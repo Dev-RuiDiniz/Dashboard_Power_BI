@@ -8,9 +8,9 @@ Este repositório será a base do produto Dashboard Power BI, uma plataforma web
 
 A fundação técnica foi criada como monorepo para separar aplicações, bibliotecas compartilhadas, documentação e infraestrutura desde o início do projeto.
 
-## Objetivo da TASK-01
+## Objetivo da Sprint 1
 
-Criar a estrutura inicial do monorepo com rastreabilidade, comandos mínimos de validação e documentação base para evolução das próximas tarefas da Sprint 1.
+Criar a fundação técnica do produto com estrutura, arquitetura, qualidade, base visual/técnica, CI inicial e documentação.
 
 ## Stack planejada
 
@@ -24,7 +24,7 @@ Criar a estrutura inicial do monorepo com rastreabilidade, comandos mínimos de 
 - Redis e BullMQ
 - Testes automatizados por camada
 
-> Nesta tarefa ainda não há implementação de API, Web ou banco de dados. A stack será inicializada nas próximas tarefas da Sprint 1.
+> As aplicações NestJS e Next.js serão inicializadas nas próximas tarefas da Sprint 1.
 
 ## Estrutura de pastas
 
@@ -37,7 +37,7 @@ packages/
   ui/                  # Componentes visuais reutilizáveis
 docs/
   decisions/           # ADRs e decisões técnicas
-infra/                 # Arquivos de infraestrutura e deploy
+infra/                 # Infraestrutura, Docker e deploy
 scripts/               # Scripts auxiliares do workspace
 .github/               # Configurações futuras de GitHub Actions
 ```
@@ -53,22 +53,39 @@ scripts/               # Scripts auxiliares do workspace
 pnpm install
 ```
 
-## Validação inicial
+## Comandos principais
 
 ```bash
 pnpm verify:workspace
-pnpm build
 pnpm lint
-pnpm test
+pnpm lint:fix
+pnpm format
+pnpm format:check
 pnpm typecheck
+pnpm quality
+pnpm build
+pnpm test
 ```
 
-Nesta fundação, os comandos apontam para a validação estrutural do workspace. Testes, lint, build real de API/Web e type-check serão evoluídos conforme as aplicações forem inicializadas.
+## Qualidade
+
+A base de qualidade usa:
+
+- ESLint para análise estática.
+- Prettier para formatação.
+- TypeScript strict.
+- Husky para hooks locais.
+- lint-staged para validar arquivos alterados.
+- commitlint para validar Conventional Commits.
+
+Mais detalhes em [`docs/quality.md`](docs/quality.md).
 
 ## Documentação
 
-- `docs/architecture.md`: visão arquitetural inicial.
-- `docs/decisions/ADR-0001-monorepo.md`: decisão técnica de uso do monorepo.
+- [`docs/architecture.md`](docs/architecture.md): visão arquitetural inicial.
+- [`docs/quality.md`](docs/quality.md): comandos e padrões de qualidade.
+- [`docs/decisions/ADR-0001-monorepo.md`](docs/decisions/ADR-0001-monorepo.md): decisão pelo monorepo.
+- [`docs/decisions/ADR-0002-tooling-qualidade.md`](docs/decisions/ADR-0002-tooling-qualidade.md): decisão sobre tooling de qualidade.
 
 ## Segurança
 
@@ -76,8 +93,8 @@ Não versionar arquivos `.env` reais, secrets, strings de conexão, tokens ou cr
 
 ## Próximas tarefas da Sprint 1
 
-1. Configurar tooling e qualidade.
-2. Inicializar NestJS API.
-3. Inicializar Next.js Web.
-4. Implementar design system base.
-5. Criar Docker Compose de desenvolvimento.
+1. Inicializar NestJS API.
+2. Inicializar Next.js Web.
+3. Implementar design system base.
+4. Criar Docker Compose de desenvolvimento.
+5. Evoluir documentação técnica.
