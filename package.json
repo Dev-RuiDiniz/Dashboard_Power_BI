@@ -15,10 +15,12 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "typecheck": "tsc --noEmit -p tsconfig.base.json",
+    "typecheck": "pnpm -r typecheck",
     "quality": "pnpm verify:workspace && pnpm lint && pnpm format:check && pnpm typecheck",
-    "build": "pnpm quality",
-    "test": "pnpm verify:workspace"
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @dashboard-power-bi/api test:e2e",
+    "dev:api": "pnpm --filter @dashboard-power-bi/api dev"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,tsx,json,md,yml,yaml}": [
