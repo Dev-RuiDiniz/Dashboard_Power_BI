@@ -1,0 +1,27 @@
+{
+  "name": "dashboard-power-bi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo da plataforma web de relatórios e BI Dashboard Power BI.",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "verify:workspace": "node scripts/verify-workspace.mjs",
+    "build": "pnpm verify:workspace",
+    "lint": "pnpm verify:workspace",
+    "test": "pnpm verify:workspace",
+    "typecheck": "pnpm verify:workspace"
+  },
+  "keywords": [
+    "dashboard",
+    "power-bi",
+    "bi",
+    "reports",
+    "monorepo"
+  ],
+  "author": "Rui Diniz",
+  "license": "UNLICENSED"
+}
