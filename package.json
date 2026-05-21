@@ -11,17 +11,21 @@
   "scripts": {
     "prepare": "husky",
     "verify:workspace": "node scripts/verify-workspace.mjs",
+    "verify:docker": "node scripts/verify-docker-dev.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "typecheck": "pnpm -r typecheck",
-    "quality": "pnpm verify:workspace && pnpm lint && pnpm format:check && pnpm typecheck",
+    "quality": "pnpm verify:workspace && pnpm verify:docker && pnpm lint && pnpm format:check && pnpm typecheck",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:e2e": "pnpm --filter @dashboard-power-bi/api test:e2e",
     "dev:api": "pnpm --filter @dashboard-power-bi/api dev",
-    "dev:web": "pnpm --filter @dashboard-power-bi/web dev"
+    "dev:web": "pnpm --filter @dashboard-power-bi/web dev",
+    "docker:dev": "docker compose --env-file infra/env/.env.example -f infra/docker/docker-compose.dev.yml up --build",
+    "docker:dev:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
+    "docker:dev:logs": "docker compose -f infra/docker/docker-compose.dev.yml logs -f"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,tsx,json,md,yml,yaml}": [
