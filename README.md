@@ -6,44 +6,11 @@ Plataforma web de relatórios e BI em formato monorepo.
 
 Este repositório será a base do produto Dashboard Power BI, uma plataforma web para centralizar relatórios, dashboards interativos, permissões por setor, exportações e administração.
 
-A fundação técnica usa monorepo para separar aplicações, bibliotecas compartilhadas, documentação e infraestrutura desde o início do projeto.
-
-## Objetivo da Sprint 1
-
-Criar a fundação técnica do produto com estrutura, arquitetura, qualidade, backend inicial, frontend inicial e documentação.
-
-## Stack planejada
-
-- Node.js 20+
-- pnpm 9+
-- TypeScript
-- NestJS para API
-- Next.js 14 para Web
-- Tailwind CSS e shadcn/ui
-- SQL Server
-- Redis e BullMQ
-- Testes automatizados por camada
-
-## Estrutura de pastas
-
-```text
-apps/
-  api/                 # Aplicação backend NestJS
-  web/                 # Aplicação frontend Next.js
-packages/
-  shared/              # Tipos, contratos e utilitários compartilhados
-  ui/                  # Componentes visuais reutilizáveis
-docs/
-  decisions/           # ADRs e decisões técnicas
-infra/                 # Infraestrutura, Docker e deploy
-scripts/               # Scripts auxiliares do workspace
-.github/               # Configurações futuras de GitHub Actions
-```
-
 ## Pré-requisitos
 
 - Node.js 20 ou superior
 - pnpm 9 ou superior
+- Docker e Docker Compose para ambiente local integrado
 
 ## Instalação
 
@@ -55,90 +22,78 @@ pnpm install
 
 ```bash
 pnpm verify:workspace
+pnpm verify:docker
 pnpm lint
-pnpm lint:fix
-pnpm format
 pnpm format:check
 pnpm typecheck
 pnpm quality
 pnpm build
 pnpm test
-pnpm test:e2e
 ```
 
-## Backend API
+## Desenvolvimento sem Docker
 
 ```bash
 pnpm dev:api
-pnpm --filter @dashboard-power-bi/api test
-pnpm --filter @dashboard-power-bi/api test:e2e
-pnpm --filter @dashboard-power-bi/api build
+pnpm dev:web
 ```
 
-API local:
+## Desenvolvimento com Docker
 
-```text
-http://localhost:3001
-```
-
-Healthcheck:
-
-```text
-GET http://localhost:3001/health
-```
-
-Swagger:
-
-```text
-http://localhost:3001/docs
-```
-
-## Frontend Web
+Subir API, Web e Redis:
 
 ```bash
-pnpm dev:web
-pnpm --filter @dashboard-power-bi/web test
-pnpm --filter @dashboard-power-bi/web build
-pnpm --filter @dashboard-power-bi/web typecheck
+pnpm docker:dev
 ```
 
-Web local:
+Ver logs:
+
+```bash
+pnpm docker:dev:logs
+```
+
+Derrubar ambiente:
+
+```bash
+pnpm docker:dev:down
+```
+
+URLs locais:
 
 ```text
-http://localhost:3000
+Web: http://localhost:3000
+API: http://localhost:3001
+Healthcheck: http://localhost:3001/health
+Swagger: http://localhost:3001/docs
+Design system: http://localhost:3000/design-system
 ```
 
-## Qualidade
+## Variáveis de ambiente
 
-A base de qualidade usa:
+O arquivo de exemplo fica em:
 
-- ESLint para análise estática.
-- Prettier para formatação.
-- TypeScript strict.
-- Husky para hooks locais.
-- lint-staged para validar arquivos alterados.
-- commitlint para validar Conventional Commits.
+```text
+infra/env/.env.example
+```
 
-Mais detalhes em [`docs/quality.md`](docs/quality.md).
+Para customizar localmente:
+
+```bash
+cp infra/env/.env.example .env
+```
+
+Não versionar `.env` real.
 
 ## Documentação
 
-- [`docs/architecture.md`](docs/architecture.md): visão arquitetural inicial.
 - [`docs/api.md`](docs/api.md): backend NestJS inicial.
 - [`docs/web.md`](docs/web.md): frontend Next.js inicial.
+- [`docs/design-system.md`](docs/design-system.md): tokens e componentes visuais.
+- [`docs/devops.md`](docs/devops.md): ambiente Docker local.
+- [`docs/environment.md`](docs/environment.md): variáveis de ambiente.
 - [`docs/quality.md`](docs/quality.md): comandos e padrões de qualidade.
-- [`docs/decisions/ADR-0001-monorepo.md`](docs/decisions/ADR-0001-monorepo.md): decisão pelo monorepo.
-- [`docs/decisions/ADR-0002-tooling-qualidade.md`](docs/decisions/ADR-0002-tooling-qualidade.md): tooling de qualidade.
-- [`docs/decisions/ADR-0003-nestjs-api.md`](docs/decisions/ADR-0003-nestjs-api.md): decisão sobre NestJS.
-- [`docs/decisions/ADR-0004-nextjs-web.md`](docs/decisions/ADR-0004-nextjs-web.md): decisão sobre Next.js.
+- [`docs/architecture.md`](docs/architecture.md): visão arquitetural inicial.
 
 ## Segurança
 
 Não versionar arquivos `.env` reais, secrets, strings de conexão, tokens ou credenciais. Use apenas arquivos de exemplo quando necessário.
-
-## Próximas tarefas da Sprint 1
-
-1. Implementar design system base.
-2. Criar Docker Compose de desenvolvimento.
-3. Evoluir documentação técnica.
-4. Preparar CI inicial.
