@@ -20,7 +20,8 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:e2e": "pnpm --filter @dashboard-power-bi/api test:e2e",
-    "dev:api": "pnpm --filter @dashboard-power-bi/api dev"
+    "dev:api": "pnpm --filter @dashboard-power-bi/api dev",
+    "dev:web": "pnpm --filter @dashboard-power-bi/web dev"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,tsx,json,md,yml,yaml}": [
