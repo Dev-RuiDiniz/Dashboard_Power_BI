@@ -9,11 +9,36 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
+    "prepare": "husky",
     "verify:workspace": "node scripts/verify-workspace.mjs",
-    "build": "pnpm verify:workspace",
-    "lint": "pnpm verify:workspace",
-    "test": "pnpm verify:workspace",
-    "typecheck": "pnpm verify:workspace"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "typecheck": "tsc --noEmit -p tsconfig.base.json",
+    "quality": "pnpm verify:workspace && pnpm lint && pnpm format:check && pnpm typecheck",
+    "build": "pnpm quality",
+    "test": "pnpm verify:workspace"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,tsx,json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "*.{js,mjs,cjs,ts,tsx}": [
+      "eslint --fix"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0"
   },
   "keywords": [
     "dashboard",
