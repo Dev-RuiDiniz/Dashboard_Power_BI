@@ -9,7 +9,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "verify:workspace": "node scripts/verifyworkspace.mjs",
+    "verify:workspace": "node scripts/verify-workspace.mjs",
     "build": "pnpm verify:workspace",
     "lint": "pnpm verify:workspace",
     "test": "pnpm verify:workspace",
