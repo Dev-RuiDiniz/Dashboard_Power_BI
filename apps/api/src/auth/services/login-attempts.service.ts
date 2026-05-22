@@ -38,7 +38,7 @@ export class LoginAttemptsService {
     const now = Date.now();
     const state = this.getCurrentState(key, now);
     const attempts = state.attempts + 1;
-    const shouldLock = attempts >= this.getMaxAttempts();
+    const shouldLock = attempts > this.getMaxAttempts();
 
     const nextState: LoginAttemptState = {
       attempts,
@@ -113,7 +113,8 @@ export class LoginAttemptsService {
   private toStatus(state: LoginAttemptState, now: number): LoginAttemptStatus {
     const lockedUntil = state.lockedUntil;
     const allowed = lockedUntil === null || lockedUntil <= now;
-    const retryAfterSeconds = lockedUntil === null || lockedUntil <= now ? 0 : Math.ceil((lockedUntil - now) / 1000);
+    const retryAfterSeconds =
+      lockedUntil === null || lockedUntil <= now ? 0 : Math.ceil((lockedUntil - now) / 1000);
 
     return {
       allowed,
