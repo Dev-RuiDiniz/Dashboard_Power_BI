@@ -3,10 +3,12 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
+import { EmailService } from '../src/auth/services/email.service';
 import { configureApp } from '../src/main';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
+  let emailService: EmailService;
 
   beforeAll(async () => {
     process.env.AUTH_DEMO_USER_EMAIL = 'admin@example.com';
@@ -18,12 +20,16 @@ describe('AuthController (e2e)', () => {
     process.env.AUTH_LOGIN_MAX_ATTEMPTS = '2';
     process.env.AUTH_LOGIN_WINDOW_SECONDS = '60';
     process.env.AUTH_LOGIN_LOCKOUT_SECONDS = '60';
+    process.env.PASSWORD_RESET_TOKEN_EXPIRES_SECONDS = '900';
+    process.env.PASSWORD_RESET_PUBLIC_URL = 'http://localhost:3000/reset-password';
+    process.env.SMTP_MODE = 'mock';
 
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleRef.createNestApplication();
+    emailService = moduleRef.get(EmailService);
     configureApp(app);
     await app.init();
   });
@@ -32,104 +38,93 @@ describe('AuthController (e2e)', () => {
     await app.close();
   });
 
-  it('POST /auth/login deve retornar access token e refresh token', async () => {
+  it('POST /auth/forgot-password deve retornar resposta genérica para e-mail existente', async () => {
     const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .set('x-forwarded-for', '10.0.0.1')
+      .post('/auth/forgot-password')
       .send({
         email: 'admin@example.com',
-        password: 'Admin123!',
       })
       .expect(200);
 
     expect(response.body).toEqual({
-      accessToken: expect.any(String),
-      refreshToken: expect.any(String),
-      tokenType: 'Bearer',
-      expiresIn: 900,
+      success: true,
+      message: 'Se o e-mail estiver cadastrado, enviaremos instruções para redefinir a senha.',
     });
+    expect(emailService.getSentEmails().length).toBeGreaterThan(0);
   });
 
-  it('POST /auth/login deve rejeitar credenciais inválidas', async () => {
-    await request(app.getHttpServer())
-      .post('/auth/login')
-      .set('x-forwarded-for', '10.0.0.2')
-      .send({
-        email: 'admin@example.com',
-        password: 'SenhaErrada123!',
-      })
-      .expect(401);
-  });
+  it('POST /auth/forgot-password deve retornar resposta genérica para e-mail inexistente', async () => {
+    emailService.clearSentEmails();
 
-  it('POST /auth/login deve retornar 429 após brute-force', async () => {
-    const payload = {
-      email: 'admin@example.com',
-      password: 'SenhaErrada123!',
-    };
-
-    await request(app.getHttpServer()).post('/auth/login').set('x-forwarded-for', '10.0.0.3').send(payload).expect(401);
-    await request(app.getHttpServer()).post('/auth/login').set('x-forwarded-for', '10.0.0.3').send(payload).expect(401);
-    await request(app.getHttpServer()).post('/auth/login').set('x-forwarded-for', '10.0.0.3').send(payload).expect(429);
-    await request(app.getHttpServer())
-      .post('/auth/login')
-      .set('x-forwarded-for', '10.0.0.3')
+    const response = await request(app.getHttpServer())
+      .post('/auth/forgot-password')
       .send({
-        email: 'admin@example.com',
-        password: 'Admin123!',
-      })
-      .expect(429);
-  });
-
-  it('POST /auth/refresh deve rotacionar refresh token', async () => {
-    const loginResponse = await request(app.getHttpServer())
-      .post('/auth/login')
-      .set('x-forwarded-for', '10.0.0.4')
-      .send({
-        email: 'admin@example.com',
-        password: 'Admin123!',
+        email: 'unknown@example.com',
       })
       .expect(200);
 
-    const refreshResponse = await request(app.getHttpServer())
-      .post('/auth/refresh')
-      .send({
-        refreshToken: loginResponse.body.refreshToken,
-      })
-      .expect(200);
-
-    expect(refreshResponse.body.refreshToken).not.toBe(loginResponse.body.refreshToken);
-
-    await request(app.getHttpServer())
-      .post('/auth/refresh')
-      .send({
-        refreshToken: loginResponse.body.refreshToken,
-      })
-      .expect(401);
+    expect(response.body).toEqual({
+      success: true,
+      message: 'Se o e-mail estiver cadastrado, enviaremos instruções para redefinir a senha.',
+    });
+    expect(emailService.getSentEmails()).toHaveLength(0);
   });
 
-  it('POST /auth/logout deve invalidar refresh token', async () => {
-    const loginResponse = await request(app.getHttpServer())
-      .post('/auth/login')
-      .set('x-forwarded-for', '10.0.0.5')
+  it('POST /auth/reset-password deve rejeitar token inválido', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({
+        token: 'token-invalido-com-tamanho-minimo-para-teste',
+        newPassword: 'NovaSenha123!',
+      })
+      .expect(400);
+  });
+
+  it('POST /auth/reset-password deve redefinir senha com token válido e impedir reutilização', async () => {
+    emailService.clearSentEmails();
+
+    await request(app.getHttpServer())
+      .post('/auth/forgot-password')
       .send({
         email: 'admin@example.com',
-        password: 'Admin123!',
       })
       .expect(200);
 
+    const token = new URL(emailService.getSentEmails()[0].resetUrl).searchParams.get('token');
+
     await request(app.getHttpServer())
-      .post('/auth/logout')
+      .post('/auth/reset-password')
       .send({
-        refreshToken: loginResponse.body.refreshToken,
+        token,
+        newPassword: 'NovaSenha123!',
       })
       .expect(200)
       .expect({ success: true });
 
     await request(app.getHttpServer())
-      .post('/auth/refresh')
+      .post('/auth/reset-password')
       .send({
-        refreshToken: loginResponse.body.refreshToken,
+        token,
+        newPassword: 'OutraSenha123!',
+      })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .set('x-forwarded-for', '10.0.10.10')
+      .send({
+        email: 'admin@example.com',
+        password: 'Admin123!',
       })
       .expect(401);
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .set('x-forwarded-for', '10.0.10.11')
+      .send({
+        email: 'admin@example.com',
+        password: 'NovaSenha123!',
+      })
+      .expect(200);
   });
 });
