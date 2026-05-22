@@ -51,6 +51,24 @@ Arquivos `.env` reais não devem ser versionados.
 | `SQLSERVER_ENCRYPT` | `true` | Define uso de conexão criptografada. |
 | `SQLSERVER_TRUST_SERVER_CERTIFICATE` | `false` | Define se certificado do servidor será confiado sem validação. |
 
+
+## Auth
+
+| Variável | Exemplo | Descrição |
+|---|---|---|
+| `AUTH_DEMO_USER_EMAIL` | vazio | E-mail do usuário demo usado apenas em desenvolvimento/testes locais. |
+| `AUTH_DEMO_USER_PASSWORD` | vazio | Senha do usuário demo. Nunca versionar valor real. |
+| `JWT_ACCESS_SECRET` | vazio | Secret forte usado para assinar access tokens. Obrigatório para login em ambientes com auth habilitado. |
+| `JWT_ACCESS_EXPIRES_IN_SECONDS` | `900` | Tempo de expiração do access token, em segundos. |
+| `JWT_REFRESH_EXPIRES_IN_SECONDS` | `604800` | Tempo de expiração do refresh token, em segundos. |
+| `BCRYPT_SALT_ROUNDS` | `10` | Custo de hash bcrypt para senhas e refresh tokens. |
+
+Observações:
+
+- `JWT_ACCESS_SECRET` deve ser diferente por ambiente.
+- Refresh tokens são armazenados internamente apenas como hash.
+- O usuário demo só deve ser usado em desenvolvimento local ou testes automatizados.
+
 ## Segurança
 
 - Nunca versionar `.env` real.
