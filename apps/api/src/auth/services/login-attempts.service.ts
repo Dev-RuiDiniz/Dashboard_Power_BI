@@ -113,7 +113,7 @@ export class LoginAttemptsService {
   private toStatus(state: LoginAttemptState, now: number): LoginAttemptStatus {
     const lockedUntil = state.lockedUntil;
     const allowed = lockedUntil === null || lockedUntil <= now;
-    const retryAfterSeconds = allowed ? 0 : Math.ceil((lockedUntil - now) / 1000);
+    const retryAfterSeconds = lockedUntil === null || lockedUntil <= now ? 0 : Math.ceil((lockedUntil - now) / 1000);
 
     return {
       allowed,
