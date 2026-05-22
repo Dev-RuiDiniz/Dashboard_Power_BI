@@ -6,6 +6,17 @@
 
 Autentica usuário e retorna `accessToken`, `refreshToken`, `tokenType` e `expiresIn`.
 
+O `accessToken` carrega as claims de autorização:
+
+```json
+{
+  "sub": "demo-admin",
+  "email": "admin@example.com",
+  "roles": ["admin"],
+  "sectors": ["diretoria", "financeiro", "comercial", "operacoes"]
+}
+```
+
 Erros esperados: `400`, `401` e `429` quando a proteção de brute-force bloquear novas tentativas.
 
 ### POST /auth/refresh
@@ -25,7 +36,7 @@ Política padrão:
 - Chave de controle baseada em e-mail normalizado + IP.
 - Logs sem senha, token ou secrets.
 
-Variáveis:
+Variáveis :
 
 ```env
 AUTH_LOGIN_MAX_ATTEMPTS=5
@@ -34,8 +45,6 @@ AUTH_LOGIN_LOCKOUT_SECONDS=900
 ```
 
 ## Recuperação de senha — TASK-10
-
-A recuperação de senha usa fluxo `forgot/reset`, token temporário opaco, expiração configurável e envio de e-mail mockável em testes.
 
 ### POST /auth/forgot-password
 
@@ -49,7 +58,7 @@ Payload:
 }
 ```
 
-Resposta 200:
+Resposta 200 genérica para evitar enumeração de usuários:
 
 ```json
 {
@@ -57,14 +66,6 @@ Resposta 200:
   "message": "Se o e-mail estiver cadastrado, enviaremos instruções para redefinir a senha."
 }
 ```
-
-Regras de segurança:
-
-- Resposta sempre genérica para evitar enumeração de usuários.
-- Token temporário opaco.
-- Armazenamento interno apenas do hash SHA-256 do token.
-- Tokens anteriores ativos são invalidados ao gerar novo token.
-- Token nunca é registrado em logs.
 
 ### POST /auth/reset-password
 
@@ -92,26 +93,74 @@ Erros esperados:
 - `400 Bad Request` para token inválido, expirado ou já utilizado.
 - `400 Bad Request` para payload inválido.
 
-Regras de segurança:
+## RBAC e permissões por setor — TASK-11
 
-- Token de uso único.
-- Senha nova armazenada com bcrypt.
-- Sessões/refresh tokens ativos do usuário são revogados após reset.
-- Token, senha e secrets não são registrados em logs.
+A autorização inicial usa RBAC com setores associados ao usuário.
 
-Variáveis:
+### Perfis
 
-```env
-PASSWORD_RESET_TOKEN_EXPIRES_SECONDS=900
-PASSWORD_RESET_PUBLIC_URL=http://localhost:3000/reset-password
-SMTP_MODE=mock
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASSWORD=
-SMTP_FROM=
-SMTP_SECURE=false
+| Perfil | Código | Permissões iniciais |
+|---|---|---|
+|Visualizador | `viewer` | Visualizar recursos do próprio setor |
+| Downloader | `downloader` | Visualizar e baixar recursos do próprio setor |
+| Admin | `admin` | Acessar recursos administrativos e qualquer setor |
+
+### Setores iniciais
+
+```text
+financeiro
+comercial
+operacoes
+diretoria
 ```
+
+### Regras de autorização
+
+- Token ausente, inválido ou expirado retorna `401 Unauthorized`.
+- Token válido sem perfil necessário retorna `403 Forbidden`.
+- Token válido sem setor necessário retorna `403 Forbidden`.
+- `admin` tem acesso global a setores nesta primeira versão.
+- A API não deve confiar em perfil ou setor enviado pelo cliente fora do JWT validado.
+
+### Guards e decorators
+
+A TASK-11 adiciona:
+
+```ts
+`Roles('viewer', 'downloader', 'admin')
+@Sectors('financeiro')
+@CurrentUser()
+JwtAuthGuard
+RolesGuard
+SectorsGuard
+```
+
+`JwtAuthGuard` valida o Bearer token e popula `request.user`.
+`RolesGuard` valida perfis exigidos por metadata.
+`SectorsGuard` valida setor exigido por metadata ou por parâmetro de rota `:sector`.
+
+### Endpoints técnicos de validação
+
+Endpoints temporários/técnicos usados para validar autorização via e2e:
+
+```text
+GET /authz-test/view/:sector
+GET /authz-test/download/:sector
+GET /authz-test/admin
+```
+
+Esses endpoints exigem `Authorization: Bearer <accessToken>`.
+
+### Usuários seed para desenvolvimento/testes
+
+Quando `AUTH_DEMO_USER_EMAIL` e `AUTH_DEMO_USER_PASSWORD` estão configurados, são criados usuários em memória:
+
+| E-mail | Perfil | Setores |
+|---|---|---|
+| `admin@example.com` ou valor de `AUTH_DEMO_USER_EMAIL` | `admin` | todos |
+|`viewer.financeiro@example.com` | `viewer` | financeiro |
+| `downloader.financeiro@example.com` | `downloader` | financeiro |
+| `viewer.comercial@example.com` | `viewer` | comercial |
 
 ## Swagger
 
@@ -130,12 +179,19 @@ pnpm --filter @dashboard-power-bi/api typecheck
 pnpm --filter @dashboard-power-bi/api build
 ```
 
-## Validação manual
+## Validação manual de autorização
 
 ```bash
-curl -i -X POST http://localhost:3001/auth/forgot-password \
+TOKEN=$(curl -s -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com"}'
+  -H "x-forwarded-for: 10.20.30.40" \
+  -d '{"email":"viewer.financeiro@example.com","password":"Admin123!"}' | jq -r .accessToken)
+
+curl -i http://localhost:3001/authz-test/view/financeiro \
+  -H "Authorization: Bearer $TOKEN"
+
+curl -i http://localhost:3001/authz-test/download/financeiro \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-Em `SMTP_MODE=mock`, o envio é capturado pelo adapter em memória usado nos testes automatizados.
+A primeira chamada deve retornar `200`; a segunda deve retornar `403` para usuário `viewer`.

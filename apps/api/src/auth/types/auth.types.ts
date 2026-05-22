@@ -1,16 +1,24 @@
+export type UserRole = 'viewer' | 'downloader' | 'admin';
+
+export type SectorCode = 'financeiro' | 'comercial' | 'operacoes' | 'diretoria';
+
 export type AuthUser = {
   id: string;
   email: string;
   passwordHash: string;
-  roles: string[];
+  roles: UserRole[];
+  sectors: SectorCode[];
   isActive: boolean;
 };
 
 export type AuthTokenPayload = {
   sub: string;
   email: string;
-  roles: string[];
+  roles: UserRole[];
+  sectors: SectorCode[];
 };
+
+export type AuthenticatedRequestUser = AuthTokenPayload;
 
 export type AuthTokens = {
   accessToken: string;
