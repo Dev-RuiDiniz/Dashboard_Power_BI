@@ -30,10 +30,23 @@ O arquivo versionado é `infra/env/.env.example`. Arquivos `.env` reais não dev
 | `SMTP_FROM` | vazio | Remetente padrão. |
 | `SMTP_SECURE` | `false` | Define se SMTP usará conexão segura. |
 
+## RBAC e setores
+
+A TASK-11 não adiciona novas variáveis obrigatórias. Os usuários seed de desenvolvimento são criados em memória quando `AUTH_DEMO_USER_EMAIL` e `AUTH_DEMO_USER_PASSWORD` estão configurados.
+
+Usuários adicionais de teste/desenvolvimento:
+
+| E-mail | Perfil | Setores |
+|---|---|---|
+|`viewer.financeiro@example.com` | `viewer` | financeiro |
+| `downloader.financeiro@example.com` | `downloader` | financeiro |
+| `viewer.comercial@example.com` | `viewer` | comercial |
+
 ## Segurança
 
 - Nunca versionar `.env` real.
 - Nunca colar senhas, tokens, secrets ou strings de conexão no chat.
 - Manter `infra/env/.env.example` apenas com placeholders.
+- `JWT_ACCESS_SECRET` deve ser forte, exclusivo por ambiente e rotacionável.
 - Tokens de recuperação são opacos, temporários e armazenados internamente apenas como hash.
-- O fluxo de recuperação retorna mensagem genérica para evitar enumeração de usuários.
+- Perfis e setores devem vir do token validado ou da persistência confiável, nunca do payload enviado pelo cliente.
