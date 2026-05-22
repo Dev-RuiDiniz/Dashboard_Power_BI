@@ -68,6 +68,7 @@ describe('AuthController (e2e)', () => {
     };
 
     await request(app.getHttpServer()).post('/auth/login').set('x-forwarded-for', '10.0.0.3').send(payload).expect(401);
+    await request(app.getHttpServer()).post('/auth/login').set('x-forwarded-for', '10.0.0.3').send(payload).expect(401);
     await request(app.getHttpServer()).post('/auth/login').set('x-forwarded-for', '10.0.0.3').send(payload).expect(429);
     await request(app.getHttpServer())
       .post('/auth/login')
