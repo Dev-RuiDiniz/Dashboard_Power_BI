@@ -21,7 +21,8 @@
     "class-validator": "^0.14.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "bcrypt": "^5.1.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.8",
@@ -35,7 +36,8 @@
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0"
+    "tsconfig-paths": "^4.2.0",
+    "@types/bcrypt": "^5.0.2"
   },
   "jest": {
     "moduleFileExtensions": [
