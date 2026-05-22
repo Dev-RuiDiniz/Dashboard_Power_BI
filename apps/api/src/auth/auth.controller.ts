@@ -1,17 +1,29 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiTooManyRequestsResponse,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { AuthService } from './auth.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { PasswordResetService } from './services/password-reset.service';
 import { AuthTokens } from './types/auth.types';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly passwordResetService: PasswordResetService,
+  ) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -21,6 +33,22 @@ export class AuthController {
   @ApiTooManyRequestsResponse({ description: 'Muitas tentativas de login. Tente novamente mais tarde.' })
   login(@Body() body: LoginDto, @Req() request: Request): Promise<AuthTokens> {
     return this.authService.login(body.email, body.password, this.getClientIp(request));
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Solicita envio de instruções para recuperação de senha.' })
+  @ApiOkResponse({ description: 'Resposta genérica enviada para evitar enumeração de usuários.' })
+  forgotPassword(@Body() body: ForgotPasswordDto): Promise<{ success: true; message: string }> {
+    return this.passwordResetService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Redefine senha usando token temporário de recuperação.' })
+  @ApiOkResponse({ description: 'Senha redefinida com sucesso.' })
+  resetPassword(@Body() body: ResetPasswordDto): Promise<{ success: true }> {
+    return this.passwordResetService.resetPassword(body.token, body.newPassword);
   }
 
   @Post('refresh')
