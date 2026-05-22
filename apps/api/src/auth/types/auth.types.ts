@@ -8,7 +8,11 @@ export type AuthUser = {
   passwordHash: string;
   roles: UserRole[];
   sectors: SectorCode[];
+  groupIds: string[];
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deactivatedAt: Date | null;
 };
 
 export type AuthTokenPayload = {
