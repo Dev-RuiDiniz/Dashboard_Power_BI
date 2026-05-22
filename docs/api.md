@@ -1,40 +1,51 @@
 # API Backend
 
-## Visão geral
-
-A API do Dashboard Power BI usa NestJS, TypeScript, validação global com `ValidationPipe`, Swagger e testes automatizados.
-
-## Endpoints iniciais
-
-### GET /health
-
-Retorna o status básico da API.
-
-```json
-{
-  "status": "ok",
-  "service": "dashboard-power-bi-api"
-}
-```
-
-### POST /validation-test
-
-Endpoint técnico temporário usado para validar o funcionamento do `ValidationPipe` global.
-
-## Autenticação — TASK-08
-
-A autenticação inicial usa login por e-mail e senha, emissão de access token em formato JWT HS256, refresh token opaco, rotação de refresh token e logout com invalidação do refresh token atual.
+## Autenticação
 
 ### POST /auth/login
 
-Autentica o usuário e retorna um par de tokens.
+Autentica usuário e retorna `accessToken`, `refreshToken`, `tokenType` e `expiresIn`.
+
+Erros esperados: `400`, `401` e `429` quando a proteção de brute-force bloquear novas tentativas.
+
+### POST /auth/refresh
+
+Rotaciona refresh token e emite novo par de tokens.
+
+### POST /auth/logout
+
+Invalida o refresh token atual.
+
+## Proteção de login — TASK-09
+
+Política padrão:
+
+- 5 falhas de login em 15 minutos.
+- Lockout temporário de 15 minutos.
+- Chave de controle baseada em e-mail normalizado + IP.
+- Logs sem senha, token ou secrets.
+
+Variáveis:
+
+```env
+AUTH_LOGIN_MAX_ATTEMPTS=5
+AUTH_LOGIN_WINDOW_SECONDS=900
+AUTH_LOGIN_LOCKOUT_SECONDS=900
+```
+
+## Recuperação de senha — TASK-10
+
+A recuperação de senha usa fluxo `forgot/reset`, token temporário opaco, expiração configurável e envio de e-mail mockável em testes.
+
+### POST /auth/forgot-password
+
+Solicita instruções de recuperação de senha.
 
 Payload:
 
 ```json
 {
-  "email": "admin@example.com",
-  "password": "Admin123!"
+  "email": "admin@example.com"
 }
 ```
 
@@ -42,40 +53,29 @@ Resposta 200:
 
 ```json
 {
-  "accessToken": "<jwt>",
-  "refreshToken": "<refresh-token-opaco>",
-  "tokenType": "Bearer",
-  "expiresIn": 900
+  "success": true,
+  "message": "Se o e-mail estiver cadastrado, enviaremos instruções para redefinir a senha."
 }
 ```
 
-Erros esperados:
+Regras de segurança:
 
-- `400 Bad Request` para payload inválido.
-- `401 Unauthorized` para credenciais inválidas.
-- `429 Too Many Requests` quando a proteção de brute-force bloquear novas tentativas.
+- Resposta sempre genérica para evitar enumeração de usuários.
+- Token temporário opaco.
+- Armazenamento interno apenas do hash SHA-256 do token.
+- Tokens anteriores ativos são invalidados ao gerar novo token.
+- Token nunca é registrado em logs.
 
-### POST /auth/refresh
+### POST /auth/reset-password
 
-Rotaciona o refresh token e retorna novo par de tokens. O refresh token anterior é invalidado e não deve ser reutilizado.
+Redefine a senha usando token temporário.
 
 Payload:
 
 ```json
 {
-  "refreshToken": "<refresh-token-atual>"
-}
-```
-
-### POST /auth/logout
-
-Invalida o refresh token atual.
-
-Payload:
-
-```json
-{
-  "refreshToken": "<refresh-token-atual>"
+  "token": "<token-temporario>",
+  "newPassword": "NovaSenha123!"
 }
 ```
 
@@ -87,52 +87,33 @@ Resposta 200:
 }
 ```
 
-## Proteção de login — TASK-09
+Erros esperados:
 
-O endpoint `POST /auth/login` possui proteção contra brute-force.
+- `400 Bad Request` para token inválido, expirado ou já utilizado.
+- `400 Bad Request` para payload inválido.
 
-Política padrão:
+Regras de segurança:
 
-- Máximo de 5 falhas de login.
-- Janela de 15 minutos.
-- Lockout temporário de 15 minutos.
-- Chave de controle baseada em e-mail normalizado + IP.
-- Login bem-sucedido limpa as falhas registradas para a chave.
-- Durante o lockout, a API retorna `429 Too Many Requests`.
+- Token de uso único.
+- Senha nova armazenada com bcrypt.
+- Sessões/refresh tokens ativos do usuário são revogados após reset.
+- Token, senha e secrets não são registrados em logs.
 
-Variáveis relacionadas:
+Variáveis:
 
 ```env
-AUTH_LOGIN_MAX_ATTEMPTS=5
-AUTH_LOGIN_WINDOW_SECONDS=900
-AUTH_LOGIN_LOCKOUT_SECONDS=900
+PASSWORD_RESET_TOKEN_EXPIRES_SECONDS=900
+PASSWORD_RESET_PUBLIC_URL=http://localhost:3000/reset-password
+SMTP_MODE=mock
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+SMTP_SECURE=false
 ```
-
-Resposta esperada em lockout:
-
-```json
-{
-  "statusCode": 429,
-  "message": {
-    "message": "Muitas tentativas de login. Tente novamente mais tarde.",
-    "retryAfterSeconds": 900
-  },
-  "error": "Too Many Requests"
-}
-```
-
-Observações de segurança:
-
-- Senhas nunca são registradas em logs.
-- Tokens nunca são registrados em logs.
-- E-mails são mascarados nos logs de falha.
-- IPs são mascarados nos logs.
-- Eventos técnicos registrados: `login_failed`, `login_rate_limited` e `login_success`.
-- A implementação atual usa memória local; em produção com múltiplas instâncias, o recomendado é evoluir para Redis.
 
 ## Swagger
-
-A documentação Swagger fica disponível em:
 
 ```text
 http://localhost:3001/docs
@@ -149,15 +130,12 @@ pnpm --filter @dashboard-power-bi/api typecheck
 pnpm --filter @dashboard-power-bi/api build
 ```
 
-## Validação manual de brute-force
+## Validação manual
 
 ```bash
-for i in 1 2 3 4 5 6; do
-  curl -i -X POST http://localhost:3001/auth/login \
-    -H "Content-Type: application/json" \
-    -H "x-forwarded-for: 10.10.10.10" \
-    -d '{"email":"admin@example.com","password":"SenhaErrada123!"}'
-done
+curl -i -X POST http://localhost:3001/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com"}'
 ```
 
-A tentativa que exceder `AUTH_LOGIN_MAX_ATTEMPTS` deve retornar HTTP `429`.
+Em `SMTP_MODE=mock`, o envio é capturado pelo adapter em memória usado nos testes automatizados.
