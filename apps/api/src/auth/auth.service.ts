@@ -96,6 +96,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       roles: user.roles,
+      sectors: user.sectors,
     });
 
     const refreshToken = this.createOpaqueRefreshToken();
