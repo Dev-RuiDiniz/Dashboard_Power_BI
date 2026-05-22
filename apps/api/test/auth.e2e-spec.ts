@@ -15,6 +15,9 @@ describe('AuthController (e2e)', () => {
     process.env.JWT_ACCESS_EXPIRES_IN_SECONDS = '900';
     process.env.JWT_REFRESH_EXPIRES_IN_SECONDS = '604800';
     process.env.BCRYPT_SALT_ROUNDS = '4';
+    process.env.AUTH_LOGIN_MAX_ATTEMPTS = '2';
+    process.env.AUTH_LOGIN_WINDOW_SECONDS = '60';
+    process.env.AUTH_LOGIN_LOCKOUT_SECONDS = '60';
 
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -32,6 +35,7 @@ describe('AuthController (e2e)', () => {
   it('POST /auth/login deve retornar access token e refresh token', async () => {
     const response = await request(app.getHttpServer())
       .post('/auth/login')
+      .set('x-forwarded-for', '10.0.0.1')
       .send({
         email: 'admin@example.com',
         password: 'Admin123!',
@@ -49,6 +53,7 @@ describe('AuthController (e2e)', () => {
   it('POST /auth/login deve rejeitar credenciais inválidas', async () => {
     await request(app.getHttpServer())
       .post('/auth/login')
+      .set('x-forwarded-for', '10.0.0.2')
       .send({
         email: 'admin@example.com',
         password: 'SenhaErrada123!',
@@ -56,9 +61,28 @@ describe('AuthController (e2e)', () => {
       .expect(401);
   });
 
+  it('POST /auth/login deve retornar 429 após brute-force', async () => {
+    const payload = {
+      email: 'admin@example.com',
+      password: 'SenhaErrada123!',
+    };
+
+    await request(app.getHttpServer()).post('/auth/login').set('x-forwarded-for', '10.0.0.3').send(payload).expect(401);
+    await request(app.getHttpServer()).post('/auth/login').set('x-forwarded-for', '10.0.0.3').send(payload).expect(429);
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .set('x-forwarded-for', '10.0.0.3')
+      .send({
+        email: 'admin@example.com',
+        password: 'Admin123!',
+      })
+      .expect(429);
+  });
+
   it('POST /auth/refresh deve rotacionar refresh token', async () => {
     const loginResponse = await request(app.getHttpServer())
       .post('/auth/login')
+      .set('x-forwarded-for', '10.0.0.4')
       .send({
         email: 'admin@example.com',
         password: 'Admin123!',
@@ -85,6 +109,7 @@ describe('AuthController (e2e)', () => {
   it('POST /auth/logout deve invalidar refresh token', async () => {
     const loginResponse = await request(app.getHttpServer())
       .post('/auth/login')
+      .set('x-forwarded-for', '10.0.0.5')
       .send({
         email: 'admin@example.com',
         password: 'Admin123!',
