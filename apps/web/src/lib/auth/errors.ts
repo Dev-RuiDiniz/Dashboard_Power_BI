@@ -9,7 +9,8 @@ export class AuthClientError extends Error {
   constructor(
     public readonly code: AuthErrorCode,
     message: string,
-    public readonly status?: number,\n  ) {
+    public readonly status?: number,
+  ) {
     super(message);
     this.name = 'AuthClientError';
   }
