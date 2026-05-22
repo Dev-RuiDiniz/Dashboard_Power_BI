@@ -33,12 +33,15 @@ describe('LoginAttemptsService', () => {
     expect(status.remainingAttempts).toBe(1);
   });
 
-  it('deve bloquear após atingir o limite de falhas dentro da janela', () => {
+  it('deve bloquear após exceder o limite de falhas dentro da janela', () => {
     service.recordFailure('admin@example.com', '127.0.0.1');
-    const status = service.recordFailure('admin@example.com', '127.0.0.1');
+    const secondStatus = service.recordFailure('admin@example.com', '127.0.0.1');
+    const blockedStatus = service.recordFailure('admin@example.com', '127.0.0.1');
 
-    expect(status.allowed).toBe(false);
-    expect(status.retryAfterSeconds).toBeGreaterThan(0);
+    expect(secondStatus.allowed).toBe(true);
+    expect(secondStatus.remainingAttempts).toBe(0);
+    expect(blockedStatus.allowed).toBe(false);
+    expect(blockedStatus.retryAfterSeconds).toBeGreaterThan(0);
     expect(() => service.assertCanAttempt('admin@example.com', '127.0.0.1')).toThrow(TooManyRequestsException);
   });
 
