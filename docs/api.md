@@ -2,196 +2,161 @@
 
 ## Autenticação
 
-### POST /auth/login
+A API usa JWT com `roles` e `sectors` no `accessToken`.
 
-Autentica usuário e retorna `accessToken`, `refreshToken`, `tokenType` e `expiresIn`.
+Endpoints principais:
 
-O `accessToken` carrega as claims de autorização:
-
-```json
-{
-  "sub": "demo-admin",
-  "email": "admin@example.com",
-  "roles": ["admin"],
-  "sectors": ["diretoria", "financeiro", "comercial", "operacoes"]
-}
+```text
+POST /auth/login
+POST /auth/refresh
+POST /auth/logout
+POST /auth/forgot-password
+POST /auth/reset-password
 ```
 
-Erros esperados: `400`, `401` e `429` quando a proteção de brute-force bloquear novas tentativas.
+Regras de segurança já implementadas:
 
-### POST /auth/refresh
+- Login com proteção contra brute-force.
+- Refresh token opaco e rotacionável.
+- Recuperação de senha com token temporário.
+- RBAC com `viewer`, `downloader` e `admin`.
+- Permissões por setor com `financeiro`, `comercial`, `operacoes` e `diretoria`.
 
-Rotaciona refresh token e emite novo par de tokens.
+## Administração — TASK-12
 
-### POST /auth/logout
+Os endpoints administrativos exigem:
 
-Invalida o refresh token atual.
-
-## Proteção de login — TASK-09
-
-Política padrão:
-
-- 5 falhas de login em 15 minutos.
-- Lockout temporário de 15 minutos.
-- Chave de controle baseada em e-mail normalizado + IP.
-- Logs sem senha, token ou secrets.
-
-Variáveis :
-
-```env
-AUTH_LOGIN_MAX_ATTEMPTS=5
-AUTH_LOGIN_WINDOW_SECONDS=900
-AUTH_LOGIN_LOCKOUT_SECONDS=900
+```text
+Authorization: Bearer <accessToken>
+perfil admin
 ```
 
-## Recuperação de senha — TASK-10
+Sem token a API retorna `401 Unauthorized`. Com token válido sem perfil `admin`, retorna `403 Forbidden`.
 
-### POST /auth/forgot-password
+### Usuários
 
-Solicita instruções de recuperação de senha.
+```text
+GET    /admin/users
+GET    /admin/users/:id
+POST   /admin/users
+PATCH  /admin/users/:id
+PATCH  /admin/users/:id/deactivate
+POST   /admin/users/:id/reset-password
+PUT    /admin/users/:id/groups
+```
+
+#### POST /admin/users
 
 Payload:
 
 ```json
 {
-  "email": "admin@example.com"
+  "email": "usuario@example.com",
+  "password": "SenhaInicial123!",
+  "roles": ["viewer"],
+  "sectors": ["financeiro"],
+  "groupIds": []
 }
 ```
 
-Resposta 200 genérica para evitar enumeração de usuários:
+Regras:
 
-```json
-{
-  "success": true,
-  "message": "Se o e-mail estiver cadastrado, enviaremos instruções para redefinir a senha."
-}
-```
+- `email` deve ser válido e único.
+- `password` deve ter no mínimo 8 caracteres.
+- `roles` aceita `viewer`, `downloader` e `admin`.
+- `sectors` aceita `financeiro`, `comercial`, `operacoes` e `diretoria`.
+- `groupIds`, quando informado, deve referenciar grupos existentes.
+- A resposta nunca expõe `passwordHash`.
 
-### POST /auth/reset-password
+#### PATCH /admin/users/:id
 
-Redefine a senha usando token temporário.
+Permite editar `email`, `roles`, `sectors` e `groupIds`.
+
+#### PATCH /admin/users/:id/deactivate
+
+Desativa logicamente o usuário e preenche `deactivatedAt`.
+
+#### POST /admin/users/:id/reset-password
 
 Payload:
 
 ```json
 {
-  "token": "<token-temporario>",
   "newPassword": "NovaSenha123!"
 }
 ```
 
-Resposta 200:
+Atualiza a senha com bcrypt e não retorna a senha.
+
+#### PUT /admin/users/:id/groups
+
+Payload:
 
 ```json
 {
-  "success": true
+  "groupIds": ["<group-id>"]
 }
 ```
 
-Erros esperados:
+Vincula o usuário a grupos existentes.
 
-- `400 Bad Request` para token inválido, expirado ou já utilizado.
-- `400 Bad Request` para payload inválido.
-
-## RBAC e permissões por setor — TASK-11
-
-A autorização inicial usa RBAC com setores associados ao usuário.
-
-### Perfis
-
-| Perfil | Código | Permissões iniciais |
-|---|---|---|
-|Visualizador | `viewer` | Visualizar recursos do próprio setor |
-| Downloader | `downloader` | Visualizar e baixar recursos do próprio setor |
-| Admin | `admin` | Acessar recursos administrativos e qualquer setor |
-
-### Setores iniciais
+### Grupos
 
 ```text
-financeiro
-comercial
-operacoes
-diretoria
+GET    /admin/groups
+GET    /admin/groups/:id
+POST   /admin/groups
+PATCH  /admin/groups/:id
+DELETE /admin/groups/:id
 ```
 
-### Regras de autorização
+#### POST /admin/groups
 
-- Token ausente, inválido ou expirado retorna `401 Unauthorized`.
-- Token válido sem perfil necessário retorna `403 Forbidden`.
-- Token válido sem setor necessário retorna `403 Forbidden`.
-- `admin` tem acesso global a setores nesta primeira versão.
-- A API não deve confiar em perfil ou setor enviado pelo cliente fora do JWT validado.
+Payload:
 
-### Guards e decorators
-
-A TASK-11 adiciona:
-
-```ts
-`Roles('viewer', 'downloader', 'admin')
-@Sectors('financeiro')
-@CurrentUser()
-JwtAuthGuard
-RolesGuard
-SectorsGuard
+```json
+{
+  "name": "Financeiro - Downloaders",
+  "description": "Grupo com permissão de download no setor financeiro.",
+  "roles": ["downloader"],
+  "sectors": ["financeiro"]
+}
 ```
 
-`JwtAuthGuard` valida o Bearer token e popula `request.user`.
-`RolesGuard` valida perfis exigidos por metadata.
-`SectorsGuard` valida setor exigido por metadata ou por parâmetro de rota `:sector`.
+Regras:
 
-### Endpoints técnicos de validação
+- `name` é obrigatório e único.
+- `roles` e `sectors` seguem os mesmos valores permitidos dos usuários.
+- `DELETE /admin/groups/:id` remove o grupo em memória nesta versão inicial.
 
-Endpoints temporários/técnicos usados para validar autorização via e2e:
+## Validação manual
 
-```text
-GET /authz-test/view/:sector
-GET /authz-test/download/:sector
-GET /authz-test/admin
-```
+```bash
+TOKEN=$(curl -s -X POST http://localhost:3001/auth/login \
+  -H "Content-Type: application/json" \
+  -H "x-forwarded-for: 10.20.30.40" \
+  -d '{"email":"admin@example.com","password":"Admin123!"}' | jq -r .accessToken)
 
-Esses endpoints exigem `Authorization: Bearer <accessToken>`.
+curl -i http://localhost:3001/admin/users \
+  -H "Authorization: Bearer $TOKEN"
 
-### Usuários seed para desenvolvimento/testes
-
-Quando `AUTH_DEMO_USER_EMAIL` e `AUTH_DEMO_USER_PASSWORD` estão configurados, são criados usuários em memória:
-
-| E-mail | Perfil | Setores |
-|---|---|---|
-| `admin@example.com` ou valor de `AUTH_DEMO_USER_EMAIL` | `admin` | todos |
-|`viewer.financeiro@example.com` | `viewer` | financeiro |
-| `downloader.financeiro@example.com` | `downloader` | financeiro |
-| `viewer.comercial@example.com` | `viewer` | comercial |
-
-## Swagger
-
-```text
-http://localhost:3001/docs
+curl -i -X POST http://localhost:3001/admin/groups \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Financeiro - Downloaders","roles":["downloader"],"sectors":["financeiro"]}'
 ```
 
 ## Comandos
 
 ```bash
 pnpm install
-pnpm dev:api
 pnpm --filter @dashboard-power-bi/api test
 pnpm --filter @dashboard-power-bi/api test:e2e
 pnpm --filter @dashboard-power-bi/api typecheck
-pnpm --filter @dashboard-power-bi/api build
+pnpm lint
+pnpm build
 ```
 
-## Validação manual de autorização
+## Observações
 
-```bash
-TOKEN=$(curl -s -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -H "x-forwarded-for: 10.20.30.40" \
-  -d '{"email":"viewer.financeiro@example.com","password":"Admin123!"}' | jq -r .accessToken)
-
-curl -i http://localhost:3001/authz-test/view/financeiro \
-  -H "Authorization: Bearer $TOKEN"
-
-curl -i http://localhost:3001/authz-test/download/financeiro \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-A primeira chamada deve retornar `200`; a segunda deve retornar `403` para usuário `viewer`.
+A persistência de usuários e grupos ainda é em memória. Para produção, a próxima evolução recomendada é persistir usuários, grupos, roles e setores no SQL Server, com auditoria de alterações administrativas.
