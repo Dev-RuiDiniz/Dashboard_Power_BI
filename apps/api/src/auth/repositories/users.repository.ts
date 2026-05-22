@@ -20,6 +20,19 @@ export class UsersRepository {
     return Array.from(this.users.values()).find((user) => user.id === id) ?? null;
   }
 
+  async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
+    const user = await this.findById(id);
+
+    if (!user) {
+      return;
+    }
+
+    this.users.set(user.email.toLowerCase(), {
+      ...user,
+      passwordHash,
+    });
+  }
+
   private seedDevelopmentUser(): void {
     const email = this.configService.get<string>('AUTH_DEMO_USER_EMAIL');
     const password = this.configService.get<string>('AUTH_DEMO_USER_PASSWORD');

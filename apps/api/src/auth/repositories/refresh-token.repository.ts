@@ -34,4 +34,10 @@ export class RefreshTokenRepository {
       revokedAt: new Date(),
     });
   }
+
+  async revokeActiveByUserId(userId: string): Promise<void> {
+    const activeSessions = await this.findActiveByUserId(userId);
+
+    await Promise.all(activeSessions.map((session) => this.revoke(session.id)));
+  }
 }
