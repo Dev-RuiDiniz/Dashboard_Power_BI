@@ -60,7 +60,10 @@ describe('AuthService', () => {
     );
   });
 
-  it('deve bloquear login após limite de falhas', async () => {
+  it('deve bloquear login após exceder limite de falhas', async () => {
+    await expect(authService.login('admin@example.com', 'SenhaErrada123!', '127.0.0.1')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
     await expect(authService.login('admin@example.com', 'SenhaErrada123!', '127.0.0.1')).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
