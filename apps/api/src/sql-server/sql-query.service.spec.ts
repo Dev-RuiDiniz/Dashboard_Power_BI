@@ -5,7 +5,7 @@ const mockInput = jest.fn();
 const mockQuery = jest.fn();
 const mockExecute = jest.fn();
 
-const createSqlServerService = (): jest.Mocked<Pick<SqlServerService, 'getPool'>>
+const createSqlServerService = (): jest.Mocked<Pick<SqlServerService, 'getPool'>> =>
   ({
     getPool: jest.fn().mockResolvedValue({
       request: () => ({
@@ -95,7 +95,8 @@ describe('SqlQueryService', () => {
     const service = new SqlQueryService(createSqlServerService() as SqlServerService);
 
     await expect(
-      service.executeView({j        viewName: 'reports.vw_dashboard_reports',
+      service.executeView({
+        viewName: 'reports.vw_dashboard_reports',
       }),
     ).rejects.toThrow(SqlQueryExecutionError);
   });
