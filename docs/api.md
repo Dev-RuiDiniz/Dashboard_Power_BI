@@ -25,56 +25,80 @@ A TASK-15 adiciona o endpoint de verificação da dependência SQL Server.
 GET /health/sql
 ```
 
-### Resposta saudável
+A resposta é sanitizada e não expõe senha, usuário, host, database ou string de conexão.
+
+## Catálogo de relatórios
+
+A TASK-17 adiciona o catálogo administrativo de relatórios e a listagem por setor.
+
+### Criar definição de relatório
+
+```http
+POST /admin/reports
+```
+
+Payload:
 
 ```json
 {
-  "status": "ok",
-  "dependency": "sql-server",
-  "details": {
-    "configured": {
-      "serverConfigured": true,
-      "port": 1433,
-      "databaseConfigured": true,
-      "userConfigured": true,
-      "encrypt": true,
-      "trustServerCertificate": false,
-      "connectionTimeout": 5000,
-      "requestTimeout": 5000
-    },
-    "latencyMs": 12
-  }
+  "name": "Relatório Financeiro",
+  "description": "Visão consolidada do setor financeiro.",
+  "sector": "financeiro",
+  "sourceType": "view",
+  "sourceName": "reports.vw_financial_reports",
+  "parameters": [
+    {
+      "name": "startDate",
+      "type": "date",
+      "required": true
+    }
+  ],
+  "requiredPermissions": ["reports:financeiro:read"],
+  "isActive": true
 }
 ```
 
-### Resposta indisponível
+Regras:
 
-```json
-{
-  "status": "unavailable",
-  "dependency": "sql-server",
-  "details": {
-    "configured": {
-      "serverConfigured": true,
-      "port": 1433,
-      "databaseConfigured": true,
-      "userConfigured": true,
-      "encrypt": true,
-      "trustServerCertificate": false,
-      "connectionTimeout": 5000,
-      "requestTimeout": 5000
-    },
-    "message": "SQL Server indisponível ou configuração inválida."
-  }
-}
+- `sourceType` aceita apenas `view` ou `stored_procedure`.
+- `sourceName` deve usar o formato seguro `schema.nome`.
+- `parameters` aceita tipos `string`, `int`, `number`, `boolean` e `date`.
+- `requiredPermissions` deve conter chaves seguras de permissão.
+- Não é permitido SQL livre no catálogo.
+
+### Listar catálogo administrativo
+
+```http
+GET /admin/reports
 ```
 
-### Regras de segurança
+### Buscar definição por ID
 
-- A resposta não expõe senha, usuário, host, database ou string de conexão.
-- Erros brutos do driver não são retornados ao cliente.
-- O teste usa mock/fixture e não depende de SQL Server real.
-- Em produção, usar usuário SQL dedicado e preferencialmente `read-only`.
+```http
+GET /admin/reports/{id}
+```
+
+### Atualizar definição parcialmente
+
+```http
+PATCH /admin/reports/{id}
+```
+
+### Desativar definição
+
+```http
+PATCH /admin/reports/{id}/deactivate
+```
+
+A desativação é lógica. A definição permanece cadastrada, mas deixa de aparecer na listagem pública por setor.
+
+### Listar relatórios ativos por setor
+
+```http
+GET /reports?sector=financeiro
+```
+
+Retorna somente relatórios ativos do setor informado.
 
 ## Execução local
 
@@ -86,13 +110,6 @@ Swagger local:
 
 ```text
 http://localhost:3001/docs
-```
-
-Healthcheck local:
-
-```text
-http://localhost:3001/health
-http://localhost:3001/health/sql
 ```
 
 ## Validação

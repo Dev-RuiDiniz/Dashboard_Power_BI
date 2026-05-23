@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
+import { ReportsModule } from './reports/reports.module';
 import { ValidationTestModule } from './validation-test/validation-test.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { ValidationTestModule } from './validation-test/validation-test.module';
     AdminModule,
     AuthModule,
     HealthModule,
+    ReportsModule,
     ValidationTestModule,
   ],
 })
