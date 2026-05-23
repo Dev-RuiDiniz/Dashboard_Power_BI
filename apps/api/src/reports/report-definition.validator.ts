@@ -26,7 +26,7 @@ export function validateCreateReportDefinition(input: CreateReportDefinitionInpu
     description: validateRequiredText(input.description, 'descrição', 500),
     sector: validateSector(input.sector),
     sourceType: validateSourceType(input.sourceType),
-    sourceName: validateSqlObjectName(input.sourceName, 'fonte SQL'),
+    sourceName: validateSourceName(input.sourceName),
     parameters: validateParameters(input.parameters ?? []),
     requiredPermissions: validatePermissions(input.requiredPermissions ?? []),
     isActive: input.isActive ?? true,
@@ -53,6 +53,15 @@ export function validateUpdateReportDefinition(
 
 export function validateSector(value: string): string {
   return validateRequiredText(value, 'setor', 80).toLowerCase();
+}
+
+
+function validateSourceName(value: string): string {
+  try {
+    return validateSqlObjectName(value, 'fonte SQL');
+  } catch {
+    throw new ReportDefinitionValidationError('Fonte SQL inválida.');
+  }
 }
 
 function validateSourceType(value: ReportSourceType): ReportSourceType {
