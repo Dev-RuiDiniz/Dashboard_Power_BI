@@ -1,45 +1,28 @@
 # Setup local
 
-Este guia orienta uma pessoa desenvolvedora nova a rodar o projeto localmente.
+## Requisitos
 
-## Pré-requisitos
+- Node.js 20 ou superior
+- pnpm 9 ou superior
+- Docker e Docker Compose, se usar ambiente containerizado
 
-- Git
-- Node.js 20+
-- pnpm 9+
-- Docker e Docker Compose para execução containerizada
-
-## 1. Clonar repositório
-
-```bash
-git clone https://github.com/Dev-RuiDiniz/Dashboard_Power_BI.git
-cd Dashboard_Power_BI
-```
-
-## 2. Instalar dependências
+## Instalação
 
 ```bash
 pnpm install
 ```
 
-## 3. Validar fundação técnica
+## Ambiente
 
-```bash
-pnpm verify:workspace
-pnpm verify:docker
-pnpm verify:docs
-pnpm quality
-```
-
-## 4. Configurar variáveis
+Crie o arquivo `.env` local a partir do exemplo versionado:
 
 ```bash
 cp infra/env/.env.example .env
 ```
 
-Preencha somente valores locais. Não commitar `.env`.
+Não versionar `.env` real.
 
-## 5. Rodar sem Docker
+## API e Web
 
 Terminal 1:
 
@@ -53,39 +36,51 @@ Terminal 2:
 pnpm dev:web
 ```
 
-Validar:
+## SQL Server externo
+
+A TASK-15 adiciona suporte de conexão segura ao SQL Server externo.
+
+Configure no `.env` local:
+
+```bash
+SQLSERVER_HOST=
+SQLSERVER_PORT=1433
+SQLSERVER_DATABASE=
+SQLSERVER_USER=
+SQLSERVER_PASSWORD=
+SQLSERVER_ENCRYPT=true
+SQLSERVER_TRUST_SERVER_CERTIFICATE=false
+SQLSERVER_CONNECTION_TIMEOUT_MS=5000
+SQLSERVER_REQUEST_TIMEOUT_MS=5000
+```
+
+Boas práticas:
+
+- usar usuário dedicado e preferencialmente `read-only`;
+- não usar usuário `sa` ou administrador;
+- não compartilhar strings de conexão em logs, issues, commits ou chats;
+- manter `SQLSERVER_ENCRYPT=true`;
+- usar `SQLSERVER_TRUST_SERVER_CERTIFICATE=false` em produção.
+
+## Healthchecks
 
 ```text
-http://localhost:3000
 http://localhost:3001/health
-http://localhost:3001/docs
-http://localhost:3000/design-system
+http://localhost:3001/health/sql
 ```
 
-## 6. Rodar com Docker
+O healthcheck SQL é sanitizado e não retorna credenciais ou erro bruto.
+
+## Qualidade
 
 ```bash
-pnpm docker:dev
+pnpm verify:workspace
+pnpm verify:docker
+pnpm verify:docs
+pnpm lint
+pnpm format:check
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm quality
 ```
-
-Logs:
-
-```bash
-pnpm docker:dev:logs
-```
-
-Derrubar:
-
-```bash
-pnpm docker:dev:down
-```
-
-## 7. Checklist final
-
-- [ ] `pnpm install` executou sem erro
-- [ ] `pnpm quality` executou sem erro
-- [ ] API responde `/health`
-- [ ] Swagger abre em `/docs`
-- [ ] Web abre em `localhost:3000`
-- [ ] Preview visual abre em `/design-system`
-- [ ] `.env` real não foi versionado

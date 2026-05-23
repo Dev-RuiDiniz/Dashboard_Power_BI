@@ -1,162 +1,104 @@
-# API Backend
+# API
 
-## Autenticação
+A API é implementada com NestJS e expõe endpoints REST documentados via Swagger.
 
-A API usa JWT com `roles` e `sectors` no `accessToken`.
+## Healthcheck da API
 
-Endpoints principais:
-
-```text
-POST /auth/login
-POST /auth/refresh
-POST /auth/logout
-POST /auth/forgot-password
-POST /auth/reset-password
+```http
+GET /health
 ```
 
-Regras de segurança já implementadas:
-
-- Login com proteção contra brute-force.
-- Refresh token opaco e rotacionável.
-- Recuperação de senha com token temporário.
-- RBAC com `viewer`, `downloader` e `admin`.
-- Permissões por setor com `financeiro`, `comercial`, `operacoes` e `diretoria`.
-
-## Administração — TASK-12
-
-Os endpoints administrativos exigem:
-
-```text
-Authorization: Bearer <accessToken>
-perfil admin
-```
-
-Sem token a API retorna `401 Unauthorized`. Com token válido sem perfil `admin`, retorna `403 Forbidden`.
-
-### Usuários
-
-```text
-GET    /admin/users
-GET    /admin/users/:id
-POST   /admin/users
-PATCH  /admin/users/:id
-PATCH  /admin/users/:id/deactivate
-POST   /admin/users/:id/reset-password
-PUT    /admin/users/:id/groups
-```
-
-#### POST /admin/users
-
-Payload:
+Resposta esperada:
 
 ```json
 {
-  "email": "usuario@example.com",
-  "password": "SenhaInicial123!",
-  "roles": ["viewer"],
-  "sectors": ["financeiro"],
-  "groupIds": []
+  "status": "ok",
+  "service": "dashboard-power-bi-api"
 }
 ```
 
-Regras:
+## Healthcheck SQL Server
 
-- `email` deve ser válido e único.
-- `password` deve ter no mínimo 8 caracteres.
-- `roles` aceita `viewer`, `downloader` e `admin`.
-- `sectors` aceita `financeiro`, `comercial`, `operacoes` e `diretoria`.
-- `groupIds`, quando informado, deve referenciar grupos existentes.
-- A resposta nunca expõe `passwordHash`.
+A TASK-15 adiciona o endpoint de verificação da dependência SQL Server.
 
-#### PATCH /admin/users/:id
+```http
+GET /health/sql
+```
 
-Permite editar `email`, `roles`, `sectors` e `groupIds`.
-
-#### PATCH /admin/users/:id/deactivate
-
-Desativa logicamente o usuário e preenche `deactivatedAt`.
-
-#### POST /admin/users/:id/reset-password
-
-Payload:
+### Resposta saudável
 
 ```json
 {
-  "newPassword": "NovaSenha123!"
+  "status": "ok",
+  "dependency": "sql-server",
+  "details": {
+    "configured": {
+      "serverConfigured": true,
+      "port": 1433,
+      "databaseConfigured": true,
+      "userConfigured": true,
+      "encrypt": true,
+      "trustServerCertificate": false,
+      "connectionTimeout": 5000,
+      "requestTimeout": 5000
+    },
+    "latencyMs": 12
+  }
 }
 ```
 
-Atualiza a senha com bcrypt e não retorna a senha.
-
-#### PUT /admin/users/:id/groups
-
-Payload:
+### Resposta indisponível
 
 ```json
 {
-  "groupIds": ["<group-id>"]
+  "status": "unavailable",
+  "dependency": "sql-server",
+  "details": {
+    "configured": {
+      "serverConfigured": true,
+      "port": 1433,
+      "databaseConfigured": true,
+      "userConfigured": true,
+      "encrypt": true,
+      "trustServerCertificate": false,
+      "connectionTimeout": 5000,
+      "requestTimeout": 5000
+    },
+    "message": "SQL Server indisponível ou configuração inválida."
+  }
 }
 ```
 
-Vincula o usuário a grupos existentes.
+### Regras de segurança
 
-### Grupos
+- A resposta não expõe senha, usuário, host, database ou string de conexão.
+- Erros brutos do driver não são retornados ao cliente.
+- O teste usa mock/fixture e não depende de SQL Server real.
+- Em produção, usar usuário SQL dedicado e preferencialmente `read-only`.
 
-```text
-GET    /admin/groups
-GET    /admin/groups/:id
-POST   /admin/groups
-PATCH  /admin/groups/:id
-DELETE /admin/groups/:id
-```
-
-#### POST /admin/groups
-
-Payload:
-
-```json
-{
-  "name": "Financeiro - Downloaders",
-  "description": "Grupo com permissão de download no setor financeiro.",
-  "roles": ["downloader"],
-  "sectors": ["financeiro"]
-}
-```
-
-Regras:
-
-- `name` é obrigatório e único.
-- `roles` e `sectors` seguem os mesmos valores permitidos dos usuários.
-- `DELETE /admin/groups/:id` remove o grupo em memória nesta versão inicial.
-
-## Validação manual
+## Execução local
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -H "x-forwarded-for: 10.20.30.40" \
-  -d '{"email":"admin@example.com","password":"Admin123!"}' | jq -r .accessToken)
-
-curl -i http://localhost:3001/admin/users \
-  -H "Authorization: Bearer $TOKEN"
-
-curl -i -X POST http://localhost:3001/admin/groups \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Financeiro - Downloaders","roles":["downloader"],"sectors":["financeiro"]}'
+pnpm dev:api
 ```
 
-## Comandos
+Swagger local:
+
+```text
+http://localhost:3001/docs
+```
+
+Healthcheck local:
+
+```text
+http://localhost:3001/health
+http://localhost:3001/health/sql
+```
+
+## Validação
 
 ```bash
-pnpm install
 pnpm --filter @dashboard-power-bi/api test
-pnpm --filter @dashboard-power-bi/api test:e2e
 pnpm --filter @dashboard-power-bi/api typecheck
-pnpm lint
-pnpm build
+pnpm --filter @dashboard-power-bi/api build
 ```
-
-## Observações
-
-A persistência de usuários e grupos ainda é em memória. Para produção, a próxima evolução recomendada é persistir usuários, grupos, roles e setores no SQL Server, com auditoria de alterações administrativas.
