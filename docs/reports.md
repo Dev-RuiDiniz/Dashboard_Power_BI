@@ -1,39 +1,35 @@
-# Catálogo de Relatórios
+# Catálogo e Reports API
 
 ## Visão geral
 
-O catálogo de relatórios centraliza as definições usadas pela plataforma para listar e futuramente executar relatórios do SQL Server.
+O módulo de relatórios centraliza o catálogo de `ReportDefinition` e expõe a Reports API para listagem, detalhe e execução segura de relatórios.
 
-A TASK-17 adiciona a entidade `ReportDefinition`, CRUD administrativo parcial e listagem de relatórios ativos por setor.
+A TASK-17 adicionou o catálogo administrativo. A TASK-18 adiciona os endpoints de consumo com paginação, validação de filtros e autorização por setor/permissão.
 
 ## Entidade `ReportDefinition`
-
-Campos principais:
 
 | Campo | Descrição |
 |---|---|
 | `id` | Identificador interno da definição. |
 | `name` | Nome exibido do relatório. |
 | `description` | Descrição funcional. |
-| `sector` | Setor responsável ou autorizado, normalizado para minúsculas. |
+| `sector` | Setor autorizado, normalizado para minúsculas. |
 | `sourceType` | Tipo da fonte SQL: `view` ou `stored_procedure`. |
 | `sourceName` | Nome seguro da fonte SQL no formato `schema.nome`. |
 | `parameters` | Lista de parâmetros aceitos pelo relatório. |
 | `requiredPermissions` | Chaves de permissão necessárias. |
-| `isActive` | Indica se o relatório aparece na listagem pública. |
-| `createdAt` | Data de criação. |
-| `updatedAt` | Data da última atualização. |
+| `isActive` | Indica se o relatório aparece na API pública. |
 
-## Fonte SQL
+## Segurança
 
-O catálogo não aceita SQL livre. A fonte deve apontar para uma view ou stored procedure revisada:
-
-```text
-reports.vw_financial_reports
-reports.sp_get_report_data
-```
-
-Valores como `reports.vw_reports; DROP TABLE users` são rejeitados.
+- O catálogo não aceita SQL livre.
+- `sourceName` deve usar o formato `schema.nome`.
+- A Reports API não retorna `sourceName` no contrato público.
+- Filtros são aceitos somente quando declarados em `parameters`.
+- Valores são normalizados e enviados à camada SQL por parâmetros.
+- A autorização roda antes da validação de execução SQL.
+- Usuários sem setor ou permissão recebem erro controlado.
+- Usuário `admin` pode acessar relatórios sem validação específica de setor/permissão.
 
 ## Parâmetros
 
@@ -75,38 +71,76 @@ PATCH /admin/reports/{id}
 PATCH /admin/reports/{id}/deactivate
 ```
 
-## Endpoint de listagem por setor
+## Reports API
+
+### `GET /reports`
+
+Lista relatórios autorizados com paginação.
+
+Query params:
+
+| Parâmetro | Padrão | Regra |
+|---|---:|---|
+| `sector` | opcional | setor normalizado |
+| `page` | `1` | inteiro positivo |
+| `pageSize` | `20` | inteiro positivo até `100` |
+
+Exemplo:
 
 ```http
-GET /reports?sector=financeiro
+GET /reports?sector=financeiro&page=1&pageSize=20
 ```
 
-Retorna apenas relatórios ativos do setor informado.
+### `GET /reports/{id}`
+
+Retorna detalhe público de um relatório autorizado.
+
+O retorno não inclui `sourceName`.
+
+### `POST /reports/{id}/query`
+
+Executa a consulta parametrizada do relatório.
+
+Payload:
+
+```json
+{
+  "filters": {
+    "startDate": "2026-05-01",
+    "sectorId": "financeiro"
+  },
+  "page": 1,
+  "pageSize": 20
+}
+```
+
+Fluxo interno:
+
+1. Busca definição no catálogo.
+2. Rejeita relatório inativo.
+3. Valida setor e permissões do usuário.
+4. Valida filtros contra `parameters`.
+5. Executa view ou stored procedure via `SqlQueryService`.
+6. Aplica paginação em memória.
+7. Retorna resposta paginada.
 
 ## Persistência
 
-Nesta etapa, o catálogo usa repositório em memória para viabilizar a feature e os testes sem introduzir migrações ou banco adicional. Uma próxima task pode trocar o repositório por persistência real, preservando os contratos do service.
-
-## Segurança
-
-- Não aceitar SQL livre.
-- Validar `sourceName` com o padrão `schema.nome`.
-- Validar parâmetros antes de uso.
-- Não expor secrets, connection strings ou credenciais.
-- Usar permissões mínimas para views e stored procedures no SQL Server.
-- Adicionar autorização real quando o módulo de permissões de relatórios for implementado.
+O catálogo ainda usa repositório em memória. Dados não persistem após restart da API. A troca por persistência real deve ser feita em task própria, com migration segura e sem perda de dados.
 
 ## Testes
 
-A TASK-17 adiciona cobertura para:
+A TASK-18 adiciona cobertura para:
 
-- validação da entidade;
-- rejeição de fonte SQL perigosa;
-- rejeição de parâmetros e permissões inseguros;
-- repositório em memória;
-- service;
-- CRUD admin parcial;
-- listagem por setor.
+- contrato de paginação;
+- validação de filtros;
+- rejeição de filtros desconhecidos;
+- autorização por setor;
+- autorização por permissão;
+- listagem autorizada;
+- detalhe autorizado;
+- query segura;
+- garantia de que SQL não executa quando autorização ou validação falha.
 
 ## Validação local
 
