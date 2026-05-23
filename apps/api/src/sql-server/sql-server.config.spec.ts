@@ -1,10 +1,11 @@
 import {
   getSqlServerConfig,
   getSqlServerSafeConfig,
-  SqlServerConfigError,} from './sql-server.config';
+  SqlServerConfigError,
+} from './sql-server.config';
 
 const createConfigService = (env: Record<string, string | undefined>) => ({
-  get: jest.fn((key: string) => env[key]),
+  get: jest.fn(<T = string>(key: string): T | undefined => env[key] as T | undefined),
 });
 
 describe('getSqlServerConfig', () => {
@@ -12,7 +13,7 @@ describe('getSqlServerConfig', () => {
     const configService = createConfigService({
       SQLSERVER_HOST: 'sql.example.local',
       SQLSERVER_PORT: '1434',
-      SQLSERVER_DATAABASE: 'PowerBI',
+      SQLSERVER_DATABASE: 'PowerBI',
       SQLSERVER_USER: 'powerbi_readonly',
       SQLSERVER_PASSWORD: 'secret',
       SQLSERVER_ENCRYPT: 'true',
@@ -82,16 +83,16 @@ describe('getSqlServerConfig', () => {
     try {
       getSqlServerConfig(configService);
     } catch (error) {
-      expect((error as Error).message).not.toContain("secret");
+      expect((error as Error).message).not.toContain('secret');
       expect((error as Error).message).not.toContain('powerbi_readonly');
-      expect((error as Error).message).not.toContain("sql.example.local");
+      expect((error as Error).message).not.toContain('sql.example.local');
     }
   });
 
   it('deve retornar configuração sanitizada sem credenciais', () => {
     const configService = createConfigService({
       SQLSERVER_HOST: 'sql.example.local',
-      SQLSERVER_DATAABASE: 'PowerBI',
+      SQLSERVER_DATABASE: 'PowerBI',
       SQLSERVER_USER: 'powerbi_readonly',
       SQLSERVER_PASSWORD: 'secret',
       SQLSERVER_ENCRYPT: 'false',
