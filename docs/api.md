@@ -19,25 +19,23 @@ Resposta esperada:
 
 ## Healthcheck SQL Server
 
-A TASK-15 adiciona o endpoint de verificação da dependência SQL Server.
-
 ```http
 GET /health/sql
 ```
 
 A resposta é sanitizada e não expõe senha, usuário, host, database ou string de conexão.
 
-## Catálogo de relatórios
-
-A TASK-17 adiciona o catálogo administrativo de relatórios e a listagem por setor.
-
-### Criar definição de relatório
+## Catálogo administrativo de relatórios
 
 ```http
 POST /admin/reports
+GET /admin/reports
+GET /admin/reports/{id}
+PATCH /admin/reports/{id}
+PATCH /admin/reports/{id}/deactivate
 ```
 
-Payload:
+Payload de criação:
 
 ```json
 {
@@ -58,47 +56,95 @@ Payload:
 }
 ```
 
+O catálogo não aceita SQL livre. `sourceName` deve usar o formato seguro `schema.nome`.
+
+## Reports API
+
+A TASK-18 adiciona a API de consumo de relatórios, com paginação, validação de filtros e autorização por setor/permissão.
+
+### Listar relatórios autorizados
+
+```http
+GET /reports?sector=financeiro&page=1&pageSize=20
+```
+
+Resposta:
+
+```json
+{
+  "items": [
+    {
+      "id": "report-1",
+      "name": "Relatório Financeiro",
+      "description": "Visão consolidada.",
+      "sector": "financeiro",
+      "sourceType": "view",
+      "parameters": [
+        {
+          "name": "startDate",
+          "type": "date",
+          "required": true
+        }
+      ],
+      "requiredPermissions": ["reports:financeiro:read"]
+    }
+  ],
+  "page": 1,
+  "pageSize": 20,
+  "total": 1,
+  "totalPages": 1
+}
+```
+
+O contrato público não retorna `sourceName`, evitando expor o nome interno da view ou stored procedure.
+
+### Detalhar relatório autorizado
+
+```http
+GET /reports/{id}
+```
+
+Retorna os metadados públicos do relatório autorizado, incluindo parâmetros necessários para montagem de filtros no frontend.
+
+### Executar query do relatório
+
+```http
+POST /reports/{id}/query
+```
+
+Payload:
+
+```json
+{
+  "filters": {
+    "startDate": "2026-05-01",
+    "sectorId": "financeiro"
+  },
+  "page": 1,
+  "pageSize": 20
+}
+```
+
+Resposta:
+
+```json
+{
+  "items": [],
+  "page": 1,
+  "pageSize": 20,
+  "total": 0,
+  "totalPages": 0
+}
+```
+
 Regras:
 
-- `sourceType` aceita apenas `view` ou `stored_procedure`.
-- `sourceName` deve usar o formato seguro `schema.nome`.
-- `parameters` aceita tipos `string`, `int`, `number`, `boolean` e `date`.
-- `requiredPermissions` deve conter chaves seguras de permissão.
-- Não é permitido SQL livre no catálogo.
-
-### Listar catálogo administrativo
-
-```http
-GET /admin/reports
-```
-
-### Buscar definição por ID
-
-```http
-GET /admin/reports/{id}
-```
-
-### Atualizar definição parcialmente
-
-```http
-PATCH /admin/reports/{id}
-```
-
-### Desativar definição
-
-```http
-PATCH /admin/reports/{id}/deactivate
-```
-
-A desativação é lógica. A definição permanece cadastrada, mas deixa de aparecer na listagem pública por setor.
-
-### Listar relatórios ativos por setor
-
-```http
-GET /reports?sector=financeiro
-```
-
-Retorna somente relatórios ativos do setor informado.
+- a autorização é validada antes da execução;
+- filtros são validados contra os parâmetros declarados no catálogo;
+- filtros desconhecidos são rejeitados;
+- valores são enviados pela camada segura de queries parametrizadas;
+- a primeira versão aplica paginação em memória após execução segura;
+- erros do SQL Server permanecem sanitizados.
 
 ## Execução local
 
