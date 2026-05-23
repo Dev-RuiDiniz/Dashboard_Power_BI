@@ -6,7 +6,7 @@ export class SqlQueryValidationError extends Error {
 }
 
 const SAFE_QUALIFIED_IDENTIFIER_PATTERN = /^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$/;
-const SAFE_IDENTIFIER_PATTERN = /^[A-Za-zM[A-Za-z0-9_]*$/;
+const SAFE_IDENTIFIER_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
 
 const FORBIDDEN_SQL_FRAGMENTS = [
   ';',
@@ -19,17 +19,17 @@ const FORBIDDEN_SQL_FRAGMENTS = [
   ']',
   ' select ',
   ' insert ',
- ' update ',
+  ' update ',
   ' delete ',
- ' drop ',
+  ' drop ',
   ' alter ',
- ' create ',
+  ' create ',
   ' merge ',
   ' union ',
- ' exec ',
+  ' exec ',
   ' execute ',
   ' truncate ',
- ' xp_',
+  ' xp_',
 ];
 
 export function validateSqlObjectName(value: string, label = 'identificador SQL'): string {
@@ -76,7 +76,7 @@ function normalizeText(value: string): string {
   const normalizedValue = value.trim();
 
   if (!normalizedValue) {
-    throw new SqlQueryValidationError('Valor SQL tRigatório.');
+    throw new SqlQueryValidationError('Valor SQL obrigatório.');
   }
 
   return normalizedValue;
