@@ -7,7 +7,7 @@ describe('fetchReports', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3001';
-    global.fetch = fetchMock;
+    global.fetch = fetchMock as unknown as typeof fetch;
   });
 
   afterEach(() => {
