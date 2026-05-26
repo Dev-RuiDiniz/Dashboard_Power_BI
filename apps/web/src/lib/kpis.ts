@@ -50,7 +50,7 @@ export function getKpiTrend(delta: number): KpiTrend {
 
 export function formatKpiValue({ value, unit }: Pick<KpiItem, 'value' | 'unit'>): string {
   if (unit === 'currency') {
-    return currencyFormatter.format(value);
+    return currencyFormatter.format(value).replace(/\u00a0/g, ' ');
   }
 
   if (unit === 'percent') {
