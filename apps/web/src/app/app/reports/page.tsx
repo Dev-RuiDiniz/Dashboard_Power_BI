@@ -1,11 +1,48 @@
+import { ReportCatalog, type ReportCatalogItem } from '@/components/reports/report-catalog';
+
+const initialReports: ReportCatalogItem[] = [
+  {
+    id: 'financeiro-dre-mensal',
+    name: 'DRE Mensal',
+    description: 'Acompanha receitas, despesas, margem e resultado operacional por competência.',
+    sector: 'Financeiro',
+    sourceType: 'view',
+    requiredPermissions: ['reports:read', 'sector:financeiro'],
+    status: 'available',
+    updatedAt: '2026-05-21T12:00:00.000Z',
+  },
+  {
+    id: 'comercial-funil-vendas',
+    name: 'Funil de Vendas',
+    description: 'Consolida oportunidades, etapas comerciais, taxa de conversão e previsão de receita.',
+    sector: 'Comercial',
+    sourceType: 'procedure',
+    requiredPermissions: ['reports:read', 'sector:comercial'],
+    status: 'available',
+    updatedAt: '2026-05-22T12:00:00.000Z',
+  },
+  {
+    id: 'operacoes-sla-atendimento',
+    name: 'SLA de Atendimento',
+    description: 'Monitora filas, tempo médio de resposta, violações de SLA e produtividade operacional.',
+    sector: 'Operações',
+    sourceType: 'view',
+    requiredPermissions: ['reports:read', 'sector:operacoes'],
+    status: 'restricted',
+    updatedAt: '2026-05-23T12:00:00.000Z',
+  },
+  {
+    id: 'executivo-indicadores-gerais',
+    name: 'Indicadores Executivos',
+    description: 'Visão consolidada de KPIs estratégicos para diretoria e gestão multiárea.',
+    sector: 'Executivo',
+    sourceType: 'procedure',
+    requiredPermissions: ['reports:read', 'role:executivo'],
+    status: 'maintenance',
+    updatedAt: '2026-05-20T12:00:00.000Z',
+  },
+];
+
 export default function ReportsPage() {
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Relatórios</p>
-      <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">Relatórios protegidos</h2>
-      <p className="mt-4 max-w-3xl text-slate-600">
-        Placeholder para a navegação de relatórios autenticados. O conteúdo final será conectado nas próximas tarefas.
-      </p>
-    </section>
-  );
+  return <ReportCatalog reports={initialReports} />;
 }
