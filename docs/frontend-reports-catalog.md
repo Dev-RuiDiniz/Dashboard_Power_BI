@@ -1,93 +1,61 @@
 # Catálogo de Dashboards — Frontend
 
-## Objetivo
+## TASK-21 — Filtros avançados
 
-A rota `/app/reports` apresenta o catálogo funcional de dashboards da plataforma Dashboard Power BI.
-
-## Entrega atual
-
-A tela agora consome a Reports API por meio de uma camada dedicada de frontend e renderiza:
-
-- loading enquanto a API é consultada;
-- erro controlado quando a API falha ou retorna erro HTTP;
-- estado vazio quando nenhum relatório atende aos filtros;
-- resumo de dashboards disponíveis e restritos;
-- filtros por texto, setor e status;
-- cards com nome, descrição, setor, tipo de fonte SQL, permissões necessárias e data de atualização.
+A rota `/app/reports` consome a Reports API e agora permite aplicar filtros avançados validados com Zod antes do envio.
 
 ## Arquivos principais
 
-- `apps/web/src/app/app/reports/page.tsx`
+- `apps/web/src/components/reports/report-advanced-filters.tsx`
 - `apps/web/src/components/reports/report-catalog-container.tsx`
-- `apps/web/src/components/reports/report-catalog.tsx`
+- `apps/web/src/lib/report-filters.ts`
 - `apps/web/src/lib/reports-api.ts`
-- `apps/web/src/lib/reports-api.test.ts`
-- `apps/web/src/components/reports/report-catalog-container.test.tsx`
-- `apps/web/src/components/reports/report-catalog.test.tsx`
+- `apps/web/src/lib/report-filters.test.ts`
+- `apps/web/src/components/reports/report-advanced-filters.test.tsx`
 
-## Integração com API
+## Campos de filtro
 
-Cliente usado:
+| Campo | Query param | Regra |
+|---|---|---|
+| Data inicial | `startDate` | `YYYY-MM-DD` |
+| Data final | `endDate` | `YYYY-MM-DD`; não pode ser menor que `startDate` |
+| Categoria | `category` | texto com `trim` |
+| Setor | `sector` | texto com `trim` |
+| Competência | `parameters[competencia]` | parâmetro dinâmico opcional |
 
-```ts
-fetchReports({ page: 1, pageSize: 20, token })
-```
+Campos vazios não são enviados para a API.
 
-Endpoint consumido:
+## Exemplo de chamada
 
 ```http
-GET /reports?page=1&pageSize=20
+GET /reports?page=1&pageSize=20&startDate=2026-05-01&endDate=2026-05-31&category=dre&sector=financeiro&parameters[competencia]=2026-05
 ```
 
-Quando `token` é informado, o cliente envia `Authorization: Bearer <token>` e `Accept: application/json`.
+Quando houver token de sessão, o cliente envia:
 
-A URL base é definida por `NEXT_PUBLIC_API_URL`. Na ausência da variável, o fallback local é `http://localhost:3001`.
-
-## Contrato esperado
-
-```json
-{
-  "items": [
-    {
-      "id": "financeiro-dre",
-      "name": "DRE Mensal",
-      "description": "Resultado financeiro.",
-      "sector": "Financeiro",
-      "sourceType": "view",
-      "requiredPermissions": ["reports:read"]
-    }
-  ],
-  "page": 1,
-  "pageSize": 20,
-  "total": 1,
-  "totalPages": 1
-}
+```http
+Authorization: Bearer <token>
+Accept: application/json
 ```
 
-O frontend normaliza `sourceType: "stored_procedure"` para `sourceType: "procedure"` para manter compatibilidade visual com o catálogo.
+A URL base vem de `NEXT_PUBLIC_API_URL`. O fallback local é `http://localhost:3001`.
 
-## Segurança e permissões
+## Segurança
 
-A autorização real permanece no backend. O frontend somente exibe dados retornados pela Reports API e não deve ser usado como fonte de verdade para controle de acesso.
+A autorização real permanece no backend. O frontend apenas valida formato, normaliza filtros e exibe os dados retornados pela Reports API. Tokens não devem ser fixados no código nem registrados em logs.
 
-Regras importantes:
+## TDD aplicado
 
-- não gravar token fixo no código;
-- não registrar token em logs;
-- tratar `401` e `403` como falhas controladas;
-- exibir mensagem segura sem detalhes sensíveis;
-- manter a filtragem de permissão no backend.
+Foram criados testes antes da implementação para:
 
-## Estratégia TDD aplicada
-
-Foram criados testes antes da implementação para cobrir:
-
-- chamada da Reports API com paginação e token bearer;
-- normalização de `stored_procedure`;
-- erro controlado quando a API falha;
-- estado de loading no catálogo integrado;
-- renderização dos relatórios retornados pela API;
-- estado de erro quando a integração falha.
+- validar schema Zod dos filtros;
+- rejeitar intervalo de datas inválido;
+- remover valores vazios;
+- montar query string com parâmetros dinâmicos;
+- renderizar formulário avançado;
+- enviar filtros válidos;
+- exibir erro de validação;
+- enviar filtros para a Reports API.
 
 ## Validação esperada
 
@@ -98,10 +66,3 @@ pnpm --filter @dashboard-power-bi/web build
 pnpm lint
 pnpm quality
 ```
-
-## Próximos passos
-
-- Persistir e recuperar token real da sessão autenticada no frontend.
-- Tratar paginação real na interface.
-- Adicionar retry controlado, se fizer sentido.
-- Exibir mensagens específicas para `401` e `403` sem expor detalhes sensíveis.
