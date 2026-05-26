@@ -52,10 +52,47 @@ describe('fetchReports', () => {
     });
   });
 
+  it('envia filtros avancados na query string', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [],
+        page: 1,
+        pageSize: 20,
+        total: 0,
+        totalPages: 0,
+      }),
+    });
+
+    await fetchReports({
+      page: 1,
+      pageSize: 20,
+      filters: {
+        startDate: '2026-05-01',
+        endDate: '2026-05-31',
+        category: 'dre',
+        sector: 'financeiro',
+        parameters: {
+          competencia: '2026-05',
+        },
+      },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3001/reports?page=1&pageSize=20&startDate=2026-05-01&endDate=2026-05-31&category=dre&sector=financeiro&parameters%5Bcompetencia%5D=2026-05',
+      {
+        headers: {
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      },
+    );
+  });
+
   it('normaliza stored_procedure para procedure no catalogo frontend', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
-      json: async () => ( {
+      json: async () => ({
         items: [
           {
             id: 'comercial-funil',

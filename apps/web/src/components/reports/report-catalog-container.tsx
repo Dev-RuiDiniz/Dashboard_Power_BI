@@ -1,11 +1,13 @@
 'use client';
 
 import { AlertTriangle, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { fetchReports, type PaginatedReports } from '@/lib/reports-api';
+import type { ReportFilters } from '@/lib/report-filters';
 
+import { ReportAdvancedFilters } from './report-advanced-filters';
 import { ReportCatalog } from './report-catalog';
 
 type ReportCatalogContainerProps = {
@@ -16,42 +18,43 @@ const INITIAL_PAGE = 1;
 const INITIAL_PAGE_SIZE = 20;
 
 export function ReportCatalogContainer({ token }: ReportCatalogContainerProps) {
-  const reportsResponse, setReportsResponse] = useState<PaginatedReports | null>(null);
+  const [reportsResponse, setReportsResponse] = useState<PaginatedReports | null>(null);
+  const [filters, setFilters] = useState<ReportFilters>({});
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isActive = true;
-
-    async function loadReports() {
+  const loadReports = useCallback(
+    async (appliedFilters: ReportFilters) => {
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
-        const response = await fetchReports({ page: INITIAL_PAGE, pageSize: INITIAL_PAGE_SIZE, token });
+        const response = await fetchReports({
+          page: INITIAL_PAGE,
+          pageSize: INITIAL_PAGE_SIZE,
+          token,
+          filters: appliedFilters,
+        });
 
-        if (isActive) {
-          setReportsResponse(response);
-        }
+        setReportsResponse(response);
       } catch {
-        if (isActive) {
-          setErrorMessage('Nao foi possivel carregar os relatorios');
-        }
+        setErrorMessage('Nao foi possivel carregar os relatorios');
       } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
-    }
+    },
+    [token],
+  );
 
-    void loadReports();
+  useEffect(() => {
+    void loadReports(filters);
+  }, [filters, loadReports]);
 
-    return () => {
-      isActive = false;
-    };
-  }, [token]);
+  function handleApplyFilters(nextFilters: ReportFilters) {
+    setFilters(nextFilters);
+  }
 
-  if (isLoading) {
+  if (isLoading && !reportsResponse) {
     return (
       <Card className="border-dashed text-center">
         <CardHeader>
@@ -63,7 +66,7 @@ export function ReportCatalogContainer({ token }: ReportCatalogContainerProps) {
     );
   }
 
-  if (errorMessage) {
+  if (errorMessage && !reportsResponse) {
     return (
       <Card className="border-amber-200 bg-amber-50 text-center">
         <CardHeader>
@@ -77,5 +80,31 @@ export function ReportCatalogContainer({ token }: ReportCatalogContainerProps) {
     );
   }
 
-  return <ReportCatalog reports={reportsResponse?.items ?? []} />;
+  return (
+    <div className="space-y-6">
+      <ReportAdvancedFilters onApplyFilters={handleApplyFilters} />
+
+      {isLoading ? (
+        <Card className="border-dashed text-center">
+          <CardHeader>
+            <Loader2 className="mx-auto h-6 w-6 animate-spin text-blue-700" aria-hidden="true" />
+            <CardTitle>Atualizando relatorios</CardTitle>
+            <CardDescription>Aplicando filtros avancados na Reports API.</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
+
+      {errorMessage ? (
+        <Card className="border-amber-200 bg-amber-50 text-center">
+          <CardHeader>
+            <AlertTriangle className="mx-auto h-6 w-6 text-amber-700" aria-hidden="true" />
+            <CardTitle>{errorMessage}</CardTitle>
+            <CardDescription>Os dados anteriores foram mantidos enquanto a nova consulta falhou.</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
+
+      <ReportCatalog reports={reportsResponse?.items ?? []} />
+    </div>
+  );
 }
