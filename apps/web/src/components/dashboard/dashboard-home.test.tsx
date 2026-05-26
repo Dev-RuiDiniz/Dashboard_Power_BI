@@ -18,9 +18,9 @@ describe('DashboardHome', () => {
     expect(screen.getByText('Receita mensal')).toBeInTheDocument();
     expect(screen.getByText('Leads qualificados')).toBeInTheDocument();
     expect(screen.getByText('SLA operacional')).toBeInTheDocument();
-    expect(screen.getByText('Financeiro')).toBeInTheDocument();
-    expect(screen.getByText('Comercial')).toBeInTheDocument();
-    expect(screen.getByText('Operacoes')).toBeInTheDocument();
+    expect(screen.getAllByText('Financeiro').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Comercial').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Operacoes').length).toBeGreaterThan(0);
   });
 
   it('renderiza estado vazio quando nao ha kpis', () => {
