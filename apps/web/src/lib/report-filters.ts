@@ -91,22 +91,27 @@ function normalizeParameters(parameters?: Record<string, string | number | boole
 function removeEmptyFilters(filters: ReportFilters): ReportFilters {
   const payload: ReportFilters = {};
 
-  appendFilter(payload, 'startDate', filters.startDate);
-  appendFilter(payload, 'endDate', filters.endDate);
-  appendFilter(payload, 'category', filters.category);
-  appendFilter(payload, 'sector', filters.sector);
+  if (filters.startDate) {
+    payload.startDate = filters.startDate;
+  }
+
+  if (filters.endDate) {
+    payload.endDate = filters.endDate;
+  }
+
+  if (filters.category) {
+    payload.category = filters.category;
+  }
+
+  if (filters.sector) {
+    payload.sector = filters.sector;
+  }
 
   if (filters.parameters && Object.keys(filters.parameters).length > 0) {
     payload.parameters = filters.parameters;
   }
 
   return payload;
-}
-
-function appendFilter<TKey extends keyof ReportFilters>(payload: ReportFilters, key: TKey, value: ReportFilters[TKey]) {
-  if (value !== undefined && value !== '') {
-    payload[key] = value;
-  }
 }
 
 function appendParam(params: URLSearchParams, key: string, value?: string) {
