@@ -15,7 +15,7 @@ describe('ReportCatalogContainer', () => {
   });
 
   it('exibe estado de loading enquanto carrega a Reports API', () => {
-    fetchReportsMock.mockReturnValueOnce(new Promise(() => undefined));
+    fetchReportsMock.mockReturnValueOnceOnce(new Promise(() => undefined));
 
     render(<ReportCatalogContainer token="jwt-token" />);
 
@@ -48,7 +48,7 @@ describe('ReportCatalogContainer', () => {
       expect(screen.getByText('DRE Mensal')).toBeInTheDocument();
     });
 
-    expect(fetchReportsMock).toHaveBeenCalledWith({ page: 1, pageSize: 20, token: 'jwt-token' });
+    expect(fetchReportsMock).toHaveBeenCalledWith({ page: 1, pageSize: 20, token: 'jwt-token', filters: {} });
   });
 
   it('exibe estado de erro quando a API falha', async () => {
