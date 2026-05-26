@@ -1,11 +1,57 @@
+import { DashboardHome } from '@/components/dashboard/dashboard-home';
+import type { KpiItem } from '@/lib/kpis';
+
+const initialKpis: KpiItem[] = [
+  {
+    id: 'receita-mensal',
+    title: 'Receita mensal',
+    sector: 'Financeiro',
+    value: 120000,
+    previousValue: 100000,
+    unit: 'currency',
+  },
+  {
+    id: 'margem-operacional',
+    title: 'Margem operacional',
+    sector: 'Financeiro',
+    value: 0.32,
+    previousValue: 0.3,
+    unit: 'percent',
+  },
+  {
+    id: 'leads-qualificados',
+    title: 'Leads qualificados',
+    sector: 'Comercial',
+    value: 430,
+    previousValue: 400,
+    unit: 'number',
+  },
+  {
+    id: 'sla-operacional',
+    title: 'SLA operacional',
+    sector: 'Operacoes',
+    value: 0.92,
+    previousValue: 0.9,
+    unit: 'percent',
+  },
+  {
+    id: 'dashboards-ativos',
+    title: 'Dashboards ativos',
+    sector: 'BI',
+    value: 18,
+    previousValue: 16,
+    unit: 'number',
+  },
+  {
+    id: 'exportacoes-mensais',
+    title: 'Exportacoes mensais',
+    sector: 'BI',
+    value: 240,
+    previousValue: 220,
+    unit: 'number',
+  },
+];
+
 export default function AppHomePage() {
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Visão geral</p>
-      <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">Bem-vindo ao Dashboard Power BI</h2>
-      <p className="mt-4 max-w-3xl text-slate-600">
-        Esta é a base da área autenticada. A partir daqui serão conectados relatórios, permissões por perfil e navegação por setor.
-      </p>
-    </section>
-  );
+  return <DashboardHome kpis={initialKpis} />;
 }
