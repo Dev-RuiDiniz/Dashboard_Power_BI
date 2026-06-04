@@ -89,7 +89,7 @@ function normalizeParameters(parameters?: Record<string, string | number | boole
 }
 
 function removeEmptyFilters(filters: ReportFilters): ReportFilters {
-  const payload: ReportFilters = {};
+  const payload: ReportFilters = { parameters: undefined };
 
   if (filters.startDate) {
     payload.startDate = filters.startDate;

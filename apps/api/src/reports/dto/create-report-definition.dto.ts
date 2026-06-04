@@ -21,10 +21,10 @@ export class CreateReportDefinitionDto {
   @ApiPropertyOptional({
     example: [{ name: 'startDate', type: 'date', required: true }],
   })
-  parameters?: ReportParameterDefinition[];
+  parameters: ReportParameterDefinition[] = [];
 
   @ApiPropertyOptional({ example: ['reports:financeiro:read'] })
-  requiredPermissions?: string[];
+  requiredPermissions: string[] = [];
 
   @ApiPropertyOptional({ example: true })
   isActive?: boolean;

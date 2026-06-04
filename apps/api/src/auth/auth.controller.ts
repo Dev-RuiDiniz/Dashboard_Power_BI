@@ -73,7 +73,7 @@ export class AuthController {
     const forwardedFor = request.headers['x-forwarded-for'];
 
     if (typeof forwardedFor === 'string' && forwardedFor.length > 0) {
-      return forwardedFor.split(',')[0].trim();
+      return forwardedFor.split(',')[0]?.trim() ?? 'unknown';
     }
 
     if (Array.isArray(forwardedFor) && forwardedFor[0]) {

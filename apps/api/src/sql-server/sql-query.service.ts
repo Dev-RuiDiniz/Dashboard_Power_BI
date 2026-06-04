@@ -45,7 +45,7 @@ export class SqlQueryService {
       const request = pool.request();
 
       for (const parameter of this.normalizeFilterParameters(filters)) {
-        request.input(parameter.name, parameter.driverType, parameter.value);
+        request.input(parameter.name, parameter.driverType as any, parameter.value);
       }
 
       const result = await request.query<TRecord>(query);
@@ -71,7 +71,7 @@ export class SqlQueryService {
       const request = pool.request();
 
       for (const parameter of this.normalizeProcedureParameters(parameters)) {
-        request.input(parameter.name, parameter.driverType, parameter.value);
+        request.input(parameter.name, parameter.driverType as any, parameter.value);
       }
 
       const result = await request.execute<TRecord>(procedureName);

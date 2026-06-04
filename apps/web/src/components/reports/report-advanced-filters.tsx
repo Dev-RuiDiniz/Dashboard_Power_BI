@@ -54,7 +54,7 @@ export function ReportAdvancedFilters({ onApplyFilters }: ReportAdvancedFiltersP
   function handleClear() {
     setFormState(initialFormState);
     setErrorMessage(null);
-    onApplyFilters({});
+    onApplyFilters(toReportFiltersPayload({}));
   }
 
   return (

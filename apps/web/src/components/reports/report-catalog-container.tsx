@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { TriangleAlert as AlertTriangle, Loader as Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui';
@@ -19,7 +19,7 @@ const INITIAL_PAGE_SIZE = 20;
 
 export function ReportCatalogContainer({ token }: ReportCatalogContainerProps) {
   const [reportsResponse, setReportsResponse] = useState<PaginatedReports | null>(null);
-  const [filters, setFilters] = useState<ReportFilters>({});
+  const [filters, setFilters] = useState<ReportFilters>({ parameters: undefined });
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 

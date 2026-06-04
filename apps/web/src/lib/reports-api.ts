@@ -39,7 +39,7 @@ export type PaginatedReports = {
 
 const DEFAULT_API_URL = 'http://localhost:3001';
 
-export async function fetchReports({ page = 1, pageSize = 20, token, filters = {} }: FetchReportsParams = {}): Promise<PaginatedReports> {
+export async function fetchReports({ page = 1, pageSize = 20, token, filters = { parameters: undefined } }: FetchReportsParams = {}): Promise<PaginatedReports> {
   const url = new URL('/reports', getApiBaseUrl());
   url.searchParams.set('page', String(page));
   url.searchParams.set('pageSize', String(pageSize));

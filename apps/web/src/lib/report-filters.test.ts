@@ -51,7 +51,7 @@ describe('reportFiltersSchema', () => {
 
   it('normaliza payload antes de enviar para a api', () => {
     expect(
-      toReportFiltersPayload {
+      toReportFiltersPayload({
         startDate: '2026-05-01',
         endDate: '',
         category: '  dre  ',

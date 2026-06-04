@@ -1,8 +1,9 @@
 import * as bcrypt from 'bcrypt';
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
-  TooManyRequestsException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -82,10 +83,13 @@ export class AuthService {
 
     if (!status.allowed) {
       this.logger.warn(`login_rate_limited email=${maskedEmail} ip=${maskedIp} retryAfterSeconds=${status.retryAfterSeconds}`);
-      throw new TooManyRequestsException({
-        message: 'Muitas tentativas de login. Tente novamente mais tarde.',
-        retryAfterSeconds: status.retryAfterSeconds,
-      });
+      throw new HttpException(
+        {
+          message: 'Muitas tentativas de login. Tente novamente mais tarde.',
+          retryAfterSeconds: status.retryAfterSeconds,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     this.logger.warn(`login_failed email=${maskedEmail} ip=${maskedIp} remainingAttempts=${status.remainingAttempts}`);

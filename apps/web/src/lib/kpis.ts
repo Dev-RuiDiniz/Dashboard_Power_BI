@@ -83,8 +83,8 @@ export function aggregateKpisBySector(kpis: KpiItem[]): SectorKpiSummary[] {
       acc[kpi.sector] = { total: 0, deltaSum: 0 };
     }
 
-    acc[kpi.sector].total += 1;
-    acc[kpi.sector].deltaSum += delta;
+    acc[kpi.sector]!.total += 1;
+    acc[kpi.sector]!.deltaSum += delta;
 
     return acc;
   }, {});

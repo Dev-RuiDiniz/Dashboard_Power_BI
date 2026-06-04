@@ -1,4 +1,4 @@
-import { Injectable, TooManyRequestsException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'node:crypto';
 
@@ -26,10 +26,13 @@ export class LoginAttemptsService {
     const status = this.getAttemptStatus(email, ipAddress);
 
     if (!status.allowed) {
-      throw new TooManyRequestsException({
-        message: 'Muitas tentativas de login. Tente novamente mais tarde.',
-        retryAfterSeconds: status.retryAfterSeconds,
-      });
+      throw new HttpException(
+        {
+          message: 'Muitas tentativas de login. Tente novamente mais tarde.',
+          retryAfterSeconds: status.retryAfterSeconds,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
   }
 

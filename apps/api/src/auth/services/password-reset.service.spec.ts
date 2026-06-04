@@ -81,7 +81,7 @@ describe('PasswordResetService', () => {
       AUTH_DEMO_USER_PASSWORD: 'Admin123!',
       BCRYPT_SALT_ROUNDS: 4,
       PASSWORD_RESET_TOKEN_EXPIRES_SECONDS: -1,
-      PASSWORD_RESET_PUBLIC_URL: http://localhost:3000/reset-password',
+      PASSWORD_RESET_PUBLIC_URL: 'http://localhost:3000/reset-password',
       SMTP_MODE: 'mock',
     });
 
