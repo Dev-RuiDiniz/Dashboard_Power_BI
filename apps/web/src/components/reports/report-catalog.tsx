@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart3, Filter, Search, ShieldCheck } from 'lucide-react';
+import { ChartBar as BarChart3, ListFilter as Filter, Search, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from '@/components/ui';
@@ -18,6 +18,7 @@ export type ReportCatalogItem = {
 
 type ReportCatalogProps = {
   reports: ReportCatalogItem[];
+  onSelectReport?: (id: string) => void;
 };
 
 const statusLabel: Record<ReportCatalogItem['status'], string> = {
@@ -32,7 +33,7 @@ const statusClassName: Record<ReportCatalogItem['status'], string> = {
   maintenance: 'border-slate-200 bg-slate-100 text-slate-700',
 };
 
-export function ReportCatalog({ reports }: ReportCatalogProps) {
+export function ReportCatalog({ reports, onSelectReport }: ReportCatalogProps) {
   const [search, setSearch] = useState('');
   const [sector, setSector] = useState('todos');
   const [status, setStatus] = useState<ReportCatalogItem['status'] | 'todos'>('todos');
@@ -178,7 +179,7 @@ export function ReportCatalog({ reports }: ReportCatalogProps) {
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-slate-500">Atualizado em {formatDate(report.updatedAt)}</p>
-                  <Button disabled={report.status !== 'available'} aria-disabled={report.status !== 'available'}>
+                  <Button disabled={report.status !== 'available'} aria-disabled={report.status !== 'available'} onClick={() => report.status === 'available' && onSelectReport?.(report.id)}>
                     {report.status === 'available' ? 'Abrir dashboard' : 'Acesso indisponível'}
                   </Button>
                 </div>

@@ -12,12 +12,13 @@ import { ReportCatalog } from './report-catalog';
 
 type ReportCatalogContainerProps = {
   token?: string;
+  onSelectReport?: (id: string) => void;
 };
 
 const INITIAL_PAGE = 1;
 const INITIAL_PAGE_SIZE = 20;
 
-export function ReportCatalogContainer({ token }: ReportCatalogContainerProps) {
+export function ReportCatalogContainer({ token, onSelectReport }: ReportCatalogContainerProps) {
   const [reportsResponse, setReportsResponse] = useState<PaginatedReports | null>(null);
   const [filters, setFilters] = useState<ReportFilters>({ parameters: undefined });
   const [isLoading, setIsLoading] = useState(true);
@@ -104,7 +105,7 @@ export function ReportCatalogContainer({ token }: ReportCatalogContainerProps) {
         </Card>
       ) : null}
 
-      <ReportCatalog reports={reportsResponse?.items ?? []} />
+      <ReportCatalog reports={reportsResponse?.items ?? []} onSelectReport={onSelectReport} />
     </div>
   );
 }
