@@ -174,6 +174,7 @@ As ADRs ficam em [`docs/decisions`](docs/decisions/README.md):
 - [`docs/devops.md`](docs/devops.md): Docker Compose local
 - [`docs/environment.md`](docs/environment.md): variáveis de ambiente
 - [`docs/quality.md`](docs/quality.md): qualidade, lint, format e commits
+- [`docs/system-map.md`](docs/system-map.md): mapeamento funcional do sistema e estado atual
 
 ## Troubleshooting
 
