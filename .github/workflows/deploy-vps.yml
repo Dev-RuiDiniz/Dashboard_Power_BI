@@ -16,6 +16,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      GHCR_NAMESPACE: ghcr.io/devruidiniz
 
     steps:
       - name: Checkout
@@ -58,8 +60,8 @@ jobs:
           file: infra/docker/api.prod.Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/dashboard-power-bi-api:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/dashboard-power-bi-api:main
+            ${{ env.GHCR_NAMESPACE }}/dashboard-power-bi-api:${{ github.sha }}
+            ${{ env.GHCR_NAMESPACE }}/dashboard-power-bi-api:main
 
       - name: Build and push Web image
         uses: docker/build-push-action@v6
@@ -70,8 +72,8 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=/api
           tags: |
-            ghcr.io/${{ github.repository_owner }}/dashboard-power-bi-web:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/dashboard-power-bi-web:main
+            ${{ env.GHCR_NAMESPACE }}/dashboard-power-bi-web:${{ github.sha }}
+            ${{ env.GHCR_NAMESPACE }}/dashboard-power-bi-web:main
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.2.0
@@ -91,7 +93,7 @@ jobs:
             git fetch origin main
             git checkout main
             git reset --hard origin/main
-            export GHCR_NAMESPACE="ghcr.io/${{ github.repository_owner }}"
+            export GHCR_NAMESPACE="${{ env.GHCR_NAMESPACE }}"
             export IMAGE_TAG="${{ github.sha }}"
             docker login ghcr.io -u "${{ github.actor }}" -p "${{ github.token }}"
             docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml pull
