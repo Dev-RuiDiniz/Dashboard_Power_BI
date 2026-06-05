@@ -1,92 +1,65 @@
-# Arquitetura inicial
+# Arquitetura Atual
 
-## Contexto
+## Objetivo
 
-O Dashboard Power BI é uma plataforma web para centralizar relatórios, dashboards interativos, permissões por setor, exportações e administração.
+Esta é a visão resumida da arquitetura realmente existente no repositório.
+Para detalhes completos, consulte `docs/ARCHITECTURE_DETAILED.md`.
 
 ## Visão geral
 
 ```text
-apps/web  ->  apps/api  -> Redis
-                       -> SQL Server externo
-packages/shared
-packages/ui
-infra/docker
-docs
+apps/web  -->  apps/api  --> SQL Server externo
+    |
+    +-------> Supabase direto
 ```
 
-## Monorepo
+Leitura correta do desenho atual:
 
-O projeto usa `pnpm workspaces` para organizar aplicações e pacotes internos.
+- a Web usa a API NestJS para autenticação, administração e relatórios;
+- a Web também acessa o Supabase diretamente para dashboard, exportações, notificações e settings;
+- a API usa SQL Server para executar relatórios;
+- parte do domínio administrativo da API ainda está em memória.
 
-```text
-apps/
-  api/
-  web/
-packages/
-  shared/
-  ui/
-docs/
-infra/
-scripts/
-```
+## Componentes
 
-## Aplicações
+### Web (`apps/web`)
 
-### API — `apps/api`
+- Next.js 14 com App Router;
+- telas públicas de auth;
+- área autenticada sob `/app`;
+- dashboard inicial, relatórios, exportações, notificações e admin.
 
-Backend NestJS com:
+### API (`apps/api`)
 
-- bootstrap em TypeScript;
-- `ConfigModule` global;
-- `ValidationPipe` global;
-- Swagger em `/docs`;
-- healthcheck em `/health`;
-- testes unitários e e2e com Jest/Supertest.
+- NestJS 10 com Swagger;
+- módulos reais: auth, admin, reports, health, validation-test e sql-server;
+- endpoints REST para auth, usuários, grupos e relatórios.
 
-### Web — `apps/web`
+### Dados
 
-Frontend Next.js 14 com:
+- SQL Server: consultas de relatórios executadas pela API;
+- Supabase: KPIs, setores, notifications, export_jobs e system_settings lidos direto pela Web;
+- memória do processo: usuários, grupos e definições de relatórios em partes da API;
+- `localStorage`: sessão do frontend.
 
-- App Router;
-- Tailwind CSS;
-- layout global;
-- providers;
-- home inicial;
-- design system base;
-- preview visual em `/design-system`.
+## Divergências relevantes em relação ao escopo V1
 
-## Infraestrutura local
+Não fazem parte da arquitetura implementada hoje:
 
-A infraestrutura de desenvolvimento fica em `infra/docker`.
+- Prisma;
+- React Query;
+- Recharts/Chart.js;
+- BullMQ;
+- S3;
+- cache Redis funcional;
+- editor de dashboards;
+- exportação backend PDF/Excel;
+- 2FA/TOTP;
+- módulo dedicado de auditoria.
 
-Serviços atuais:
+## Implicações
 
-- API;
-- Web;
-- Redis.
-
-SQL Server é externo e configurado por variáveis de ambiente.
-
-## Qualidade
-
-A base de qualidade inclui:
-
-- ESLint;
-- Prettier;
-- TypeScript strict;
-- Husky;
-- lint-staged;
-- commitlint;
-- validações estruturais de workspace, Docker e documentação.
-
-## Decisões
-
-As decisões ficam registradas em ADRs dentro de `docs/decisions`.
-
-## Segurança
-
-- `.env` real não deve ser versionado.
-- Secrets devem ficar fora do repositório.
-- Logs não devem conter credenciais.
-- SQL Server externo deve ser configurado por variáveis seguras.
+- o sistema não deve ser documentado como plataforma BI completa;
+- a arquitetura atual é híbrida e fragmentada;
+- parte do produto já é navegável e funcional;
+- a comparação formal com o escopo está em `docs/scope-v1-gap-analysis.md`.

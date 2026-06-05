@@ -1,412 +1,324 @@
-# Arquitetura Detalhada - Plataforma BI
+# Arquitetura Detalhada do Estado Real
 
-## 1. Visão Geral do Sistema
+## 1. Escopo deste documento
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         CLIENTE (Browser)                               │
-│                    Next.js 14 + React 18 + Recharts                     │
-│              Tailwind CSS + shadcn/ui + React Query                     │
-└────────────────────────────┬────────────────────────────────────────────┘
-                             │ HTTPS + JWT
-                             ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      API LAYER (NestJS)                                 │
-│          REST API + Middleware + Guards + Rate Limiting                 │
-│  - Auth Service (JWT + bcrypt + TOTP)                                   │
-│  - Permission Service (RBAC + Setor)                                    │
-│  - Report Service (SQL Query Execution)                                 │
-│  - Export Service (PDF/Excel via BullMQ)                                │
-│  - Audit Service (Logging)                                              │
-└────────────────────────────┬────────────────────────────────────────────┘
-                    ┌────────┴────────┬──────────┐
-                    ▼                 ▼          ▼
-        ┌──────────────────┐  ┌──────────────┐  ┌──────────────┐
-        │  Supabase DB     │  │  Redis Cache │  │ SQL Server   │
-        │  (Auth + BI Meta)│  │  (Sessions)  │  │  (Raw Data)  │
-        └──────────────────┘  └──────────────┘  └──────────────┘
-```
+Este documento descreve a arquitetura realmente implementada no repositório em `2026-06-05`.
+Ele não descreve a arquitetura-alvo do PDF V1; para isso, consulte `docs/scope-v1-gap-analysis.md`.
 
-## 2. Camadas da Aplicação
+Documentos relacionados:
 
-### 2.1 Frontend (Next.js 14)
-- **Layout**: `app/layout.tsx` com providers globais (Supabase client, React Query)
-- **Rotas Autenticadas**: `app/app/*` protegido por `AuthGuard`
-- **Rotas Públicas**: `app/login`, `app/forgot-password`, `app/reset-password`
-- **Componentes UI**: `components/ui/*` (Button, Card, Input, Table, etc.)
-- **Features**: 
-  - `components/dashboard/*` - KPIs e gráficos interativos
-  - `components/reports/*` - Catálogo e visualizador
-  - `components/admin/*` - Gestão de usuários e relatórios
+- `docs/system-map.md`: inventário canônico do sistema;
+- `docs/architecture.md`: visão resumida da arquitetura atual;
+- `SPRINT_STATUS.md`: resumo executivo do estado de entrega;
+- `docs/scope-v1-gap-analysis.md`: comparação formal entre escopo e realidade.
 
-### 2.2 Backend (NestJS)
-```
-apps/api/src/
-├── auth/                      # Autenticação e JWT
-│   ├── auth.controller.ts
-│   ├── auth.service.ts
-│   ├── guards/               # JWT, Role, Sector
-│   ├── decorators/           # @CurrentUser(), @Roles(), @Sectors()
-│   └── dto/                  # LoginDto, ResetPasswordDto, etc
-├── reports/                   # Relatórios e consultas
-│   ├── reports.controller.ts
-│   ├── reports-api.service.ts
-│   ├── sql-query.service.ts  # Queries parametrizadas
-│   └── entities/
-├── dashboards/               # Dashboards personalizados
-├── admin/                    # Gestão (usuários, grupos, relatórios)
-├── exports/                  # Fila de exportação (BullMQ)
-├── audit/                    # Logs de auditoria
-└── sql-server/              # Conexão pooled + validação SQL
+## 2. Topologia atual
+
+```text
+Browser
+  |
+  +--> Next.js Web (`apps/web`)
+          |
+          +--> API NestJS (`apps/api`) para auth, admin e reports
+          |
+          +--> Supabase direto para dashboard, notifications, export_jobs e system_settings
+
+API NestJS
+  |
+  +--> SQL Server externo via `mssql`
+  |
+  +--> memória do processo para parte do domínio administrativo
 ```
 
-### 2.3 Banco de Dados (Supabase)
-- **Autenticação**: Tabela `users` com JWT native (Supabase Auth)
-- **Autorização**: Tabelas `user_sectors`, `report_permissions`, `access_logs`
-- **Metadados BI**: `reports`, `dashboards`, `kpis`, `export_jobs`
-- **RLS**: Todas as tabelas com políticas restritivas
+Pontos centrais da arquitetura atual:
 
-### 2.4 SQL Server (Externo)
-- **Fonte de Dados**: Views e stored procedures com nomes no padrão `schema.nome`
-- **Integração**: NestJS executa queries via conexão pooled (mssql/tedious)
-- **Segurança**: 100% parametrizado; usuário dedicado read-only
+- a Web não depende apenas da API própria;
+- a API é o ponto central de autenticação e relatórios;
+- o Supabase é usado diretamente pela Web em partes relevantes do produto;
+- SQL Server é a fonte de dados usada pela API para execução de relatórios;
+- parte do domínio da API ainda é sustentada por repositórios em memória.
 
----
+## 3. Aplicações do monorepo
 
-## 3. Fluxo de Autenticação
+### `apps/web`
 
-```
-1. Usuário acessa /login
-2. Submete email + senha via LoginForm
-3. API executa authService.login(email, password)
-4. Valida credenciais contra users (bcrypt compare)
-5. Gera JWT de curta duração (15min) + refresh token (7 dias)
-6. Retorna { accessToken, refreshToken, expiresIn }
-7. Frontend salva em localStorage
-8. Frontend redireciona para /app
-9. Cada requisição envia Authorization: Bearer <accessToken>
-10. API verifica JWT e carrega user context via @CurrentUser()
-```
+Aplicação Next.js 14 com App Router.
 
-### 3.1 Rate Limiting & Brute Force
-- Login: máx 5 tentativas a cada 15min por IP
-- Bloqueia por 15min após exceder limite
-- Limpa histórico após login bem-sucedido
-- Registra todos os eventos em access_logs
+Funções reais:
 
-### 3.2 2FA (Opcional → Obrigatório para Admins)
-- TOTP via Google Authenticator
-- QR code gerado no primeiro acesso
-- Backup codes salvos criptografados
-- Obrigatório para role "admin"
+- login e recuperação de senha;
+- dashboard inicial;
+- catálogo e execução de relatórios;
+- área administrativa básica;
+- telas de exportações, notificações e settings.
 
----
+### `apps/api`
 
-## 4. Autorização & Permissões
+Aplicação NestJS 10 com API REST e Swagger.
 
-### 4.1 Modelo RBAC + Sector-Based
-```
-User
-├── Role: visualizador | downloader | admin
-├── Sectors: [financeiro, RH, vendas, ...]
-└── Report-Level: Permissões específicas por relatório
+Funções reais:
 
-Relatório
-├── Sector: financeiro (por exemplo)
-├── Required Permissions: [reports:financeiro:read]
-└── Access Rules: Usuario deve estar em setor + ter permissão
-```
+- autenticação com JWT;
+- refresh/logout;
+- recuperação e redefinição de senha;
+- CRUD administrativo de usuários e grupos;
+- CRUD administrativo de definições de relatórios;
+- listagem, detalhe e execução de relatórios;
+- healthcheck da API e do SQL Server.
 
-### 4.2 Guards em Cascade
-```typescript
-@UseGuards(JwtAuthGuard, RolesGuard, SectorsGuard)
-@Roles('downloader', 'admin')
-@Sectors('financeiro')
-getReportData(@Param('id') reportId: string) {
-  // 1. JwtAuthGuard verifica token válido
-  // 2. RolesGuard verifica role (downloader ou admin)
-  // 3. SectorsGuard verifica setor (financeiro)
-}
-```
+## 4. Arquitetura da Web
 
-### 4.3 RLS em Banco de Dados
-Cada SELECT/UPDATE/DELETE passa por políticas Supabase:
-```sql
-CREATE POLICY "Users can view reports in their sectors"
-  ON reports FOR SELECT
-  TO authenticated
-  USING (
-    sector_id IN (
-      SELECT sector_id FROM user_sectors
-      WHERE user_id = auth.uid()
-    )
-    OR auth.jwt()->>'role' = 'admin'
-  );
-```
+### Rotas
 
----
+Rotas públicas:
 
-## 5. Execução de Relatórios (Report Flow)
+- `/`
+- `/login`
+- `/forgot-password`
+- `/reset-password`
+- `/design-system`
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ FRONTEND: Usuário seleciona relatório e filtros                      │
-└─────────────┬──────────────────────────────────────────────────────┘
-              │ POST /reports/{id}/query { filters, page, pageSize }
-              ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ API: ReportsController.queryReport()                                 │
-│   1. Carrega definição do relatório                                  │
-│   2. Valida autorização (ReportAuthorizationService)                 │
-│   3. Valida filtros contra parâmetros declarados                     │
-│   4. Chama SqlQueryService.executeView/Procedure                     │
-└─────────────┬──────────────────────────────────────────────────────┘
-              │
-              ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ SQL Server (Parametrizado)                                           │
-│ SELECT * FROM dbo.vw_financial_reports                               │
-│ WHERE sector_id = @sector_id AND date >= @startDate                 │
-│                                                                       │
-│ Valores sent via mssql.input(paramName, type, value)                │
-│ Nenhuma concatenação de strings                                      │
-└─────────────┬──────────────────────────────────────────────────────┘
-              │ Resultados retornam (raw rows)
-              ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ API: Paginação em memória + retorna JSON                             │
-│ { items: [...], page, pageSize, total, totalPages }                 │
-└─────────────┬──────────────────────────────────────────────────────┘
-              │ Resposta HTTP
-              ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ FRONTEND: React Query caches resultado                               │
-│   Renderiza tabela ou gráfico (Recharts)                             │
-│   Usuário pode exportar, filtrar, ou voltar                          │
-└──────────────────────────────────────────────────────────────────────┘
-```
+Rotas autenticadas:
 
-### 5.1 Caching Strategy
-- **Redis**: Armazena resultados de queries por TTL (padrão 60min)
-- **Frontend**: React Query cache automático (5min)
-- **Invalidation**: Ao atualizar filtros ou manualmente via `queryClient.invalidateQueries()`
+- `/app`
+- `/app/reports`
+- `/app/exports`
+- `/app/notifications`
+- `/app/admin`
+- `/app/admin/users`
+- `/app/admin/groups`
+- `/app/admin/settings`
 
----
+### Organização funcional
 
-## 6. Pipeline de Exportação (PDF/Excel)
+Principais áreas do frontend:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ FRONTEND: Usuário clica "Exportar PDF"                          │
-│   Escolhe formato + intervalo de dados                          │
-└──────────────┬──────────────────────────────────────────────────┘
-               │ POST /reports/{id}/export { format, parameters }
-               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ API: ExportsController.exportReport()                           │
-│   1. Valida autorização (role: downloader ou admin)             │
-│   2. Cria ExportJob com status='pending'                        │
-│   3. Enfileira no BullMQ                                        │
-│   4. Retorna jobId + URL de polling                             │
-└──────────────┬──────────────────────────────────────────────────┘
-               │ Frontend polls GET /exports/{jobId}
-               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ BullMQ Worker: Processa export_jobs da fila                     │
-│   1. Fetch dados do relatório (mesma query de execução)         │
-│   2. Renderiza HTML template (Handlebars)                       │
-│   3. PDF: Puppeteer / WeasyPrint → arquivo                      │
-│   4. Excel: ExcelJS → arquivo .xlsx                             │
-│   5. Upload para S3 (ou storage local)                          │
-│   6. Atualiza ExportJob: status='completed', file_url=...       │
-└──────────────┬──────────────────────────────────────────────────┘
-               │ Frontend detects completion
-               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ FRONTEND: Oferece download do arquivo                           │
-│   Link válido por 7 dias (default), depois auto-expira          │
-│   Auditoria: Registra IP + user_agent + timestamp               │
-└─────────────────────────────────────────────────────────────────┘
-```
+- `components/auth`: formulários e guardas de autenticação;
+- `components/dashboard`: KPIs e resumo de dashboard;
+- `components/reports`: catálogo, filtros e visualização tabular;
+- `components/admin`: usuários, grupos e settings;
+- `components/exports`: lista de exportações;
+- `components/notifications`: lista e atualização de notificações.
 
-### 6.1 Async Jobs com BullMQ
-- **Queue**: `export-jobs` processor
-- **Worker**: NestJS background job processor
-- **Retry**: 3 tentativas com backoff exponencial
-- **Timeout**: 5min máximo por export
-- **Storage**: S3 ou local `/tmp` (auto-cleanup 7 dias)
+### Estratégia de dados da Web
 
----
+A Web usa dois caminhos de dados:
 
-## 7. Segurança em Camadas
+1. API própria:
+   - auth;
+   - usuários;
+   - grupos;
+   - relatórios;
+   - execução de consulta.
+2. Supabase direto:
+   - `kpis`;
+   - `sectors`;
+   - `export_jobs`;
+   - `notifications`;
+   - `system_settings`.
 
-### 7.1 Frontend
-- **XSS Prevention**: DOMPurify sanitização de inputs
-- **CSRF**: Double-submit cookie pattern (SameSite=Strict)
-- **CSP**: Content-Security-Policy header (NestJS middleware)
-- **HTTPS Only**: Força TLS 1.3 em produção
+Isso produz uma arquitetura híbrida: parte do domínio é mediada pela API e parte é acessada diretamente no frontend.
 
-### 7.2 Network
-- **TLS 1.3 Obrigatório**
-- **HSTS Header**: Força HTTPS por 1 ano
-- **CORS**: Whitelist de domínios (não `*`)
+## 5. Arquitetura da API
 
-### 7.3 API (NestJS)
-- **JWT Validation**: Assinatura + expiração
-- **Rate Limiting**: Login (5/15min), API global (100/min per IP)
-- **Input Validation**: Class-validator + Zod schema
-- **Output Sanitization**: Nunca retorna hash de senha, error details, SQL schema
+### Módulos reais
 
-### 7.4 SQL Server
-- **100% Parametrizado**: Sem concatenação
-- **Usuário Read-Only**: Credenciais dedicadas, sem permissão DDL
-- **Connection Pooling**: Máx 10 conexões, timeout 5s
-- **Query Monitoring**: Timeout 5s, logging de queries lentas
+| Módulo                 | Papel atual                                                    |
+| ---------------------- | -------------------------------------------------------------- |
+| `AuthModule`           | login, refresh, logout, recuperação e redefinição de senha     |
+| `AdminModule`          | usuários e grupos                                              |
+| `ReportsModule`        | catálogo, administração de definições e execução de relatórios |
+| `HealthModule`         | status da API e status do SQL Server                           |
+| `ValidationTestModule` | endpoint técnico de validação                                  |
+| `SqlServerModule`      | conexão, validação e execução segura no SQL Server             |
 
-### 7.5 Banco de Dados (Supabase)
-- **RLS**: Todas as tabelas com políticas restrictivas
-- **auth.uid() Checks**: Obrigatório em toda política
-- **No Public Data**: Nenhuma tabela acessível sem autenticação
-- **Audit Trail**: access_logs completo de quem acessa o quê
+### Endpoints principais
 
----
+Autenticação:
 
-## 8. Decisões de Design
+- `POST /auth/login`
+- `POST /auth/forgot-password`
+- `POST /auth/reset-password`
+- `POST /auth/refresh`
+- `POST /auth/logout`
 
-### 8.1 Por que Monorepo?
-- Compartilhamento de tipos TypeScript (API ↔ Web)
-- Single git history para related changes
-- Simplifica CI/CD (build once, deploy separately)
+Admin:
 
-### 8.2 Por que Supabase?
-- Auth nativa + RLS built-in (não reinventar roda)
-- PostgreSQL confiável + migrations versionadas
-- Real-time capabilities (futura notificação de updates)
-- Suporta JWT JWT próprio (não depende de Supabase SDK)
+- `GET/POST/PATCH` em `/admin/users`
+- `POST /admin/users/:id/reset-password`
+- `PUT /admin/users/:id/groups`
+- `GET/POST/PATCH/DELETE` em `/admin/groups`
+- `GET/POST/PATCH` em `/admin/reports`
 
-### 8.3 Por que NestJS para API?
-- Modular architecture (fácil de escalar)
-- TypeScript + DI framework (injeção de dependência)
-- Guards + Interceptors + Pipes (middleware robusto)
-- Swagger auto-generated (documentação live)
+Relatórios:
 
-### 8.4 Por que Next.js 14 (App Router)?
-- SSR + SSG nativo (melhor SEO)
-- File-based routing (automático)
-- Server components (segurança: API keys server-side)
-- Middleware support (auth check antes de renderizar)
+- `GET /reports`
+- `GET /reports/:id`
+- `POST /reports/:id/query`
 
----
+Saúde:
 
-## 9. Padrões de Código
+- `GET /health`
+- `GET /health/sql`
 
-### 9.1 Services (NestJS)
-```typescript
-@Injectable()
-export class ReportService {
-  constructor(
-    private readonly reportRepo: ReportRepository,
-    private readonly sqlQuery: SqlQueryService,
-    private readonly auth: AuthorizationService
-  ) {}
+## 6. Persistência e fontes de dados
 
-  async getReportData(reportId: string, filters: ReportFilters, user: AuthUser) {
-    const report = await this.reportRepo.findById(reportId);
-    this.auth.assertCanAccess(report, user); // Fail-secure
-    
-    const query = this.buildQuery(report, filters);
-    const rows = await this.sqlQuery.execute(query); // Safe execution
-    
-    return this.paginate(rows, filters.page, filters.pageSize);
-  }
-}
+### SQL Server
+
+Uso real:
+
+- fonte externa para execução de relatórios;
+- acesso via `mssql`;
+- consultas parametrizadas pela API.
+
+O SQL Server hoje não é o banco de persistência de usuários, grupos ou settings da própria plataforma.
+
+### Supabase
+
+Uso real confirmado pela Web:
+
+- KPIs (`kpis`);
+- setores (`sectors`);
+- exportações (`export_jobs`);
+- notificações (`notifications`);
+- configurações (`system_settings`).
+
+As migrations do Supabase descrevem um domínio maior, mas nem tudo está conectado à experiência real da aplicação.
+
+### Memória do processo
+
+Uso real na API:
+
+- usuários e grupos administrativos;
+- definições de relatórios.
+
+Isso significa que parte do estado do backend não está persistida em um banco controlado pela própria API.
+
+### `localStorage`
+
+Uso real na Web:
+
+- persistência da sessão autenticada no navegador.
+
+## 7. Fluxos reais do sistema
+
+### Login
+
+```text
+1. Usuário acessa `/login`
+2. Web envia credenciais para `POST /auth/login`
+3. API valida credenciais
+4. API retorna tokens
+5. Web persiste sessão no `localStorage`
+6. Usuário acessa rotas sob `/app`
 ```
 
-### 9.2 Validators (SQL Injection Prevention)
-```typescript
-export function validateSqlObjectName(name: string): string {
-  // Rejeita: "dbo.table; DROP TABLE", "dbo].[users", etc
-  const SAFE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*$/;
-  
-  if (!SAFE_PATTERN.test(name.trim())) {
-    throw new Error(`Invalid SQL object name: ${name}`);
-  }
-  
-  return name;
-}
+### Consulta de relatório
+
+```text
+1. Usuário acessa `/app/reports`
+2. Web lista relatórios via `GET /reports`
+3. Usuário seleciona filtros e um relatório
+4. Web envia `POST /reports/:id/query`
+5. API valida acesso e parâmetros
+6. API consulta o SQL Server
+7. Web renderiza os resultados em tabela
 ```
 
-### 9.3 RLS Policies (Supabase)
-```sql
--- Restrictive by default
-CREATE POLICY "Users can view own reports"
-  ON reports FOR SELECT
-  TO authenticated
-  USING (
-    sector_id IN (
-      SELECT sector_id FROM user_sectors
-      WHERE user_id = auth.uid()
-    )
-  );
+### Dashboard inicial
 
--- Admin override
-CREATE POLICY "Admin can view all"
-  ON reports FOR SELECT
-  TO authenticated
-  USING (auth.jwt()->>'role' = 'admin');
+```text
+1. Usuário acessa `/app`
+2. Web lê `kpis` e `sectors` direto do Supabase
+3. Se a consulta falha ou volta vazia, usa fallback local
+4. Renderiza cards de KPI, resumo e agregação por setor
 ```
 
----
+### Notificações e exportações
 
-## 10. Performance & Scalability
+```text
+1. Usuário acessa `/app/notifications` ou `/app/exports`
+2. Web consulta tabelas do Supabase diretamente
+3. A UI exibe os dados existentes
+4. Não há backend próprio coordenando esses fluxos
+```
 
-### 10.1 Database Indexing
-- `idx_user_sectors_user` - Query rápida de setores de um user
-- `idx_access_logs_created` - Paginação de logs por data
-- `idx_reports_sector` - Listagem por setor
-- Cardinality matters: evita índices em colunas booleanas com baixa cardinalidade
+## 8. Segurança realmente presente
 
-### 10.2 Redis Caching
-- Sessions: Armazenar refresh tokens + user context (TTL 7 dias)
-- Report results: Cache de queries SQL (TTL configurável por relatório)
-- Invalidation: Manual ou time-based
-- Monitor: Redis CLI `INFO memory` para detectar vazamento
+Implementado ou claramente visível:
 
-### 10.3 BullMQ for Heavy Operations
-- Exports (PDF/Excel) enfileirados (não bloqueiam API)
-- Scheduled jobs (refresh de KPIs)
-- Email notifications
-- Retry automático + dead-letter queue
+- hash de senha com `bcrypt`;
+- JWT para autenticação;
+- validação de DTOs com `ValidationPipe`;
+- guards de autorização na API;
+- consultas parametrizadas em SQL Server;
+- CORS configurado para frontend local;
+- mascaramento/sanitização de erros de SQL em partes do backend.
 
----
+Parcial ou dependente de interpretação:
 
-## 11. Sprint 1 Deliverables (Dias 1-10)
+- controle de tentativas no login;
+- autorização por role/setor em relatórios e endpoints administrativos.
 
-- [ ] Monorepo setup + CI/CD pipelines
-- [ ] Supabase schema (users, sectors, permissions, access_logs)
-- [ ] Auth completo (login, JWT, bcrypt, recuperação de senha)
-- [ ] CRUD de usuários e grupos (Admin)
-- [ ] Permission system (sector + report-level)
-- [ ] SQL Server integração (pool + parametrized queries)
-- [ ] Report listing com filtros básicos
-- [ ] Design system tokens + componentes base
-- [ ] Docker Compose dev environment
-- [ ] Testes unitários (Auth + Permission + SQL)
+Ausente no código atual:
 
----
+- 2FA/TOTP;
+- CSRF;
+- CSP;
+- sessão em cookie seguro;
+- auditoria dedicada de ações sensíveis;
+- HSTS/forçar HTTPS como comportamento do app;
+- proteção via DOMPurify confirmada no frontend.
 
-## 12. Glossário
+## 9. Componentes previstos no PDF e ausentes na arquitetura real
 
-| Termo | Significado |
-|-------|------------|
-| RLS | Row Level Security (Supabase) - Filtra dados por política por linha |
-| JWT | JSON Web Token - Token stateless para autenticação |
-| RBAC | Role-Based Access Control - Permissões por role (visualizador, etc) |
-| Sector | Departamento/área (financeiro, RH, vendas) |
-| KPI | Key Performance Indicator - Métrica de negócio |
-| Parametrized Query | Query com placeholders (`@param`) em vez de string concat |
-| BullMQ | Job queue library para Redis |
-| TLS | Transport Layer Security (HTTPS) |
-| CSP | Content Security Policy - Header de proteção contra XSS |
-| Middleware | Função que processa requisição antes de chegar ao controller |
+Os itens abaixo aparecem no PDF V1, mas não estão implementados como parte da arquitetura atual:
 
+- Prisma ORM;
+- React Query;
+- Recharts ou Chart.js;
+- BullMQ;
+- S3 ou storage equivalente para exports;
+- WebSocket/realtime da aplicação;
+- pipeline de exportação PDF/Excel no backend;
+- editor visual de dashboards;
+- cache Redis funcional;
+- cron/refresh agendado.
+
+## 10. Consequências práticas da arquitetura atual
+
+### Pontos positivos
+
+- a base web/api está de pé e navegável;
+- autenticação, admin básico e consulta de relatórios já funcionam;
+- existe integração real com SQL Server;
+- a documentação Swagger permite inspecionar a API.
+
+### Riscos e restrições
+
+- parte importante do domínio depende de memória do processo;
+- a aplicação mistura API própria e Supabase direto;
+- exportações e notificações não passam por backend central;
+- o dashboard pode parecer funcional mesmo sem dados reais por causa do fallback local;
+- o desenho arquitetural do PDF não corresponde ao que está rodando hoje.
+
+## 11. Leitura recomendada para novos contribuidores
+
+Ordem sugerida:
+
+1. `README.md`
+2. `docs/system-map.md`
+3. `docs/scope-v1-gap-analysis.md`
+4. `SPRINT_STATUS.md`
+5. `docs/api.md` e `docs/web.md`
+
+## 12. Conclusão
+
+A arquitetura real do projeto hoje é:
+
+- Next.js + NestJS;
+- Web consumindo API e, em partes, Supabase direto;
+- SQL Server usado pela API para relatórios;
+- persistência fragmentada entre memória, Supabase, SQL Server e `localStorage`.
+
+Essa arquitetura já suporta uma base funcional de produto, mas ainda diverge da arquitetura prevista no escopo V1 e não deve ser descrita como plataforma completa de BI pronta para produção.
