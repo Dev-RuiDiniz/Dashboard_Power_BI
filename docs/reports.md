@@ -1,39 +1,71 @@
-# Catálogo e Reports API
+# Relatórios
 
-## Visão geral
+## Objetivo
 
-O módulo de relatórios centraliza o catálogo de `ReportDefinition` e expõe a Reports API para listagem, detalhe e execução segura de relatórios.
+Este documento descreve o módulo de relatórios no estado atual do repositório.
 
-A TASK-17 adicionou o catálogo administrativo. A TASK-18 adiciona os endpoints de consumo com paginação, validação de filtros e autorização por setor/permissão.
+## O que existe hoje
 
-## Entidade `ReportDefinition`
+O domínio de relatórios está dividido entre API e Web:
 
-| Campo | Descrição |
-|---|---|
-| `id` | Identificador interno da definição. |
-| `name` | Nome exibido do relatório. |
-| `description` | Descrição funcional. |
-| `sector` | Setor autorizado, normalizado para minúsculas. |
-| `sourceType` | Tipo da fonte SQL: `view` ou `stored_procedure`. |
-| `sourceName` | Nome seguro da fonte SQL no formato `schema.nome`. |
-| `parameters` | Lista de parâmetros aceitos pelo relatório. |
-| `requiredPermissions` | Chaves de permissão necessárias. |
-| `isActive` | Indica se o relatório aparece na API pública. |
+- a API mantém o catálogo administrativo e executa consultas no SQL Server;
+- a Web lista relatórios, monta filtros, chama a execução e renderiza resultados.
 
-## Segurança
+## Catálogo administrativo
 
-- O catálogo não aceita SQL livre.
-- `sourceName` deve usar o formato `schema.nome`.
-- A Reports API não retorna `sourceName` no contrato público.
-- Filtros são aceitos somente quando declarados em `parameters`.
-- Valores são normalizados e enviados à camada SQL por parâmetros.
-- A autorização roda antes da validação de execução SQL.
-- Usuários sem setor ou permissão recebem erro controlado.
-- Usuário `admin` pode acessar relatórios sem validação específica de setor/permissão.
+Endpoints existentes:
 
-## Parâmetros
+```http
+POST /admin/reports
+GET /admin/reports
+GET /admin/reports/{id}
+PATCH /admin/reports/{id}
+PATCH /admin/reports/{id}/deactivate
+```
 
-Tipos permitidos:
+Estado real:
+
+- o catálogo existe no backend;
+- as definições ainda usam repositório em memória;
+- não há tela web administrativa equivalente para essa gestão.
+
+## Reports API pública
+
+```http
+GET /reports
+GET /reports/{id}
+POST /reports/{id}/query
+```
+
+### `GET /reports`
+
+- lista relatórios autorizados;
+- aceita paginação;
+- pode filtrar por setor.
+
+### `GET /reports/{id}`
+
+- retorna o detalhe público do relatório;
+- não expõe `sourceName`.
+
+### `POST /reports/{id}/query`
+
+- valida autorização antes da execução;
+- valida os filtros declarados;
+- consulta view ou stored procedure no SQL Server;
+- retorna paginação da resposta.
+
+## Segurança da execução
+
+O sistema hoje protege o fluxo com as seguintes regras:
+
+- `sourceName` deve ser um identificador seguro no formato `schema.nome`;
+- não existe SQL livre vindo do cliente;
+- filtros desconhecidos são rejeitados;
+- a autorização por role/setor/permissão roda antes da consulta;
+- erros de SQL são sanitizados.
+
+## Tipos de parâmetros suportados
 
 ```text
 string
@@ -61,86 +93,44 @@ Exemplo:
 ]
 ```
 
-## Endpoints administrativos
+## Experiência da Web
 
-```http
-POST /admin/reports
-GET /admin/reports
-GET /admin/reports/{id}
-PATCH /admin/reports/{id}
-PATCH /admin/reports/{id}/deactivate
-```
+Na aplicação atual:
 
-## Reports API
+- o usuário acessa `/app/reports`;
+- o catálogo é listado na mesma página do visualizador;
+- filtros avançados são montados na interface;
+- a resposta é exibida em tabela.
 
-### `GET /reports`
+Isso cobre uma parte do escopo de relatórios, mas ainda não entrega:
 
-Lista relatórios autorizados com paginação.
+- rota dedicada de visualização por relatório;
+- exportação backend;
+- favoritos integrados ao frontend atual;
+- gráficos de BI a partir da execução.
 
-Query params:
+## Persistência e limitações
 
-| Parâmetro | Padrão | Regra |
-|---|---:|---|
-| `sector` | opcional | setor normalizado |
-| `page` | `1` | inteiro positivo |
-| `pageSize` | `20` | inteiro positivo até `100` |
+Estado atual:
 
-Exemplo:
+- definições de relatórios: memória da API;
+- dados consultados: SQL Server;
+- sessão do usuário: `localStorage` no frontend.
 
-```http
-GET /reports?sector=financeiro&page=1&pageSize=20
-```
+Limitações práticas:
 
-### `GET /reports/{id}`
+- reiniciar a API perde definições mantidas em memória;
+- a camada de relatórios ainda não tem cache Redis funcional;
+- não há fila ou processamento assíncrono de export.
 
-Retorna detalhe público de um relatório autorizado.
+## O que não existe hoje
 
-O retorno não inclui `sourceName`.
-
-### `POST /reports/{id}/query`
-
-Executa a consulta parametrizada do relatório.
-
-Payload:
-
-```json
-{
-  "filters": {
-    "startDate": "2026-05-01",
-    "sectorId": "financeiro"
-  },
-  "page": 1,
-  "pageSize": 20
-}
-```
-
-Fluxo interno:
-
-1. Busca definição no catálogo.
-2. Rejeita relatório inativo.
-3. Valida setor e permissões do usuário.
-4. Valida filtros contra `parameters`.
-5. Executa view ou stored procedure via `SqlQueryService`.
-6. Aplica paginação em memória.
-7. Retorna resposta paginada.
-
-## Persistência
-
-O catálogo ainda usa repositório em memória. Dados não persistem após restart da API. A troca por persistência real deve ser feita em task própria, com migration segura e sem perda de dados.
-
-## Testes
-
-A TASK-18 adiciona cobertura para:
-
-- contrato de paginação;
-- validação de filtros;
-- rejeição de filtros desconhecidos;
-- autorização por setor;
-- autorização por permissão;
-- listagem autorizada;
-- detalhe autorizado;
-- query segura;
-- garantia de que SQL não executa quando autorização ou validação falha.
+- `POST /reports/{id}/export`;
+- `GET /exports/{jobId}`;
+- worker de exportação;
+- BullMQ;
+- armazenamento de arquivo em S3;
+- editor de relatórios/dashboards.
 
 ## Validação local
 
@@ -148,7 +138,4 @@ A TASK-18 adiciona cobertura para:
 pnpm --filter @dashboard-power-bi/api test
 pnpm --filter @dashboard-power-bi/api typecheck
 pnpm --filter @dashboard-power-bi/api build
-pnpm lint
-pnpm format:check
-pnpm quality
 ```

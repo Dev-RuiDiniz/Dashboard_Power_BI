@@ -1,10 +1,25 @@
 # Dashboard Power BI
 
-Plataforma web de relatórios e BI em formato monorepo.
+Monorepo da plataforma Dashboard Power BI em estado funcional parcial.
 
 ## Visão geral
 
-O Dashboard Power BI centraliza relatórios, dashboards interativos, permissões por setor, exportações e administração. A Sprint 1 entrega a fundação técnica: monorepo, qualidade, API, Web, design system, Docker Compose dev e documentação de onboarding.
+Este repositório já entrega uma base real de:
+
+- autenticação com API NestJS;
+- dashboard inicial;
+- catálogo e execução de relatórios;
+- administração básica de usuários e grupos;
+- leitura de notificações, exportações e settings no Supabase.
+
+Ele ainda não representa a plataforma V1 completa descrita no PDF de escopo.
+
+Documentos canônicos do estado atual:
+
+- `docs/system-map.md`
+- `docs/scope-v1-gap-analysis.md`
+- `SPRINT_STATUS.md`
+- `docs/ARCHITECTURE_DETAILED.md`
 
 ## Stack
 
@@ -13,9 +28,9 @@ O Dashboard Power BI centraliza relatórios, dashboards interativos, permissões
 - TypeScript
 - NestJS para API
 - Next.js 14 para Web
-- Tailwind CSS e componentes base inspirados em shadcn/ui
-- Redis
+- Tailwind CSS
 - SQL Server externo
+- Supabase consumido diretamente em partes da Web
 - Docker Compose para desenvolvimento local
 
 ## Setup rápido
@@ -30,13 +45,11 @@ pnpm verify:docs
 pnpm quality
 ```
 
-Para ambiente com variáveis locais:
+Observação importante:
 
-```bash
-cp infra/env/.env.example .env
-```
-
-Não versionar `.env` real.
+- scripts e docs históricas referenciam `infra/env/.env.example`;
+- o arquivo não está presente no clone atual;
+- use variáveis locais compatíveis com `docs/environment.md` até esse exemplo ser recriado no repositório.
 
 ## Checklist de setup local
 
@@ -54,7 +67,7 @@ Não versionar `.env` real.
 - [ ] Validar `http://localhost:3000`
 - [ ] Validar `http://localhost:3001/health`
 - [ ] Validar `http://localhost:3001/docs`
-- [ ] Opcionalmente subir tudo com `pnpm docker:dev`
+- [ ] Opcionalmente tentar `pnpm docker:dev` se o ambiente local de env estiver compatível
 
 ## Desenvolvimento sem Docker
 
@@ -82,29 +95,20 @@ Swagger: http://localhost:3001/docs
 
 ## Desenvolvimento com Docker
 
-Subir API, Web e Redis:
+O repositório mantém comandos Docker:
 
 ```bash
 pnpm docker:dev
-```
-
-Ver logs:
-
-```bash
 pnpm docker:dev:logs
-```
-
-Derrubar ambiente:
-
-```bash
 pnpm docker:dev:down
 ```
 
-Validar configuração do Compose:
+Mas hoje existe um desvio conhecido:
 
-```bash
-docker compose --env-file infra/env/.env.example -f infra/docker/docker-compose.dev.yml config
-```
+- os scripts usam `infra/env/.env.example`;
+- esse arquivo não está versionado no clone atual.
+
+Se esse arquivo não for recriado localmente, os comandos de Docker exigirão ajuste manual.
 
 ## Arquitetura e monorepo
 
@@ -113,21 +117,20 @@ apps/
   api/      # API NestJS
   web/      # Web Next.js
 packages/
-  shared/   # tipos, contratos e utilitários compartilhados
-  ui/       # pacote reservado para componentes compartilhados futuros
-docs/       # documentação técnica, setup e ADRs
-infra/      # Docker Compose, Dockerfiles e env examples
+  shared/   # reservado para contratos/utilitários compartilhados
+  ui/       # reservado para componentes compartilhados
+docs/       # documentação técnica e análise de escopo
+infra/      # Dockerfiles e Compose
 scripts/    # validações estruturais
+supabase/   # migrations e políticas
 ```
 
-Fluxo local atual:
+Fluxo real atual:
 
 ```text
-Web Next.js -> API NestJS -> Redis
-                       -> SQL Server externo via variáveis
+Web Next.js -> API NestJS -> SQL Server externo
+          \-> Supabase direto
 ```
-
-Detalhes em [`docs/architecture.md`](docs/architecture.md).
 
 ## Comandos principais
 
@@ -141,21 +144,26 @@ pnpm typecheck
 pnpm test
 pnpm build
 pnpm quality
+pnpm dev:api
+pnpm dev:web
+pnpm docker:dev
 ```
 
 ## Variáveis de ambiente
 
-O exemplo versionado fica em:
+A referência de variáveis está em `docs/environment.md`.
+
+Desvio conhecido:
 
 ```text
 infra/env/.env.example
 ```
 
-A documentação completa fica em [`docs/environment.md`](docs/environment.md).
+Esse caminho é citado por scripts e documentação histórica, mas o arquivo não está presente no clone atual.
 
 ## Decisões arquiteturais
 
-As ADRs ficam em [`docs/decisions`](docs/decisions/README.md):
+As ADRs ficam em `docs/decisions`:
 
 - ADR-0001 — Monorepo
 - ADR-0002 — Tooling de qualidade
@@ -166,21 +174,26 @@ As ADRs ficam em [`docs/decisions`](docs/decisions/README.md):
 
 ## Documentação complementar
 
-- [`docs/setup.md`](docs/setup.md): passo a passo para novo dev
-- [`docs/architecture.md`](docs/architecture.md): arquitetura inicial
-- [`docs/api.md`](docs/api.md): backend NestJS
-- [`docs/web.md`](docs/web.md): frontend Next.js
-- [`docs/design-system.md`](docs/design-system.md): tokens e componentes
-- [`docs/devops.md`](docs/devops.md): Docker Compose local
-- [`docs/environment.md`](docs/environment.md): variáveis de ambiente
-- [`docs/quality.md`](docs/quality.md): qualidade, lint, format e commits
-- [`docs/system-map.md`](docs/system-map.md): mapeamento funcional do sistema e estado atual
+- `docs/system-map.md`: inventário canônico do sistema
+- `docs/scope-v1-gap-analysis.md`: comparação formal entre escopo V1 e estado real
+- `SPRINT_STATUS.md`: status verificado do projeto
+- `docs/ARCHITECTURE_DETAILED.md`: arquitetura real consolidada
+- `docs/architecture.md`: resumo arquitetural
+- `docs/api.md`: API realmente implementada
+- `docs/web.md`: visão da aplicação web
+- `docs/frontend.md`: comportamento do frontend
+- `docs/reports.md`: módulo de relatórios no estado atual
+- `docs/setup.md`: onboarding local
+- `docs/design-system.md`: base visual
+- `docs/devops.md`: Docker e operações locais
+- `docs/environment.md`: variáveis de ambiente
+- `docs/quality.md`: qualidade e validações
 
 ## Troubleshooting
 
 ### Porta em uso
 
-Ajuste `API_PORT`, `WEB_PORT` ou `REDIS_PORT` no `.env` local.
+Ajuste `API_PORT` e `WEB_PORT` nas variáveis locais.
 
 ### Dependências inconsistentes
 
@@ -189,21 +202,38 @@ rm -rf node_modules apps/*/node_modules packages/*/node_modules
 pnpm install
 ```
 
-### Docker com cache antigo
+### Docker falhando por arquivo de env ausente
 
-```bash
-docker compose --env-file .env -f infra/docker/docker-compose.dev.yml up --build --force-recreate
+O primeiro ponto a verificar é a ausência de:
+
+```text
+infra/env/.env.example
 ```
 
-### Redis indisponível
+### SQL Server indisponível
 
-```bash
-docker compose -f infra/docker/docker-compose.dev.yml logs redis
-```
+Valide:
+
+- credenciais `SQLSERVER_*`;
+- conectividade da instância externa;
+- `GET http://localhost:3001/health/sql`.
+
+### Supabase indisponível
+
+Partes da Web dependem de:
+
+- `kpis`
+- `sectors`
+- `export_jobs`
+- `notifications`
+- `system_settings`
+
+Sem essas integrações, dashboard, notificações, exportações e settings podem degradar ou ficar vazios.
 
 ## Segurança
 
 - Nunca versionar `.env` real.
-- Nunca commitar tokens, senhas, strings de conexão ou secrets.
-- Usar `infra/env/.env.example` somente com placeholders.
-- Configurar secrets em CI/CD apenas por mecanismos seguros da plataforma.
+- Nunca commitar tokens, senhas ou strings de conexão.
+- A API usa JWT, `bcrypt` e consultas parametrizadas ao SQL Server.
+- A Web ainda usa sessão em `localStorage`, o que deve ser tratado como limitação do estado atual.
+- O PDF V1 prevê camadas adicionais como 2FA/TOTP, CSRF e CSP, mas elas não estão implementadas hoje.

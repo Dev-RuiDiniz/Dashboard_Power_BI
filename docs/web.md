@@ -1,70 +1,176 @@
 # Aplicação Web
 
+## Objetivo
+
+Este documento descreve a aplicação `apps/web` como ela funciona hoje.
+
 ## Visão geral
 
-A aplicação web do Dashboard Power BI foi inicializada em `apps/web` com Next.js 14, App Router, TypeScript, Tailwind CSS, estrutura base de shadcn/ui, layout global, providers e testes de renderização.
+A Web é uma aplicação Next.js 14 com App Router.
+Hoje ela entrega:
 
-## Objetivo da TASK-04
+- telas públicas de autenticação;
+- área autenticada baseada em sessão local;
+- dashboard inicial com KPIs;
+- catálogo e execução de relatórios;
+- admin básico;
+- páginas de exportações, notificações e configurações.
 
-Entregar a fundação frontend para sustentar as próximas telas do produto, preservando qualidade, responsividade e documentação técnica desde o início.
+## Rotas reais
 
-## Stack
-
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- Jest
-- Testing Library
-- shadcn/ui como referência de organização visual
-
-## Estrutura
+### Públicas
 
 ```text
-apps/web/
-  src/
-    app/
-      globals.css
-      layout.tsx
-      page.tsx
-      page.test.tsx
-      providers.tsx
-    components/
-      ui/
-        button.tsx
-        card.tsx
-    lib/
-      utils.ts
+/
+/login
+/forgot-password
+/reset-password
+/design-system
 ```
 
-## Comandos
+### Autenticadas
+
+```text
+/app
+/app/reports
+/app/exports
+/app/notifications
+/app/admin
+/app/admin/users
+/app/admin/groups
+/app/admin/settings
+```
+
+## Como a Web busca dados
+
+Hoje existem dois fluxos:
+
+### Via API NestJS
+
+- login e recuperação de senha;
+- usuários;
+- grupos;
+- catálogo de relatórios;
+- detalhe e execução de relatórios.
+
+### Via Supabase direto
+
+- `kpis`;
+- `sectors`;
+- `export_jobs`;
+- `notifications`;
+- `system_settings`.
+
+Isso significa que a Web não opera sobre um backend único.
+
+## Áreas funcionais
+
+### Autenticação
+
+Evidências:
+
+- `apps/web/src/components/auth/*`
+- `apps/web/src/lib/auth/api.ts`
+- `apps/web/src/lib/auth/session.ts`
+
+O sistema hoje faz:
+
+- login por e-mail e senha;
+- recuperação de senha;
+- redefinição por token;
+- armazenamento da sessão no navegador;
+- proteção client-side das rotas sob `/app`.
+
+### Dashboard
+
+Evidências:
+
+- `apps/web/src/app/app/page.tsx`
+- `apps/web/src/components/dashboard/dashboard-home.tsx`
+
+O sistema hoje faz:
+
+- busca KPIs e setores no Supabase;
+- calcula resumo agregado;
+- exibe cards de KPI e tabela por setor;
+- usa fallback local quando não encontra dados válidos.
+
+### Relatórios
+
+Evidências:
+
+- `apps/web/src/app/app/reports/page.tsx`
+- `apps/web/src/components/reports/*`
+
+O sistema hoje faz:
+
+- lista relatórios autorizados;
+- permite filtrar;
+- mostra metadados do item selecionado;
+- executa consulta via API;
+- renderiza resultado em tabela.
+
+### Administração
+
+Evidências:
+
+- `apps/web/src/app/app/admin/*`
+- `apps/web/src/components/admin/*`
+
+O sistema hoje faz:
+
+- hub administrativo;
+- tela de usuários;
+- tela de grupos;
+- leitura de configurações do sistema.
+
+### Exportações e notificações
+
+Evidências:
+
+- `apps/web/src/components/exports/exports-list.tsx`
+- `apps/web/src/components/notifications/notifications-list.tsx`
+
+O sistema hoje faz:
+
+- consulta exportações no Supabase;
+- consulta notificações no Supabase;
+- marca notificações como lidas.
+
+## Limitações reais da Web
+
+- não existe `/app/profile`;
+- não existe rota dedicada `/app/reports/[id]`;
+- não existe tela web para `/admin/reports`;
+- não existe editor de dashboards;
+- não existe tela de logs;
+- não existe gestão de permissões dedicada;
+- não há realtime de notificações;
+- não há exportação backend disparada a partir da Web.
+
+## Stack realmente usada
+
+- Next.js 14;
+- React 18;
+- TypeScript;
+- Tailwind CSS;
+- `@supabase/supabase-js`;
+- `zod`;
+- `lucide-react`.
+
+Não encontrados em uso real no frontend atual:
+
+- React Query;
+- Recharts;
+- Chart.js;
+- React Hook Form;
+- ExcelJS.
+
+## Comandos úteis
 
 ```bash
-pnpm install
 pnpm dev:web
 pnpm --filter @dashboard-power-bi/web test
 pnpm --filter @dashboard-power-bi/web build
 pnpm --filter @dashboard-power-bi/web typecheck
 ```
-
-## Rota inicial
-
-### GET /
-
-Renderiza a home institucional inicial com:
-
-- nome do produto;
-- descrição da plataforma;
-- cards de Relatórios, Dashboards e Administração;
-- status da fundação técnica;
-- base responsiva com Tailwind CSS.
-
-## Testes
-
-O teste inicial fica em `apps/web/src/app/page.test.tsx` e valida a renderização da home com Testing Library.
-
-## Observações técnicas
-
-- O arquivo `components.json` define a base de organização compatível com shadcn/ui.
-- Os componentes `Button` e `Card` são mínimos e poderão evoluir para o design system do produto.
-- Nenhum arquivo `.env` real, token ou credencial deve ser versionado.

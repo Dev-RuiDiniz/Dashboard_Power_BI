@@ -1,126 +1,139 @@
 # Frontend
 
-## TASK-13 — Telas Login e Recuperação
+## Escopo deste documento
 
-Rotas de autenticação implementadas no app web:
+Este documento complementa `docs/web.md` com foco em comportamento do frontend e experiência atual do usuário.
+
+## Sessão e autenticação no navegador
+
+A sessão do usuário é salva em `localStorage`.
+Arquivos centrais:
+
+- `apps/web/src/lib/auth/session.ts`
+- `apps/web/src/components/auth/auth-guard.tsx`
+- `apps/web/src/components/auth/logout-button.tsx`
+
+Comportamento atual:
+
+- login bem-sucedido salva access token e refresh token localmente;
+- `AuthGuard` valida a presença e o formato básico da sessão;
+- logout limpa a sessão local e redireciona para `/login`.
+
+Limites atuais:
+
+- a proteção de rota é client-side;
+- não há cookie `HttpOnly`;
+- não há middleware server-side de autenticação;
+- a maturidade de sessão ainda é inferior ao que seria esperado para produção.
+
+## Rotas de autenticação
 
 ```text
 /login
 /forgot-password
-/reset-password?token=<token>
+/reset-password
 ```
 
-A integração usa `NEXT_PUBLIC_API_URL`, com fallback local para `http://localhost:3001`.
+### `/login`
 
-### Login
+- consome `POST /auth/login`;
+- valida e-mail e senha;
+- trata erro de credenciais inválidas e bloqueio por tentativas;
+- redireciona para `/app` quando a sessão é criada.
 
-`/login` consome `POST /auth/login`.
+### `/forgot-password`
 
-Estados cobertos:
+- consome `POST /auth/forgot-password`;
+- usa mensagem genérica de sucesso para evitar enumeração.
 
-- validação de e-mail obrigatório e formato inválido;
-- validação de senha obrigatória;
-- loading durante envio;
-- erro de credenciais inválidas;
-- erro de limite de tentativas `429`;
-- salvamento da sessão em `localStorage`;
-- redirecionamento para `/app`.
+### `/reset-password`
 
-### Recuperação
+- consome `POST /auth/reset-password`;
+- exige token, nova senha e confirmação.
 
-`/forgot-password` consome `POST /auth/forgot-password`.
+## Área autenticada
 
-A mensagem de sucesso é genérica para evitar enumeração de usuários.
-
-### Redefinição
-
-`/reset-password?token=<token>` consome `POST /auth/reset-password`.
-
-Valida token obrigatório, senha mínima de 8 caracteres e confirmação igual à nova senha.
-
-## TASK-14 — Base da área autenticada
-
-A área autenticada foi estruturada a partir de `/app`.
-
-Rotas iniciais:
+Rotas centrais:
 
 ```text
 /app
 /app/reports
+/app/exports
+/app/notifications
 /app/admin
 ```
 
-### Layout autenticado
+Componentes estruturais:
 
-A base autenticada usa:
+- `AuthenticatedLayout`
+- `AppSidebar`
+- `AppHeader`
+- `NavLink`
+- `LogoutButton`
 
-```text
-AuthenticatedLayout
-AuthGuard
-AppSidebar
-AppHeader
-LogoutButton
-NavLink
-```
+O sistema hoje entrega navegação autenticada funcional, mas ainda sem o conjunto completo de telas do escopo V1.
 
-Composição:
+## Dashboard
 
-- sidebar lateral em desktop;
-- header com status de sessão e botão `Sair`;
-- conteúdo principal com espaçamento consistente;
-- placeholders para visão geral, relatórios e administração.
+O dashboard inicial:
 
-### Guarda de rotas
+- lê `kpis` e `sectors` direto do Supabase;
+- calcula tendências e agregações localmente;
+- mostra fallback local quando a integração não responde.
 
-`AuthGuard` é client-side e valida a presença de uma sessão local válida.
+Consequência prática:
 
-Comportamento:
+- a tela permanece navegável mesmo sem dados reais;
+- isso ajuda em desenvolvimento, mas pode esconder falhas de integração.
 
-- sem sessão: redireciona para `/login`;
-- sessão ausente, corrompida ou com formato inválido: limpa storage e bloqueia conteúdo;
-- sessão válida: renderiza o conteúdo protegido;
-- durante verificação: exibe estado de loading.
+## Relatórios
 
-A sessão é considerada válida quando contém:
+O frontend de relatórios:
 
-```text
-accessToken
-refreshToken
-tokenType = Bearer
-expiresIn > 0
-```
+- busca catálogo via API;
+- monta filtros a partir dos metadados;
+- envia a consulta para a API;
+- mostra os resultados em tabela;
+- mantém detalhe e visualização na mesma experiência de página.
 
-### Logout
+O que ainda não existe:
 
-O botão `Sair` executa:
+- visualizador dedicado por rota;
+- gráfico interativo;
+- exportação completa;
+- favoritos integrados de ponta a ponta.
 
-```text
-clearAuthSession()
-router.replace('/login')
-```
+## Administração
 
-Nesta fase, o logout limpa apenas a sessão local. Em produção, o fluxo deve chamar o backend para revogar refresh token antes de limpar a sessão local.
+O frontend administrativo hoje cobre:
 
-### Segurança
+- hub de admin;
+- usuários;
+- grupos;
+- configurações.
 
-A sessão ainda é persistida em `localStorage` por simplicidade nesta fase. Antes de produção, a recomendação é migrar refresh/access token para cookies `HttpOnly`, `Secure` e `SameSite`, com proteção server-side/middleware e rotação segura no backend.
+O que ainda não existe:
 
-A guarda client-side melhora a experiência, mas não substitui autorização no backend.
+- gestão de relatórios na Web;
+- gestão de permissões;
+- logs de auditoria;
+- editor de dashboards.
 
-### Validação
+## Integrações diretas no frontend
+
+Partes do sistema consultam Supabase sem passar pela API:
+
+- dashboard;
+- exportações;
+- notificações;
+- configurações.
+
+Essa decisão já está refletida no código e precisa ser considerada em qualquer evolução arquitetural.
+
+## Validação
 
 ```bash
 pnpm --filter @dashboard-power-bi/web test
 pnpm --filter @dashboard-power-bi/web typecheck
 pnpm --filter @dashboard-power-bi/web build
 ```
-
-### Teste manual
-
-1. Acesse `/app` sem login.
-2. Confirme redirecionamento para `/login`.
-3. Faça login em `/login`.
-4. Confirme redirecionamento para `/app`.
-5. Confirme sidebar, header e botão `Sair`.
-6. Clique em `Sair`.
-7. Confirme limpeza da sessão e retorno para `/login`.
