@@ -3,7 +3,23 @@
 import { TriangleAlert as AlertTriangle, Loader as Loader2, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableEmpty } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableEmpty,
+} from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 
 type SystemSetting = {
@@ -24,11 +40,14 @@ export function AdminSettings() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { data, error } = await supabase.from('system_settings').select('*').order('setting_key');
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .order('setting_key');
       if (error) throw error;
       setSettings(data ?? []);
     } catch {
-      setErrorMessage('Nao foi possivel carregar as configuracoes.');
+      setErrorMessage('Não foi possível carregar as configurações.');
     } finally {
       setIsLoading(false);
     }
@@ -43,7 +62,7 @@ export function AdminSettings() {
       <Card className="border-dashed text-center">
         <CardHeader>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-700" aria-hidden="true" />
-          <CardTitle>Carregando configuracoes</CardTitle>
+          <CardTitle>Carregando configurações</CardTitle>
         </CardHeader>
       </Card>
     );
@@ -55,7 +74,9 @@ export function AdminSettings() {
         <CardHeader>
           <AlertTriangle className="mx-auto h-8 w-8 text-amber-700" aria-hidden="true" />
           <CardTitle>{errorMessage}</CardTitle>
-          <CardDescription>Verifique a conexao com o Supabase e as permissoes de acesso.</CardDescription>
+          <CardDescription>
+            Verifique a conexão com o Supabase e as permissões de acesso.
+          </CardDescription>
         </CardHeader>
       </Card>
     );
@@ -64,12 +85,17 @@ export function AdminSettings() {
   return (
     <section className="space-y-6" aria-labelledby="admin-settings-title">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Administracao</p>
-        <h1 id="admin-settings-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-          Configuracoes do sistema
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+          Administração
+        </p>
+        <h1
+          id="admin-settings-title"
+          className="mt-3 text-3xl font-bold tracking-tight text-slate-950"
+        >
+          Configurações do sistema
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-          Gerencie as configuracoes globais da plataforma, incluindo SMTP, pool de conexao e cache.
+          Gerencie as configurações globais da plataforma, incluindo SMTP, pool de conexão e cache.
         </p>
       </div>
 
@@ -77,9 +103,11 @@ export function AdminSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-blue-700" aria-hidden="true" />
-            Configuracoes cadastradas
+            Configurações cadastradas
           </CardTitle>
-          <CardDescription>Parametros globais que controlam o comportamento da plataforma.</CardDescription>
+          <CardDescription>
+            Parâmetros globais que controlam o comportamento da plataforma.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -87,25 +115,27 @@ export function AdminSettings() {
               <TableRow>
                 <TableHead>Chave</TableHead>
                 <TableHead>Valor</TableHead>
-                <TableHead>Descricao</TableHead>
+                <TableHead>Descrição</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Atualizado em</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {settings.length === 0 ? (
-                <TableEmpty colSpan={5}>Nenhuma configuracao encontrada.</TableEmpty>
+                <TableEmpty colSpan={5}>Nenhuma configuração encontrada.</TableEmpty>
               ) : (
                 settings.map((setting) => (
                   <TableRow key={setting.id}>
-                    <TableCell className="font-medium font-mono text-xs">{setting.setting_key}</TableCell>
+                    <TableCell className="font-medium font-mono text-xs">
+                      {setting.setting_key}
+                    </TableCell>
                     <TableCell className="max-w-xs truncate font-mono text-xs">
                       {setting.is_sensitive ? '****' : JSON.stringify(setting.setting_value)}
                     </TableCell>
                     <TableCell>{setting.description ?? '-'}</TableCell>
                     <TableCell>
                       <Badge variant={setting.is_sensitive ? 'warning' : 'default'}>
-                        {setting.is_sensitive ? 'Sensivel' : 'Publico'}
+                        {setting.is_sensitive ? 'Sensível' : 'Público'}
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(setting.updated_at)}</TableCell>
@@ -121,5 +151,7 @@ export function AdminSettings() {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
+    new Date(value),
+  );
 }

@@ -36,7 +36,7 @@ export const reportFiltersSchema = z
       return filters.startDate <= filters.endDate;
     },
     {
-      message: 'A data inicial nao pode ser maior que a data final.',
+      message: 'A data inicial não pode ser maior que a data final.',
       path: ['startDate'],
     },
   );
@@ -70,20 +70,23 @@ function normalizeParameters(parameters?: Record<string, string | number | boole
     return undefined;
   }
 
-  const normalized = Object.entries(parameters).reduce<Record<string, string | number | boolean>>((acc, [key, value]) => {
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
+  const normalized = Object.entries(parameters).reduce<Record<string, string | number | boolean>>(
+    (acc, [key, value]) => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
 
-      if (trimmed.length > 0) {
-        acc[key] = trimmed;
+        if (trimmed.length > 0) {
+          acc[key] = trimmed;
+        }
+
+        return acc;
       }
 
+      acc[key] = value;
       return acc;
-    }
-
-    acc[key] = value;
-    return acc;
-  }, {});
+    },
+    {},
+  );
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }

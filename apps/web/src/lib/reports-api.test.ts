@@ -89,7 +89,7 @@ describe('fetchReports', () => {
     );
   });
 
-  it('normaliza stored_procedure para procedure no catalogo frontend', async () => {
+  it('normaliza stored_procedure para procedure no catálogo do frontend', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -124,7 +124,7 @@ describe('fetchReports', () => {
     });
 
     await expect(fetchReports({ page: 1, pageSize: 20, token: 'jwt-token' })).rejects.toThrow(
-      'Nao foi possivel carregar os relatorios.',
+      'Não foi possível carregar os relatórios.',
     );
   });
 });

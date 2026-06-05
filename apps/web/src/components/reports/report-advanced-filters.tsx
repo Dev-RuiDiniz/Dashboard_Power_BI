@@ -3,7 +3,15 @@
 import { SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from '@/components/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+} from '@/components/ui';
 import { type ReportFilters, toReportFiltersPayload } from '@/lib/report-filters';
 
 type ReportAdvancedFiltersProps = {
@@ -62,14 +70,17 @@ export function ReportAdvancedFilters({ onApplyFilters }: ReportAdvancedFiltersP
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <SlidersHorizontal className="h-5 w-5 text-blue-700" aria-hidden="true" />
-          Filtros avancados
+          Filtros avançados
         </CardTitle>
         <CardDescription>
-          Refine a consulta por periodo, categoria, setor e parametros dinamicos do relatorio.
+          Refine a consulta por período, categoria, setor e parâmetros dinâmicos do relatório.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="grid gap-4 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]" onSubmit={handleSubmit}>
+        <form
+          className="grid gap-4 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]"
+          onSubmit={handleSubmit}
+        >
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
             Data inicial
             <Input
@@ -107,7 +118,7 @@ export function ReportAdvancedFilters({ onApplyFilters }: ReportAdvancedFiltersP
           </label>
 
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-            Competencia
+            Competência
             <Input
               value={formState.competencia}
               onChange={(event) => updateField('competencia', event.target.value)}
@@ -133,7 +144,9 @@ export function ReportAdvancedFilters({ onApplyFilters }: ReportAdvancedFiltersP
   );
 }
 
-function toSafePayload(formState: FormState): { success: true; filters: ReportFilters } | { success: false; error: string } {
+function toSafePayload(
+  formState: FormState,
+): { success: true; filters: ReportFilters } | { success: false; error: string } {
   try {
     return {
       success: true,
@@ -148,9 +161,10 @@ function toSafePayload(formState: FormState): { success: true; filters: ReportFi
       }),
     };
   } catch (error) {
-    const message = error instanceof Error && error.message.includes('data inicial')
-      ? 'A data inicial nao pode ser maior que a data final.'
-      : 'Revise os filtros informados.';
+    const message =
+      error instanceof Error && error.message.includes('data inicial')
+        ? 'A data inicial não pode ser maior que a data final.'
+        : 'Revise os filtros informados.';
 
     return {
       success: false,

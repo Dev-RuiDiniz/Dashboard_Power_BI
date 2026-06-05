@@ -1,9 +1,29 @@
 'use client';
 
-import { TriangleAlert as AlertTriangle, Download, FileSpreadsheet, FileText, Loader as Loader2 } from 'lucide-react';
+import {
+  TriangleAlert as AlertTriangle,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Loader as Loader2,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableEmpty } from '@/components/ui';
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableEmpty,
+} from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 
 type ExportJob = {
@@ -64,7 +84,7 @@ export function ExportsList() {
       if (error) throw error;
       setExports(data ?? []);
     } catch {
-      setErrorMessage('Nao foi possivel carregar o historico de exportacoes.');
+      setErrorMessage('Não foi possível carregar o histórico de exportações.');
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +99,7 @@ export function ExportsList() {
       <Card className="border-dashed text-center">
         <CardHeader>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-700" aria-hidden="true" />
-          <CardTitle>Carregando exportacoes</CardTitle>
+          <CardTitle>Carregando exportações</CardTitle>
         </CardHeader>
       </Card>
     );
@@ -104,12 +124,18 @@ export function ExportsList() {
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Exportacoes</p>
-            <h1 id="exports-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-              Historico de exportacoes
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+              Exportações
+            </p>
+            <h1
+              id="exports-title"
+              className="mt-3 text-3xl font-bold tracking-tight text-slate-950"
+            >
+              Histórico de exportações
             </h1>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-              Acompanhe o status das suas exportacoes em PDF, Excel, CSV e JSON. Downloads disponiveis por 7 dias.
+              Acompanhe o status das suas exportações em PDF, Excel, CSV e JSON. Downloads
+              disponíveis por 7 dias.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -123,9 +149,9 @@ export function ExportsList() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="h-5 w-5 text-blue-700" aria-hidden="true" />
-            Exportacoes recentes
+            Exportações recentes
           </CardTitle>
-          <CardDescription>Ultimas 50 exportacoes solicitadas.</CardDescription>
+          <CardDescription>Últimas 50 exportações solicitadas.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -136,12 +162,12 @@ export function ExportsList() {
                 <TableHead>Tamanho</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead>Expira em</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {exports.length === 0 ? (
-                <TableEmpty colSpan={6}>Nenhuma exportacao encontrada.</TableEmpty>
+                <TableEmpty colSpan={6}>Nenhuma exportação encontrada.</TableEmpty>
               ) : (
                 exports.map((exp) => {
                   const Icon = formatIcon[exp.export_format];
@@ -156,7 +182,9 @@ export function ExportsList() {
                       <TableCell>
                         <Badge variant={statusVariant[exp.status]}>{statusLabel[exp.status]}</Badge>
                       </TableCell>
-                      <TableCell>{exp.file_size_bytes ? formatFileSize(exp.file_size_bytes) : '-'}</TableCell>
+                      <TableCell>
+                        {exp.file_size_bytes ? formatFileSize(exp.file_size_bytes) : '-'}
+                      </TableCell>
                       <TableCell>{formatDate(exp.created_at)}</TableCell>
                       <TableCell>{formatDate(exp.expires_at)}</TableCell>
                       <TableCell className="text-right">
@@ -195,7 +223,9 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
+    new Date(value),
+  );
 }
 
 function formatFileSize(bytes: number) {

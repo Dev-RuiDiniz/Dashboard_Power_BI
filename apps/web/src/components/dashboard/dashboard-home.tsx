@@ -73,7 +73,10 @@ export function DashboardHome() {
     return (
       <Card className="border-dashed text-center">
         <CardHeader>
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-700" aria-hidden="true" />
+          <div
+            className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-700"
+            aria-hidden="true"
+          />
           <CardTitle>Carregando indicadores</CardTitle>
           <CardDescription>Consultando KPIs e dados setoriais.</CardDescription>
         </CardHeader>
@@ -86,7 +89,9 @@ export function DashboardHome() {
       <Card className="border-dashed text-center">
         <CardHeader>
           <CardTitle>Nenhum KPI disponivel</CardTitle>
-          <CardDescription>Cadastre ou conecte indicadores para visualizar a home de BI.</CardDescription>
+          <CardDescription>
+            Cadastre ou conecte indicadores para visualizar a home de BI.
+          </CardDescription>
         </CardHeader>
       </Card>
     );
@@ -98,20 +103,29 @@ export function DashboardHome() {
   return (
     <section className="space-y-6" aria-labelledby="dashboard-home-title">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Sprint 4 · BI</p>
-        <h1 id="dashboard-home-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+          Sprint 4 · BI
+        </p>
+        <h1
+          id="dashboard-home-title"
+          className="mt-3 text-3xl font-bold tracking-tight text-slate-950"
+        >
           Dashboard Home
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-          Visao executiva dos principais indicadores por setor, com delta percentual em relacao ao periodo anterior e
-          cards resumidos para acompanhamento rapido.
+          Visao executiva dos principais indicadores por setor, com delta percentual em relacao ao
+          periodo anterior e cards resumidos para acompanhamento rapido.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard icon={BarChart3} label="KPIs monitorados" value={String(summary.totalKpis)} />
         <SummaryCard icon={Layers3} label="Setores cobertos" value={String(summary.totalSectors)} />
-        <SummaryCard icon={TrendingUp} label="Delta medio" value={formatDelta(summary.averageDelta)} />
+        <SummaryCard
+          icon={TrendingUp}
+          label="Delta medio"
+          value={formatDelta(summary.averageDelta)}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -130,7 +144,9 @@ export function DashboardHome() {
             <div key={sector.sector} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-semibold text-slate-950">{sector.sector}</p>
               <p className="mt-2 text-2xl font-bold text-slate-950">{sector.total}</p>
-              <p className="mt-1 text-xs text-slate-500">Delta medio {formatDelta(sector.averageDelta)}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Delta medio {formatDelta(sector.averageDelta)}
+              </p>
             </div>
           ))}
         </CardContent>
@@ -163,11 +179,53 @@ function SummaryCard({ icon: Icon, label, value }: SummaryCardProps) {
 
 function getFallbackKpis(): KpiItem[] {
   return [
-    { id: 'receita-mensal', title: 'Receita mensal', sector: 'Financeiro', value: 120000, previousValue: 100000, unit: 'currency' },
-    { id: 'margem-operacional', title: 'Margem operacional', sector: 'Financeiro', value: 0.32, previousValue: 0.3, unit: 'percent' },
-    { id: 'leads-qualificados', title: 'Leads qualificados', sector: 'Comercial', value: 430, previousValue: 400, unit: 'number' },
-    { id: 'sla-operacional', title: 'SLA operacional', sector: 'Operacoes', value: 0.92, previousValue: 0.9, unit: 'percent' },
-    { id: 'dashboards-ativos', title: 'Dashboards ativos', sector: 'BI', value: 18, previousValue: 16, unit: 'number' },
-    { id: 'exportacoes-mensais', title: 'Exportacoes mensais', sector: 'BI', value: 240, previousValue: 220, unit: 'number' },
+    {
+      id: 'receita-mensal',
+      title: 'Receita mensal',
+      sector: 'Financeiro',
+      value: 120000,
+      previousValue: 100000,
+      unit: 'currency',
+    },
+    {
+      id: 'margem-operacional',
+      title: 'Margem operacional',
+      sector: 'Financeiro',
+      value: 0.32,
+      previousValue: 0.3,
+      unit: 'percent',
+    },
+    {
+      id: 'leads-qualificados',
+      title: 'Leads qualificados',
+      sector: 'Comercial',
+      value: 430,
+      previousValue: 400,
+      unit: 'number',
+    },
+    {
+      id: 'sla-operacional',
+      title: 'SLA operacional',
+      sector: 'Operacoes',
+      value: 0.92,
+      previousValue: 0.9,
+      unit: 'percent',
+    },
+    {
+      id: 'dashboards-ativos',
+      title: 'Dashboards ativos',
+      sector: 'BI',
+      value: 18,
+      previousValue: 16,
+      unit: 'number',
+    },
+    {
+      id: 'exportacoes-mensais',
+      title: 'Exportações mensais',
+      sector: 'BI',
+      value: 240,
+      previousValue: 220,
+      unit: 'number',
+    },
   ];
 }

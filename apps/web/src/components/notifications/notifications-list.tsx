@@ -3,7 +3,15 @@
 import { Bell, Check, Loader as Loader2, TriangleAlert as AlertTriangle } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 
 type Notification = {
@@ -18,13 +26,16 @@ type Notification = {
 };
 
 const typeLabel: Record<Notification['notification_type'], string> = {
-  report_available: 'Relatorio disponivel',
+  report_available: 'Relatório disponível',
   access_granted: 'Acesso concedido',
-  export_ready: 'Exportacao pronta',
+  export_ready: 'Exportação pronta',
   alert: 'Alerta',
 };
 
-const typeBadge: Record<Notification['notification_type'], 'default' | 'success' | 'warning' | 'danger'> = {
+const typeBadge: Record<
+  Notification['notification_type'],
+  'default' | 'success' | 'warning' | 'danger'
+> = {
   report_available: 'default',
   access_granted: 'success',
   export_ready: 'success',
@@ -48,7 +59,7 @@ export function NotificationsList() {
       if (error) throw error;
       setNotifications(data ?? []);
     } catch {
-      setErrorMessage('Nao foi possivel carregar as notificacoes.');
+      setErrorMessage('Não foi possível carregar as notificações.');
     } finally {
       setIsLoading(false);
     }
@@ -66,10 +77,12 @@ export function NotificationsList() {
         .eq('id', id);
       if (error) throw error;
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n))
+        prev.map((n) =>
+          n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n,
+        ),
       );
     } catch {
-      alert('Erro ao marcar notificacao como lida.');
+      alert('Erro ao marcar notificação como lida.');
     }
   }
 
@@ -85,10 +98,10 @@ export function NotificationsList() {
         .in('id', ids);
       if (error) throw error;
       setNotifications((prev) =>
-        prev.map((n) => ({ ...n, is_read: true, read_at: n.read_at ?? new Date().toISOString() }))
+        prev.map((n) => ({ ...n, is_read: true, read_at: n.read_at ?? new Date().toISOString() })),
       );
     } catch {
-      alert('Erro ao marcar notificacoes como lidas.');
+      alert('Erro ao marcar notificações como lidas.');
     }
   }
 
@@ -99,7 +112,7 @@ export function NotificationsList() {
       <Card className="border-dashed text-center">
         <CardHeader>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-700" aria-hidden="true" />
-          <CardTitle>Carregando notificacoes</CardTitle>
+          <CardTitle>Carregando notificações</CardTitle>
         </CardHeader>
       </Card>
     );
@@ -121,17 +134,25 @@ export function NotificationsList() {
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Notificacoes</p>
-            <h1 id="notifications-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-              Central de notificacoes
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+              Notificações
+            </p>
+            <h1
+              id="notifications-title"
+              className="mt-3 text-3xl font-bold tracking-tight text-slate-950"
+            >
+              Central de notificações
             </h1>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-              Acompanhe alertas, concessoes de acesso, exportacoes concluidas e outros avisos importantes.
+              Acompanhe alertas, concessões de acesso, exportações concluídas e outros avisos
+              importantes.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Nao lidas</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Não lidas
+              </p>
               <p className="mt-2 text-3xl font-bold text-slate-950">{unreadCount}</p>
             </div>
             {unreadCount > 0 && (
@@ -147,8 +168,8 @@ export function NotificationsList() {
         <Card className="border-dashed text-center">
           <CardHeader>
             <Bell className="mx-auto h-8 w-8 text-slate-400" aria-hidden="true" />
-            <CardTitle>Nenhuma notificacao</CardTitle>
-            <CardDescription>Voce esta em dia com todas as notificacoes.</CardDescription>
+            <CardTitle>Nenhuma notificação</CardTitle>
+            <CardDescription>Você está em dia com todas as notificações.</CardDescription>
           </CardHeader>
         </Card>
       ) : (
@@ -167,7 +188,9 @@ export function NotificationsList() {
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-slate-950">{notification.title}</p>
                   <p className="mt-1 text-sm text-slate-600">{notification.message}</p>
-                  <p className="mt-2 text-xs text-slate-400">{formatDate(notification.created_at)}</p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    {formatDate(notification.created_at)}
+                  </p>
                 </div>
                 {!notification.is_read && (
                   <Button
@@ -189,5 +212,7 @@ export function NotificationsList() {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
+    new Date(value),
+  );
 }

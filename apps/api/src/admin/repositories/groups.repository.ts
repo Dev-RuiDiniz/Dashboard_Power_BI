@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+﻿import { ConflictException, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 
 import { SectorCode, UserRole } from '../../auth/types/auth.types';
@@ -39,14 +39,17 @@ export class GroupsRepository {
 
   async findByName(name: string): Promise<UserGroup | null> {
     const normalized = name.trim().toLowerCase();
-    return Array.from(this.groups.values()).find((group) => group.name.toLowerCase() === normalized) ?? null;
+    return (
+      Array.from(this.groups.values()).find((group) => group.name.toLowerCase() === normalized) ??
+      null
+    );
   }
 
   async create(input: CreateGroupInput): Promise<UserGroup> {
     const existing = await this.findByName(input.name);
 
     if (existing) {
-      throw new ConflictException('á existe um grupo com este nome.');
+      throw new ConflictException('Já existe um grupo com este nome.');
     }
 
     const now = new Date();

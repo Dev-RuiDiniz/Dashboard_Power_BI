@@ -1,9 +1,31 @@
 'use client';
 
-import { TriangleAlert as AlertTriangle, Loader as Loader2, Plus, Search, Users } from 'lucide-react';
+import {
+  TriangleAlert as AlertTriangle,
+  Loader as Loader2,
+  Plus,
+  Search,
+  Users,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableEmpty } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableEmpty,
+} from '@/components/ui';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/admin-api';
 
 type AdminGroup = {
@@ -31,7 +53,7 @@ export function AdminGroups() {
       const response = await apiGet<AdminGroupsResponse>('/admin/groups');
       setGroups(response);
     } catch {
-      setErrorMessage('Nao foi possivel carregar os grupos.');
+      setErrorMessage('Não foi possível carregar os grupos.');
     } finally {
       setIsLoading(false);
     }
@@ -41,9 +63,10 @@ export function AdminGroups() {
     void loadGroups();
   }, [loadGroups]);
 
-  const filteredGroups = search.trim().length > 0
-    ? groups.filter((g) => g.name.toLowerCase().includes(search.toLowerCase()))
-    : groups;
+  const filteredGroups =
+    search.trim().length > 0
+      ? groups.filter((g) => g.name.toLowerCase().includes(search.toLowerCase()))
+      : groups;
 
   if (isLoading) {
     return (
@@ -62,7 +85,9 @@ export function AdminGroups() {
         <CardHeader>
           <AlertTriangle className="mx-auto h-8 w-8 text-amber-700" aria-hidden="true" />
           <CardTitle>{errorMessage}</CardTitle>
-          <CardDescription>Verifique se a API esta disponivel e se voce possui permissao de administrador.</CardDescription>
+          <CardDescription>
+            Verifique se a API está disponível e se você possui permissão de administrador.
+          </CardDescription>
         </CardHeader>
       </Card>
     );
@@ -71,12 +96,18 @@ export function AdminGroups() {
   return (
     <section className="space-y-6" aria-labelledby="admin-groups-title">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Administracao</p>
-        <h1 id="admin-groups-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+          Administração
+        </p>
+        <h1
+          id="admin-groups-title"
+          className="mt-3 text-3xl font-bold tracking-tight text-slate-950"
+        >
           Gerenciamento de grupos
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-          Crie e gerencie grupos de acesso com roles e setores predefinidos para facilitar a atribuicao de permissoes.
+          Crie e gerencie grupos de acesso com roles e setores predefinidos para facilitar a
+          atribuição de permissões.
         </p>
       </div>
 
@@ -88,7 +119,7 @@ export function AdminGroups() {
                 <Users className="h-5 w-5 text-blue-700" aria-hidden="true" />
                 Grupos cadastrados
               </CardTitle>
-              <CardDescription>Lista de grupos com suas permissoes e setores.</CardDescription>
+              <CardDescription>Lista de grupos com suas permissões e setores.</CardDescription>
             </div>
             <Button onClick={() => setShowCreateForm(true)}>
               <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -100,7 +131,10 @@ export function AdminGroups() {
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
             Buscar
             <span className="relative">
-              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden="true" />
+              <Search
+                className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400"
+                aria-hidden="true"
+              />
               <Input
                 className="pl-9"
                 value={search}
@@ -115,11 +149,11 @@ export function AdminGroups() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
-                <TableHead>Descricao</TableHead>
+                <TableHead>Descrição</TableHead>
                 <TableHead>Roles</TableHead>
                 <TableHead>Setores</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -133,14 +167,24 @@ export function AdminGroups() {
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {group.roles.map((role) => (
-                          <Badge key={role} className="border border-slate-200 bg-white text-slate-700">{role}</Badge>
+                          <Badge
+                            key={role}
+                            className="border border-slate-200 bg-white text-slate-700"
+                          >
+                            {role}
+                          </Badge>
                         ))}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {group.sectors.map((sector) => (
-                          <Badge key={sector} className="border border-blue-200 bg-blue-50 text-blue-700">{sector}</Badge>
+                          <Badge
+                            key={sector}
+                            className="border border-blue-200 bg-blue-50 text-blue-700"
+                          >
+                            {sector}
+                          </Badge>
                         ))}
                       </div>
                     </TableCell>
@@ -201,7 +245,7 @@ function CreateGroupModal({ onClose, onCreated }: { onClose: () => void; onCreat
     setError(null);
 
     if (name.trim().length < 3) {
-      setError('O nome deve ter no minimo 3 caracteres.');
+      setError('O nome deve ter no mínimo 3 caracteres.');
       return;
     }
 
@@ -222,19 +266,41 @@ function CreateGroupModal({ onClose, onCreated }: { onClose: () => void; onCreat
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+    >
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Criar novo grupo</CardTitle>
-          <CardDescription>Preencha os dados para cadastrar um novo grupo de acesso.</CardDescription>
+          <CardDescription>
+            Preencha os dados para cadastrar um novo grupo de acesso.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input label="Nome" value={name} onChange={(e) => setName(e.target.value)} required helperText="Minimo 3 caracteres" />
-            <Input label="Descricao" value={description} onChange={(e) => setDescription(e.target.value)} />
-            {error && <p className="text-xs font-medium text-danger" role="alert">{error}</p>}
+            <Input
+              label="Nome"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              helperText="Minimo 3 caracteres"
+            />
+            <Input
+              label="Descrição"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            {error && (
+              <p className="text-xs font-medium text-danger" role="alert">
+                {error}
+              </p>
+            )}
             <div className="flex gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancelar</Button>
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                Cancelar
+              </Button>
               <Button type="submit" disabled={isSubmitting} className="flex-1">
                 {isSubmitting ? 'Criando...' : 'Criar grupo'}
               </Button>

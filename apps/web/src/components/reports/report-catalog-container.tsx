@@ -39,7 +39,7 @@ export function ReportCatalogContainer({ token, onSelectReport }: ReportCatalogC
 
         setReportsResponse(response);
       } catch {
-        setErrorMessage('Nao foi possivel carregar os relatorios');
+        setErrorMessage('Não foi possível carregar os relatórios.');
       } finally {
         setIsLoading(false);
       }
@@ -60,8 +60,10 @@ export function ReportCatalogContainer({ token, onSelectReport }: ReportCatalogC
       <Card className="border-dashed text-center">
         <CardHeader>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-700" aria-hidden="true" />
-          <CardTitle>Carregando catalogo de dashboards</CardTitle>
-          <CardDescription>Estamos consultando a Reports API e validando os dashboards autorizados para a sessao.</CardDescription>
+          <CardTitle>Carregando catálogo de dashboards</CardTitle>
+          <CardDescription>
+            Estamos consultando a Reports API e validando os dashboards autorizados para a sessão.
+          </CardDescription>
         </CardHeader>
       </Card>
     );
@@ -74,7 +76,8 @@ export function ReportCatalogContainer({ token, onSelectReport }: ReportCatalogC
           <AlertTriangle className="mx-auto h-8 w-8 text-amber-700" aria-hidden="true" />
           <CardTitle>{errorMessage}</CardTitle>
           <CardDescription>
-            Verifique se a API esta disponivel, se a URL publica esta configurada e se a sessao possui permissao para listar relatorios.
+            Verifique se a API está disponível, se a URL pública está configurada e se a sessão
+            possui permissão para listar relatórios.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -89,8 +92,8 @@ export function ReportCatalogContainer({ token, onSelectReport }: ReportCatalogC
         <Card className="border-dashed text-center">
           <CardHeader>
             <Loader2 className="mx-auto h-6 w-6 animate-spin text-blue-700" aria-hidden="true" />
-            <CardTitle>Atualizando relatorios</CardTitle>
-            <CardDescription>Aplicando filtros avancados na Reports API.</CardDescription>
+            <CardTitle>Atualizando relatórios</CardTitle>
+            <CardDescription>Aplicando filtros avançados na Reports API.</CardDescription>
           </CardHeader>
         </Card>
       ) : null}
@@ -100,7 +103,9 @@ export function ReportCatalogContainer({ token, onSelectReport }: ReportCatalogC
           <CardHeader>
             <AlertTriangle className="mx-auto h-6 w-6 text-amber-700" aria-hidden="true" />
             <CardTitle>{errorMessage}</CardTitle>
-            <CardDescription>Os dados anteriores foram mantidos enquanto a nova consulta falhou.</CardDescription>
+            <CardDescription>
+              Os dados anteriores foram mantidos enquanto a nova consulta falhou.
+            </CardDescription>
           </CardHeader>
         </Card>
       ) : null}

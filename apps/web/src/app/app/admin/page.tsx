@@ -8,7 +8,7 @@ const adminCards = [
     href: '/app/admin/users',
     icon: UserCog,
     title: 'Usuarios',
-    description: 'Crie, edite e desative usuarios. Gerencie roles, setores e redefina senhas.',
+    description: 'Crie, edite e desative usuários. Gerencie roles, setores e redefina senhas.',
   },
   {
     href: '/app/admin/groups',
@@ -28,12 +28,15 @@ export default function AdminPage() {
   return (
     <section className="space-y-6" aria-labelledby="admin-title">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Administracao</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+          Administração
+        </p>
         <h1 id="admin-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
           Painel administrativo
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-          Gerencie usuarios, grupos de acesso e configuracoes do sistema. Acesso restrito a administradores.
+          Gerencie usuários, grupos de acesso e configurações do sistema. Acesso restrito a
+          administradores.
         </p>
       </div>
 

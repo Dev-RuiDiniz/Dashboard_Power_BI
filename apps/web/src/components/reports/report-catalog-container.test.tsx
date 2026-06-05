@@ -15,11 +15,11 @@ describe('ReportCatalogContainer', () => {
   });
 
   it('exibe estado de loading enquanto carrega a Reports API', () => {
-    fetchReportsMock.mockReturnValueOnceOnce(new Promise(() => undefined));
+    fetchReportsMock.mockReturnValueOnce(new Promise(() => undefined));
 
     render(<ReportCatalogContainer token="jwt-token" />);
 
-    expect(screen.getByText('Carregando catalogo de dashboards')).toBeInTheDocument();
+    expect(screen.getByText('Carregando catálogo de dashboards')).toBeInTheDocument();
   });
 
   it('renderiza relatorios retornados pela API', async () => {
@@ -48,7 +48,12 @@ describe('ReportCatalogContainer', () => {
       expect(screen.getByText('DRE Mensal')).toBeInTheDocument();
     });
 
-    expect(fetchReportsMock).toHaveBeenCalledWith({ page: 1, pageSize: 20, token: 'jwt-token', filters: {} });
+    expect(fetchReportsMock).toHaveBeenCalledWith({
+      page: 1,
+      pageSize: 20,
+      token: 'jwt-token',
+      filters: {},
+    });
   });
 
   it('exibe estado de erro quando a API falha', async () => {
@@ -57,7 +62,7 @@ describe('ReportCatalogContainer', () => {
     render(<ReportCatalogContainer token="jwt-token" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Nao foi possivel carregar os relatorios')).toBeInTheDocument();
+      expect(screen.getByText('Não foi possível carregar os relatórios.')).toBeInTheDocument();
     });
   });
 });

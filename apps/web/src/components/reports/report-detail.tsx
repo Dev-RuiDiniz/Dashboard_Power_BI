@@ -1,9 +1,31 @@
 'use client';
 
-import { TriangleAlert as AlertTriangle, ArrowLeft, ChartBar as BarChart3, Loader as Loader2, Play } from 'lucide-react';
+import {
+  TriangleAlert as AlertTriangle,
+  ArrowLeft,
+  ChartBar as BarChart3,
+  Loader as Loader2,
+  Play,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableEmpty } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableEmpty,
+} from '@/components/ui';
 import { apiGet, apiPost } from '@/lib/admin-api';
 
 type ReportParameter = {
@@ -53,7 +75,7 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
       const response = await apiGet<ReportDetail>(`/reports/${reportId}`);
       setReport(response);
     } catch {
-      setErrorMessage('Nao foi possivel carregar o relatorio.');
+      setErrorMessage('Não foi possível carregar o relatório.');
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +124,7 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
       <Card className="border-dashed text-center">
         <CardHeader>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-700" aria-hidden="true" />
-          <CardTitle>Carregando relatorio</CardTitle>
+          <CardTitle>Carregando relatório</CardTitle>
         </CardHeader>
       </Card>
     );
@@ -113,30 +135,31 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
       <Card className="border-amber-200 bg-amber-50 text-center">
         <CardHeader>
           <AlertTriangle className="mx-auto h-8 w-8 text-amber-700" aria-hidden="true" />
-          <CardTitle>{errorMessage ?? 'Relatorio nao encontrado.'}</CardTitle>
+          <CardTitle>{errorMessage ?? 'Relatório não encontrado.'}</CardTitle>
           <Button variant="outline" onClick={onBack} className="mx-auto mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao catalogo
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao catálogo
           </Button>
         </CardHeader>
       </Card>
     );
   }
 
-  const columns = queryResult?.items.length
-    ? Object.keys(queryResult.items[0]!)
-    : [];
+  const columns = queryResult?.items.length ? Object.keys(queryResult.items[0]!) : [];
 
   return (
     <section className="space-y-6" aria-labelledby="report-detail-title">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={onBack} aria-label="Voltar ao catalogo">
+        <Button variant="ghost" onClick={onBack} aria-label="Voltar ao catálogo">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
             {report.sector} &middot; {report.sourceType === 'view' ? 'View SQL' : 'Procedure SQL'}
           </p>
-          <h1 id="report-detail-title" className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
+          <h1
+            id="report-detail-title"
+            className="mt-1 text-2xl font-bold tracking-tight text-slate-950"
+          >
             {report.name}
           </h1>
         </div>
@@ -146,14 +169,16 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-blue-700" aria-hidden="true" />
-            Detalhes do relatorio
+            Detalhes do relatório
           </CardTitle>
           <CardDescription>{report.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {report.requiredPermissions.map((perm) => (
-              <Badge key={perm} className="border border-slate-200 bg-white text-slate-700">{perm}</Badge>
+              <Badge key={perm} className="border border-slate-200 bg-white text-slate-700">
+                {perm}
+              </Badge>
             ))}
           </div>
         </CardContent>
@@ -162,8 +187,8 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
       {report.parameters.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Parametros da consulta</CardTitle>
-            <CardDescription>Preencha os parametros para executar o relatorio.</CardDescription>
+            <CardTitle>Parâmetros da consulta</CardTitle>
+            <CardDescription>Preencha os parâmetros para executar o relatório.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -171,11 +196,19 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
                 <Input
                   key={param.name}
                   label={`${param.label ?? param.name}${param.required ? ' *' : ''}`}
-                  type={param.type === 'date' ? 'date' : param.type === 'int' || param.type === 'number' ? 'number' : 'text'}
+                  type={
+                    param.type === 'date'
+                      ? 'date'
+                      : param.type === 'int' || param.type === 'number'
+                        ? 'number'
+                        : 'text'
+                  }
                   value={paramValues[param.name] ?? ''}
-                  onChange={(e) => setParamValues((prev) => ({ ...prev, [param.name]: e.target.value }))}
+                  onChange={(e) =>
+                    setParamValues((prev) => ({ ...prev, [param.name]: e.target.value }))
+                  }
                   placeholder={param.type}
-                  helperText={`Tipo: ${param.type}${param.required ? ' (obrigatorio)' : ''}`}
+                  helperText={`Tipo: ${param.type}${param.required ? ' (obrigatório)' : ''}`}
                 />
               ))}
             </div>
@@ -208,12 +241,15 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
           <CardHeader>
             <CardTitle>Resultados</CardTitle>
             <CardDescription>
-              {queryResult.total} registro(s) encontrado(s) &middot; Pagina {queryResult.page} de {queryResult.totalPages}
+              {queryResult.total} registro(s) encontrado(s) &middot; Página {queryResult.page} de{' '}
+              {queryResult.totalPages}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {queryResult.items.length === 0 ? (
-              <p className="py-8 text-center text-sm text-slate-500">Nenhum resultado para a consulta.</p>
+              <p className="py-8 text-center text-sm text-slate-500">
+                Nenhum resultado para a consulta.
+              </p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>

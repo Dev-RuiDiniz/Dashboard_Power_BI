@@ -14,7 +14,7 @@ describe('ReportAdvancedFilters', () => {
     await user.type(screen.getByLabelText('Data final'), '2026-05-31');
     await user.type(screen.getByLabelText('Categoria'), 'dre');
     await user.type(screen.getByLabelText('Setor'), 'financeiro');
-    await user.type(screen.getByLabelText('Competencia'), '2026-05');
+    await user.type(screen.getByLabelText('Competência'), '2026-05');
 
     await user.click(screen.getByRole('button', { name: 'Aplicar filtros' }));
 
@@ -39,7 +39,9 @@ describe('ReportAdvancedFilters', () => {
     await user.type(screen.getByLabelText('Data final'), '2026-05-01');
     await user.click(screen.getByRole('button', { name: 'Aplicar filtros' }));
 
-    expect(screen.getByText('A data inicial nao pode ser maior que a data final.')).toBeInTheDocument();
+    expect(
+      screen.getByText('A data inicial não pode ser maior que a data final.'),
+    ).toBeInTheDocument();
     expect(onApplyFilters).not.toHaveBeenCalled();
   });
 
