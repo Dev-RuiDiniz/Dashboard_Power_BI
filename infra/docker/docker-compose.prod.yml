@@ -1,6 +1,9 @@
 services:
   api:
-    image: ${GHCR_NAMESPACE:-ghcr.io/devruidiniz}/dashboard-power-bi-api:${IMAGE_TAG:-main}
+    build:
+      context: ../..
+      dockerfile: infra/docker/api.prod.Dockerfile
+    image: dashboard-power-bi-api:prod
     container_name: dashboard-power-bi-api
     restart: unless-stopped
     env_file:
@@ -19,7 +22,12 @@ services:
       - dashboard-power-bi
 
   web:
-    image: ${GHCR_NAMESPACE:-ghcr.io/devruidiniz}/dashboard-power-bi-web:${IMAGE_TAG:-main}
+    build:
+      context: ../..
+      dockerfile: infra/docker/web.prod.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+    image: dashboard-power-bi-web:prod
     container_name: dashboard-power-bi-web
     restart: unless-stopped
     env_file:

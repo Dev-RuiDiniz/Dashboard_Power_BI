@@ -12,7 +12,7 @@ Este repositório já entrega uma base real de:
 - administração básica de usuários e grupos;
 - leitura de notificações, exportações e settings no Supabase;
 - infraestrutura de desenvolvimento em Docker Compose;
-- infraestrutura de produção com imagens Docker e deploy para VPS via GitHub Actions.
+- infraestrutura de produção com Docker Compose e deploy para VPS via GitHub Actions.
 
 Ele ainda não representa a plataforma V1 completa descrita no PDF de escopo.
 
@@ -34,7 +34,6 @@ Documentos canônicos do estado atual:
 - SQL Server externo
 - Supabase consumido diretamente em partes da Web
 - Docker Compose para desenvolvimento e produção
-- GHCR para imagens
 - GitHub Actions para deploy na VPS
 
 ## Setup rápido
@@ -64,6 +63,7 @@ Arquivos de ambiente versionados de referência:
 - [ ] Rodar `pnpm verify:workspace`
 - [ ] Rodar `pnpm verify:docker`
 - [ ] Rodar `pnpm verify:docs`
+- [ ] Rodar `pnpm quality`
 - [ ] Subir API com `pnpm dev:api`
 - [ ] Subir Web com `pnpm dev:web`
 - [ ] Validar `http://localhost:3000`
@@ -164,6 +164,7 @@ pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm quality
 pnpm dev:api
 pnpm dev:web
 pnpm docker:dev
@@ -189,7 +190,7 @@ A referência de variáveis está em `docs/environment.md`.
 - `docs/design-system.md`: base visual
 - `docs/devops.md`: Docker e operações
 - `docs/environment.md`: variáveis de ambiente
-- `docs/deploy-vps.md`: deploy via GitHub Actions + GHCR + SSH
+- `docs/deploy-vps.md`: deploy via GitHub Actions + SSH
 - `docs/quality.md`: qualidade e validações
 
 ## Troubleshooting

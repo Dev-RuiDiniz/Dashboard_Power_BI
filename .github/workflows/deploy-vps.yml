@@ -15,9 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
-    env:
-      GHCR_NAMESPACE: ghcr.io/devruidiniz
 
     steps:
       - name: Checkout
@@ -43,38 +40,6 @@ jobs:
       - name: Verify docs
         run: pnpm verify:docs
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push API image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: infra/docker/api.prod.Dockerfile
-          push: true
-          tags: |
-            ${{ env.GHCR_NAMESPACE }}/dashboard-power-bi-api:${{ github.sha }}
-            ${{ env.GHCR_NAMESPACE }}/dashboard-power-bi-api:main
-
-      - name: Build and push Web image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: infra/docker/web.prod.Dockerfile
-          push: true
-          build-args: |
-            NEXT_PUBLIC_API_URL=/api
-          tags: |
-            ${{ env.GHCR_NAMESPACE }}/dashboard-power-bi-web:${{ github.sha }}
-            ${{ env.GHCR_NAMESPACE }}/dashboard-power-bi-web:main
-
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -93,10 +58,6 @@ jobs:
             git fetch origin main
             git checkout main
             git reset --hard origin/main
-            export GHCR_NAMESPACE="${{ env.GHCR_NAMESPACE }}"
-            export IMAGE_TAG="${{ github.sha }}"
-            docker login ghcr.io -u "${{ github.actor }}" -p "${{ github.token }}"
-            docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml pull
-            docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up -d
+            docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up --build -d
             docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml ps
             docker image prune -f

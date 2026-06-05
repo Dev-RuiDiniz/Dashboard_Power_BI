@@ -18,12 +18,10 @@ O arquivo real de produção continua fora do Git.
 
 ## API básica
 
-| Variável         | Exemplo               | Uso                                           |
-| ---------------- | --------------------- | --------------------------------------------- |
-| `API_PORT`       | `3001`                | Porta da API                                  |
-| `NODE_ENV`       | `development`         | Ambiente da aplicação                         |
-| `GHCR_NAMESPACE` | `ghcr.io/devruidiniz` | Namespace das imagens de produção             |
-| `IMAGE_TAG`      | `main`                | Tag das imagens usadas no Compose de produção |
+| Variável   | Exemplo       | Uso                   |
+| ---------- | ------------- | --------------------- |
+| `API_PORT` | `3001`        | Porta da API          |
+| `NODE_ENV` | `development` | Ambiente da aplicação |
 
 ## Auth
 

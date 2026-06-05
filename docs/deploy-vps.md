@@ -5,7 +5,6 @@
 Publicar o estado atual do projeto na VPS usando:
 
 - GitHub Actions;
-- GHCR (`ghcr.io`) para imagens Docker;
 - SSH para acionar o deploy remoto;
 - Docker Compose na VPS.
 
@@ -22,10 +21,9 @@ faz, em ordem:
 1. `checkout` do repositório;
 2. `pnpm install`;
 3. validações leves de workspace e docs;
-4. build e push das imagens `api` e `web` no GHCR;
-5. conexão SSH na VPS;
-6. `docker compose pull`;
-7. `docker compose up -d`.
+4. conexão SSH na VPS;
+5. sincronização do repositório remoto;
+6. `docker compose up --build -d`.
 
 ## Artefatos usados no deploy
 
@@ -70,25 +68,11 @@ Pontos importantes:
 - `NEXT_PUBLIC_API_URL=/api`
 - `PASSWORD_RESET_PUBLIC_URL` deve apontar para a URL pública real
 - `JWT_ACCESS_SECRET` deve ser forte
-- `GHCR_NAMESPACE` normalmente será `ghcr.io/devruidiniz`
-
-## Estratégia das imagens
-
-O workflow publica:
-
-- tag imutável por commit: `${GITHUB_SHA}`
-- tag de conveniência: `main`
-
-O deploy remoto usa a tag do commit da execução atual.
 
 ## Compose de produção
 
-O compose de produção usa `image:` em vez de `build:`.
-Isso permite:
-
-- build centralizado no GitHub;
-- pull simples na VPS;
-- rollback por tag.
+O compose de produção usa `build:` com Dockerfiles versionados no próprio repositório.
+Isso permite que o GitHub Actions sincronize o código e mande a VPS rebuildar o estado atual.
 
 ## Primeira preparação manual da VPS
 
@@ -96,7 +80,7 @@ Antes da action funcionar sozinha, a VPS precisa ter:
 
 1. Docker e plugin do Compose;
 2. pasta do projeto já criada;
-3. arquivos de infraestrutura presentes em disco;
+3. `git` disponível;
 4. `infra/env/.env.production` configurado.
 
 ## Comandos úteis na VPS
@@ -104,8 +88,7 @@ Antes da action funcionar sozinha, a VPS precisa ter:
 ```bash
 docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml ps
 docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml logs -f
-docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml pull
-docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up -d
+docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up --build -d
 ```
 
 ## Observação operacional

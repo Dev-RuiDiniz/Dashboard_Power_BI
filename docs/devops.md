@@ -57,12 +57,12 @@ Com o arquivo `infra/env/.env.example`:
 docker compose --env-file infra/env/.env.example -f infra/docker/docker-compose.dev.yml up --build
 ```
 
-## Produção via imagens
+## Produção via Docker Compose
 
-O compose de produção usa `image:` e foi preparado para receber imagens do GHCR:
+O compose de produção usa `build:` com Dockerfiles versionados no próprio repositório:
 
 ```bash
-docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up -d
+docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up --build -d
 ```
 
 ## Validação manual
@@ -96,9 +96,9 @@ docs/deploy-vps.md
 
 O workflow atual:
 
-- faz build e push das imagens para o GHCR;
 - conecta na VPS por SSH;
-- executa `pull` e `up -d` do Compose de produção.
+- sincroniza o repositório remoto;
+- executa `up --build -d` do Compose de produção.
 
 ## Troubleshooting
 
@@ -109,7 +109,7 @@ Primeiro ponto a verificar:
 - presença do arquivo de env correto;
 - portas já em uso;
 - credenciais externas do SQL Server;
-- disponibilidade do GHCR no deploy remoto.
+- disponibilidade de Docker e git na VPS.
 
 ### Porta em uso
 
@@ -124,8 +124,7 @@ docker compose --env-file infra/env/.env.example -f infra/docker/docker-compose.
 ### Reaplicar ambiente de produção
 
 ```bash
-docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml pull
-docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up -d
+docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up --build -d
 ```
 
 ### Derrubar ambiente
