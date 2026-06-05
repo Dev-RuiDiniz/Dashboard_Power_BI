@@ -23,12 +23,17 @@ describe('HealthController (e2e)', () => {
   });
 
   it('GET /health deve retornar status ok', async () => {
+    await request(app.getHttpServer()).get('/health').expect(200).expect({
+      status: 'ok',
+      service: 'dashboard-power-bi-api',
+    });
+  });
+
+  it('GET /health deve permitir requisicoes da web local via CORS', async () => {
     await request(app.getHttpServer())
       .get('/health')
+      .set('Origin', 'http://localhost:3000')
       .expect(200)
-      .expect({
-        status: 'ok',
-        service: 'dashboard-power-bi-api',
-      });
+      .expect('access-control-allow-origin', 'http://localhost:3000');
   });
 });

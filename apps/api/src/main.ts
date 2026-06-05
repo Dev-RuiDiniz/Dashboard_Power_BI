@@ -6,6 +6,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 export function configureApp(app: INestApplication): void {
+  app.enableCors({
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
