@@ -2,46 +2,37 @@
 
 ## Objetivo
 
-A TASK-06 adiciona uma base de Docker Compose para desenvolvimento local do Dashboard Power BI.
+Este documento descreve a infraestrutura local realmente mantida no repositório.
 
-O ambiente sobe os serviços principais de desenvolvimento:
+## O que existe hoje
 
-- API NestJS;
-- Web Next.js;
-- Redis;
-- placeholders para SQL Server externo.
-
-## Arquivos principais
+Arquivos principais:
 
 ```text
 infra/docker/docker-compose.dev.yml
 infra/docker/api.Dockerfile
 infra/docker/web.Dockerfile
-infra/env/.env.example
 scripts/verify-docker-dev.mjs
 ```
 
-## Subida local
+Serviços previstos no Compose:
 
-Copie o arquivo de exemplo quando precisar customizar portas ou credenciais locais:
+- API NestJS;
+- Web Next.js;
+- Redis.
 
-```bash
-cp infra/env/.env.example .env
+O SQL Server continua externo ao Compose.
+
+## Desvio conhecido
+
+Os scripts do projeto usam:
+
+```text
+infra/env/.env.example
 ```
 
-Não versionar `.env`.
-
-Subir ambiente usando o exemplo versionado:
-
-```bash
-docker compose --env-file infra/env/.env.example -f infra/docker/docker-compose.dev.yml up --build
-```
-
-Subir ambiente usando `.env` local:
-
-```bash
-docker compose --env-file .env -f infra/docker/docker-compose.dev.yml up --build
-```
+Esse arquivo não está presente no clone atual.
+Na prática, isso significa que os comandos Docker existentes dependem de recriação local desse arquivo ou ajuste manual do comando.
 
 ## Comandos via pnpm
 
@@ -50,6 +41,14 @@ pnpm verify:docker
 pnpm docker:dev
 pnpm docker:dev:logs
 pnpm docker:dev:down
+```
+
+## Subida manual
+
+Com o arquivo de env ajustado localmente:
+
+```bash
+docker compose --env-file infra/env/.env.example -f infra/docker/docker-compose.dev.yml up --build
 ```
 
 ## Validação manual
@@ -64,34 +63,33 @@ http://localhost:3001/docs
 
 ## Redis
 
-O Redis usa a imagem `redis:7.4-alpine`, expõe a porta `6379` e possui healthcheck com `redis-cli ping`.
+Redis aparece no ambiente local do Compose, mas não está integrado de forma funcional à aplicação atual para sessão, cache ou filas de jobs.
 
 ## SQL Server externo
 
-O SQL Server não sobe como container nesta tarefa. A conexão será feita via variáveis de ambiente apontando para um servidor externo.
+O SQL Server não sobe como container neste repositório.
+A API depende de variáveis `SQLSERVER_*` apontando para uma instância externa.
 
 ## Troubleshooting
 
+### Docker falhando ao iniciar
+
+Primeiro ponto a verificar:
+
+- ausência de `infra/env/.env.example`.
+
 ### Porta em uso
 
-Ajustar `API_PORT`, `WEB_PORT` ou `REDIS_PORT` no `.env` local.
+Ajuste `API_PORT`, `WEB_PORT` ou `REDIS_PORT` no ambiente local.
 
-### Dependências desatualizadas
-
-Rebuildar os containers:
+### Rebuild do ambiente
 
 ```bash
-docker compose --env-file .env -f infra/docker/docker-compose.dev.yml up --build --force-recreate
+docker compose --env-file infra/env/.env.example -f infra/docker/docker-compose.dev.yml up --build --force-recreate
 ```
 
 ### Derrubar ambiente
 
 ```bash
 docker compose -f infra/docker/docker-compose.dev.yml down
-```
-
-Para remover volumes locais:
-
-```bash
-docker compose -f infra/docker/docker-compose.dev.yml down -v
 ```

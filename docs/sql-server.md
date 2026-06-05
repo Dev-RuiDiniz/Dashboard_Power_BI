@@ -2,9 +2,12 @@
 
 ## Visão geral
 
-A camada SQL Server da API centraliza conexão, healthcheck e execução segura de consultas para relatórios.
+A camada SQL Server da API centraliza:
 
-A TASK-16 adiciona a camada de queries parametrizadas para impedir SQL livre vindo de entrada externa e reduzir risco de SQL Injection.
+- conexão;
+- healthcheck;
+- validação de identificadores;
+- execução segura de consultas para relatórios.
 
 ## Arquivos principais
 
@@ -16,21 +19,29 @@ apps/api/src/sql-server/sql-query.service.ts
 apps/api/src/sql-server/sql-server.module.ts
 ```
 
+## Como funciona hoje
+
+O fluxo real é:
+
+1. a API recebe uma consulta de relatório;
+2. valida o relatório e seus parâmetros;
+3. monta execução segura para view ou stored procedure;
+4. envia valores via parâmetros do driver `mssql`;
+5. sanitiza erros antes de responder.
+
 ## Regras de segurança
 
-- Não aceitar SQL livre vindo de controller, query string, body ou parâmetros externos.
-- Não concatenar valores de usuário em SQL.
-- Validar nomes de schemas, views, stored procedures, colunas e parâmetros.
-- Executar views apenas com identificadores no formato `schema.nome`.
-- Executar stored procedures apenas com identificadores no formato `schema.nome`.
-- Usar `.input()` do driver `mssql` para valores.
-- Não retornar erro bruto do driver ao chamador.
-- Não logar credenciais, connection string, host, usuário, senha ou database.
-- Usar usuário SQL dedicado e preferencialmente `read-only`.
+- não aceitar SQL livre vindo do cliente;
+- não concatenar valores de usuário em SQL;
+- validar nomes de schema, view, procedure, coluna e parâmetro;
+- aceitar apenas identificadores no formato `schema.nome`;
+- usar `.input()` do `mssql` para valores;
+- não retornar erro bruto do driver;
+- não logar credenciais ou connection string.
 
 ## Identificadores permitidos
 
-Views e stored procedures devem usar o padrão:
+Formato aceito:
 
 ```text
 schema.nome
@@ -54,11 +65,7 @@ dbo].[users
 exec reports.sp_get_report_data
 ```
 
-## Parâmetros permitidos
-
-Os parâmetros são tipados e normalizados antes da chamada ao driver.
-
-Tipos suportados:
+## Parâmetros suportados
 
 ```text
 string
@@ -68,7 +75,7 @@ boolean
 date
 ```
 
-Exemplo de filtro seguro para view:
+Exemplo de view segura:
 
 ```ts
 await sqlQueryService.executeView({
@@ -86,46 +93,20 @@ await sqlQueryService.executeView({
 });
 ```
 
-Query gerada:
+## Limites atuais
 
-```sql
-SELECT id, name, sector_id FROM reports.vw_dashboard_reports WHERE sector_id = @sectorId
+- a camada é usada para relatórios, não como ORM geral da plataforma;
+- não existe Prisma;
+- não há cache Redis funcional na frente dessas consultas;
+- paginação do resultado de relatórios ainda pode ocorrer em memória após a execução.
+
+## Healthcheck
+
+```http
+GET /health/sql
 ```
 
-O valor `financeiro` é enviado via `.input()` e não é interpolado no SQL.
-
-## Stored procedures
-
-Exemplo de execução segura:
-
-```ts
-await sqlQueryService.executeStoredProcedure({
-  procedureName: 'reports.sp_get_report_data',
-  parameters: [
-    {
-      name: 'reportId',
-      type: 'string',
-      value: 'abc',
-      maxLength: 50,
-    },
-  ],
-});
-```
-
-A procedure é executada pelo driver via `execute`, com parâmetros enviados por `.input()`.
-
-## Testes de segurança
-
-A TASK-16 adiciona testes para:
-
-- rejeição de identificadores perigosos;
-- rejeição de colunas inseguras;
-- rejeição de parâmetros inseguros;
-- normalização de parâmetros tipados;
-- manutenção de payloads de SQL Injection como valor parametrizado;
-- execução segura de views;
-- execução segura de stored procedures;
-- erro sanitizado quando o driver falha.
+O retorno é sanitizado e serve para validar disponibilidade da dependência sem expor detalhes sensíveis.
 
 ## Validação local
 
@@ -133,15 +114,4 @@ A TASK-16 adiciona testes para:
 pnpm --filter @dashboard-power-bi/api test
 pnpm --filter @dashboard-power-bi/api typecheck
 pnpm --filter @dashboard-power-bi/api build
-pnpm lint
-pnpm format:check
-pnpm quality
 ```
-
-## Pontos de atenção
-
-- A camada não deve ser usada para executar SQL arbitrário.
-- Para novos relatórios, preferir views e stored procedures revisadas.
-- Qualquer filtro novo deve ser declarado com coluna, nome de parâmetro e tipo.
-- Arrays, objetos aninhados e parâmetros desconhecidos são rejeitados.
-- Erros retornados ao chamador devem permanecer sanitizados.
