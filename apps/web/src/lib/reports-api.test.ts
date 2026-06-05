@@ -89,6 +89,30 @@ describe('fetchReports', () => {
     );
   });
 
+  it('aceita base relativa para a API atras do mesmo host', async () => {
+    process.env.NEXT_PUBLIC_API_URL = '/api';
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [],
+        page: 1,
+        pageSize: 20,
+        total: 0,
+        totalPages: 0,
+      }),
+    });
+
+    await fetchReports({ page: 1, pageSize: 20 });
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/reports?page=1&pageSize=20', {
+      headers: {
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+    });
+  });
+
   it('normaliza stored_procedure para procedure no catálogo do frontend', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,

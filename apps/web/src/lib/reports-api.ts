@@ -45,12 +45,12 @@ export async function fetchReports({
   token,
   filters = { parameters: undefined },
 }: FetchReportsParams = {}): Promise<PaginatedReports> {
-  const url = new URL('/reports', getApiBaseUrl());
-  url.searchParams.set('page', String(page));
-  url.searchParams.set('pageSize', String(pageSize));
+  const searchParams = new URLSearchParams();
+  searchParams.set('page', String(page));
+  searchParams.set('pageSize', String(pageSize));
 
   buildReportFiltersQueryParams(filters).forEach((value, key) => {
-    url.searchParams.set(key, value);
+    searchParams.set(key, value);
   });
 
   const headers: Record<string, string> = {
@@ -61,7 +61,7 @@ export async function fetchReports({
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await fetch(buildReportsUrl(searchParams), {
     headers,
     cache: 'no-store',
   });
@@ -82,7 +82,14 @@ export async function fetchReports({
 }
 
 function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL;
+  return (process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL).replace(/\/$/, '');
+}
+
+function buildReportsUrl(searchParams: URLSearchParams): string {
+  const query = searchParams.toString();
+  const path = `${getApiBaseUrl()}/reports`;
+
+  return query ? `${path}?${query}` : path;
 }
 
 function toCatalogItem(report: ApiReport): ReportCatalogItem {

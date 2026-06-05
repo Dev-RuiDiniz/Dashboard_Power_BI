@@ -22,6 +22,8 @@ yarn-debug.log*
 .env
 .env.*
 !.env.example
+!infra/env/.env.example
+!infra/env/.env.production.example
 
 # OS / editors
 .DS_Store

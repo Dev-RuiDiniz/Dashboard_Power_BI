@@ -1,8 +1,8 @@
-# DevOps local
+# DevOps
 
 ## Objetivo
 
-Este documento descreve a infraestrutura local realmente mantida no repositório.
+Este documento descreve a infraestrutura realmente mantida no repositório para desenvolvimento e deploy.
 
 ## O que existe hoje
 
@@ -12,27 +12,30 @@ Arquivos principais:
 infra/docker/docker-compose.dev.yml
 infra/docker/api.Dockerfile
 infra/docker/web.Dockerfile
+infra/docker/docker-compose.prod.yml
+infra/docker/api.prod.Dockerfile
+infra/docker/web.prod.Dockerfile
+infra/docker/nginx/default.conf
+infra/env/.env.example
+infra/env/.env.production.example
 scripts/verify-docker-dev.mjs
+.github/workflows/deploy-vps.yml
 ```
 
-Serviços previstos no Compose:
+Serviços previstos no Compose de desenvolvimento:
 
 - API NestJS;
 - Web Next.js;
 - Redis.
 
-O SQL Server continua externo ao Compose.
+Serviços previstos no Compose de produção:
 
-## Desvio conhecido
+- API NestJS;
+- Web Next.js;
+- Redis;
+- Nginx.
 
-Os scripts do projeto usam:
-
-```text
-infra/env/.env.example
-```
-
-Esse arquivo não está presente no clone atual.
-Na prática, isso significa que os comandos Docker existentes dependem de recriação local desse arquivo ou ajuste manual do comando.
+O SQL Server continua externo ao Compose em qualquer ambiente.
 
 ## Comandos via pnpm
 
@@ -41,19 +44,30 @@ pnpm verify:docker
 pnpm docker:dev
 pnpm docker:dev:logs
 pnpm docker:dev:down
+pnpm docker:prod
+pnpm docker:prod:logs
+pnpm docker:prod:down
 ```
 
-## Subida manual
+## Desenvolvimento local
 
-Com o arquivo de env ajustado localmente:
+Com o arquivo `infra/env/.env.example`:
 
 ```bash
 docker compose --env-file infra/env/.env.example -f infra/docker/docker-compose.dev.yml up --build
 ```
 
+## Produção via imagens
+
+O compose de produção usa `image:` e foi preparado para receber imagens do GHCR:
+
+```bash
+docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up -d
+```
+
 ## Validação manual
 
-Após subir os containers:
+Em desenvolvimento:
 
 ```text
 http://localhost:3000
@@ -61,14 +75,30 @@ http://localhost:3001/health
 http://localhost:3001/docs
 ```
 
+No ambiente publicado atrás do Nginx, a entrada HTTP fica na porta definida por `NGINX_PORT`.
+
 ## Redis
 
-Redis aparece no ambiente local do Compose, mas não está integrado de forma funcional à aplicação atual para sessão, cache ou filas de jobs.
+Redis aparece no Compose local e no Compose de produção, mas não está integrado hoje de forma funcional para cache, sessão ou filas de jobs.
 
 ## SQL Server externo
 
 O SQL Server não sobe como container neste repositório.
 A API depende de variáveis `SQLSERVER_*` apontando para uma instância externa.
+
+## Deploy automatizado
+
+A publicação para VPS via GitHub Actions está documentada em:
+
+```text
+docs/deploy-vps.md
+```
+
+O workflow atual:
+
+- faz build e push das imagens para o GHCR;
+- conecta na VPS por SSH;
+- executa `pull` e `up -d` do Compose de produção.
 
 ## Troubleshooting
 
@@ -76,16 +106,26 @@ A API depende de variáveis `SQLSERVER_*` apontando para uma instância externa.
 
 Primeiro ponto a verificar:
 
-- ausência de `infra/env/.env.example`.
+- presença do arquivo de env correto;
+- portas já em uso;
+- credenciais externas do SQL Server;
+- disponibilidade do GHCR no deploy remoto.
 
 ### Porta em uso
 
-Ajuste `API_PORT`, `WEB_PORT` ou `REDIS_PORT` no ambiente local.
+Ajuste `API_PORT`, `WEB_PORT`, `REDIS_PORT` ou `NGINX_PORT` conforme o ambiente.
 
-### Rebuild do ambiente
+### Rebuild do ambiente de desenvolvimento
 
 ```bash
 docker compose --env-file infra/env/.env.example -f infra/docker/docker-compose.dev.yml up --build --force-recreate
+```
+
+### Reaplicar ambiente de produção
+
+```bash
+docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml pull
+docker compose --env-file infra/env/.env.production -f infra/docker/docker-compose.prod.yml up -d
 ```
 
 ### Derrubar ambiente

@@ -8,5 +8,7 @@ coverage
 .env
 .env.*
 !.env.example
+!infra/env/.env.example
+!infra/env/.env.production.example
 playwright-report
 test-results

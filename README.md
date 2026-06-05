@@ -10,7 +10,9 @@ Este repositório já entrega uma base real de:
 - dashboard inicial;
 - catálogo e execução de relatórios;
 - administração básica de usuários e grupos;
-- leitura de notificações, exportações e settings no Supabase.
+- leitura de notificações, exportações e settings no Supabase;
+- infraestrutura de desenvolvimento em Docker Compose;
+- infraestrutura de produção com imagens Docker e deploy para VPS via GitHub Actions.
 
 Ele ainda não representa a plataforma V1 completa descrita no PDF de escopo.
 
@@ -31,7 +33,9 @@ Documentos canônicos do estado atual:
 - Tailwind CSS
 - SQL Server externo
 - Supabase consumido diretamente em partes da Web
-- Docker Compose para desenvolvimento local
+- Docker Compose para desenvolvimento e produção
+- GHCR para imagens
+- GitHub Actions para deploy na VPS
 
 ## Setup rápido
 
@@ -45,11 +49,10 @@ pnpm verify:docs
 pnpm quality
 ```
 
-Observação importante:
+Arquivos de ambiente versionados de referência:
 
-- scripts e docs históricas referenciam `infra/env/.env.example`;
-- o arquivo não está presente no clone atual;
-- use variáveis locais compatíveis com `docs/environment.md` até esse exemplo ser recriado no repositório.
+- `infra/env/.env.example`
+- `infra/env/.env.production.example`
 
 ## Checklist de setup local
 
@@ -61,13 +64,12 @@ Observação importante:
 - [ ] Rodar `pnpm verify:workspace`
 - [ ] Rodar `pnpm verify:docker`
 - [ ] Rodar `pnpm verify:docs`
-- [ ] Rodar `pnpm quality`
 - [ ] Subir API com `pnpm dev:api`
 - [ ] Subir Web com `pnpm dev:web`
 - [ ] Validar `http://localhost:3000`
 - [ ] Validar `http://localhost:3001/health`
 - [ ] Validar `http://localhost:3001/docs`
-- [ ] Opcionalmente tentar `pnpm docker:dev` se o ambiente local de env estiver compatível
+- [ ] Opcionalmente usar `pnpm docker:dev`
 
 ## Desenvolvimento sem Docker
 
@@ -95,20 +97,28 @@ Swagger: http://localhost:3001/docs
 
 ## Desenvolvimento com Docker
 
-O repositório mantém comandos Docker:
-
 ```bash
 pnpm docker:dev
 pnpm docker:dev:logs
 pnpm docker:dev:down
 ```
 
-Mas hoje existe um desvio conhecido:
+## Produção / VPS
 
-- os scripts usam `infra/env/.env.example`;
-- esse arquivo não está versionado no clone atual.
+Artefatos de produção:
 
-Se esse arquivo não for recriado localmente, os comandos de Docker exigirão ajuste manual.
+```text
+infra/docker/docker-compose.prod.yml
+infra/docker/api.prod.Dockerfile
+infra/docker/web.prod.Dockerfile
+.github/workflows/deploy-vps.yml
+```
+
+O deploy automatizado está descrito em:
+
+- `docs/deploy-vps.md`
+- `docs/devops.md`
+- `docs/environment.md`
 
 ## Arquitetura e monorepo
 
@@ -120,7 +130,7 @@ packages/
   shared/   # reservado para contratos/utilitários compartilhados
   ui/       # reservado para componentes compartilhados
 docs/       # documentação técnica e análise de escopo
-infra/      # Dockerfiles e Compose
+infra/      # Dockerfiles, Compose e env examples
 scripts/    # validações estruturais
 supabase/   # migrations e políticas
 ```
@@ -131,6 +141,17 @@ Fluxo real atual:
 Web Next.js -> API NestJS -> SQL Server externo
           \-> Supabase direto
 ```
+
+## Decisões arquiteturais
+
+As ADRs ficam em `docs/decisions`:
+
+- ADR-0001 - Monorepo
+- ADR-0002 - Tooling de qualidade
+- ADR-0003 - API NestJS
+- ADR-0004 - Web Next.js
+- ADR-0005 - Design system base
+- ADR-0006 - Docker Compose dev
 
 ## Comandos principais
 
@@ -143,34 +164,15 @@ pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm build
-pnpm quality
 pnpm dev:api
 pnpm dev:web
 pnpm docker:dev
+pnpm docker:prod
 ```
 
 ## Variáveis de ambiente
 
 A referência de variáveis está em `docs/environment.md`.
-
-Desvio conhecido:
-
-```text
-infra/env/.env.example
-```
-
-Esse caminho é citado por scripts e documentação histórica, mas o arquivo não está presente no clone atual.
-
-## Decisões arquiteturais
-
-As ADRs ficam em `docs/decisions`:
-
-- ADR-0001 — Monorepo
-- ADR-0002 — Tooling de qualidade
-- ADR-0003 — API NestJS
-- ADR-0004 — Web Next.js
-- ADR-0005 — Design system base
-- ADR-0006 — Docker Compose dev
 
 ## Documentação complementar
 
@@ -185,15 +187,16 @@ As ADRs ficam em `docs/decisions`:
 - `docs/reports.md`: módulo de relatórios no estado atual
 - `docs/setup.md`: onboarding local
 - `docs/design-system.md`: base visual
-- `docs/devops.md`: Docker e operações locais
+- `docs/devops.md`: Docker e operações
 - `docs/environment.md`: variáveis de ambiente
+- `docs/deploy-vps.md`: deploy via GitHub Actions + GHCR + SSH
 - `docs/quality.md`: qualidade e validações
 
 ## Troubleshooting
 
 ### Porta em uso
 
-Ajuste `API_PORT` e `WEB_PORT` nas variáveis locais.
+Ajuste `API_PORT`, `WEB_PORT`, `REDIS_PORT` ou `NGINX_PORT` conforme o ambiente.
 
 ### Dependências inconsistentes
 
@@ -202,13 +205,12 @@ rm -rf node_modules apps/*/node_modules packages/*/node_modules
 pnpm install
 ```
 
-### Docker falhando por arquivo de env ausente
+### Docker falhando por ambiente incorreto
 
-O primeiro ponto a verificar é a ausência de:
+Valide se o arquivo de ambiente usado corresponde ao contexto:
 
-```text
-infra/env/.env.example
-```
+- `infra/env/.env.example` para desenvolvimento
+- `infra/env/.env.production` na VPS
 
 ### SQL Server indisponível
 
