@@ -1,279 +1,429 @@
-# Mapeamento do Sistema
+# Mapeamento Canônico do Sistema
+
+## Objetivo deste documento
+
+Este documento descreve o estado real do repositório em `2026-06-05`.
+Ele é a referência canônica para:
+
+- módulos existentes na Web e na API;
+- rotas realmente expostas;
+- endpoints realmente implementados;
+- integrações externas em uso;
+- mapa de persistência atual;
+- limitações e soluções provisórias confirmadas no código.
+
+Use este arquivo junto com:
+
+- `docs/scope-v1-gap-analysis.md` para comparar código x escopo do PDF V1;
+- `SPRINT_STATUS.md` para o resumo executivo do que está implementado, parcial e ausente;
+- `docs/ARCHITECTURE_DETAILED.md` para a arquitetura consolidada do que existe hoje.
 
 ## Visão geral
 
-O Dashboard Power BI é um monorepo com duas aplicações principais:
+O repositório é um monorepo `pnpm` com duas aplicações:
 
 - `apps/web`: frontend em Next.js 14 com App Router;
-- `apps/api`: backend em NestJS com endpoints REST e documentação Swagger.
+- `apps/api`: backend em NestJS com API REST e Swagger.
 
-Além disso, o repositório contém:
+Também existem:
 
-- `packages/shared`: espaço reservado para contratos e utilitários compartilhados;
-- `packages/ui`: espaço reservado para componentes compartilhados futuros;
-- `supabase/migrations`: estrutura de banco e permissões para as entidades da plataforma;
-- `infra/docker`: ambiente local com Compose e Dockerfiles.
+- `supabase/migrations`: esquema e políticas para tabelas usadas pela Web e por integrações futuras;
+- `packages/shared`: espaço reservado para tipos/utilitários compartilhados;
+- `packages/ui`: espaço reservado para componentes compartilhados;
+- `infra/docker`: Dockerfiles e Compose para desenvolvimento local.
 
-## Arquitetura funcional atual
+## O que o sistema faz hoje
 
-Hoje, o sistema funciona em três frentes principais:
+Hoje o projeto entrega um recorte funcional de autenticação, administração básica e consulta de relatórios:
 
-1. **Frontend autenticado e administrativo**
-   - navegação protegida por sessão local;
-   - dashboard inicial;
-   - catálogo e detalhe de relatórios;
-   - telas administrativas;
-   - histórico de exportações e central de notificações.
+1. A Web autentica usuários via API própria.
+2. A Web protege rotas internas com sessão salva em `localStorage`.
+3. A Web lista relatórios, exibe detalhes e executa consultas via API.
+4. A API gerencia usuários, grupos e definições administrativas de relatórios.
+5. A API executa consultas parametrizadas em SQL Server.
+6. Partes da Web leem dados diretamente do Supabase para dashboard, exportações, notificações e configurações.
 
-2. **API de autenticação, administração e relatórios**
-   - login, refresh, logout, recuperação e redefinição de senha;
-   - gestão de usuários e grupos;
-   - catálogo administrativo de relatórios;
-   - listagem, detalhamento e execução de relatórios autorizados;
-   - healthchecks da API e do SQL Server.
+Não há hoje implementação end-to-end de editor de dashboards, exportação backend, 2FA/TOTP, fila assíncrona, auditoria dedicada nem dashboards personalizados persistidos pela aplicação.
 
-3. **Camada de dados híbrida**
-   - a **API** conversa com SQL Server e também mantém estruturas em memória para fluxos de autenticação e administração;
-   - a **Web** consome a API para autenticação, administração e relatórios;
-   - a **Web** também consulta o Supabase diretamente para KPIs, notificações, exportações e configurações do sistema.
+## Estrutura real do monorepo
 
-## Rotas da aplicação web
+```text
+apps/
+  api/                    API NestJS
+  web/                    Aplicação Next.js
+docs/                     Documentação técnica
+infra/                    Docker e arquivos de infraestrutura
+packages/
+  shared/                 Reservado para contratos compartilhados
+  ui/                     Reservado para componentes compartilhados
+scripts/                  Scripts de verificação
+supabase/
+  migrations/             Estrutura SQL e políticas do Supabase
+```
+
+## Web: módulos e rotas reais
 
 ### Rotas públicas
 
-- `/`
-  - home institucional da plataforma;
-  - apresenta proposta do produto, pilares do sistema e status da base técnica.
-
-- `/login`
-  - formulário de autenticação com e-mail e senha;
-  - consome `POST /auth/login`;
-  - salva a sessão no `localStorage`.
-
-- `/forgot-password`
-  - solicitação de recuperação de senha;
-  - consome `POST /auth/forgot-password`.
-
-- `/reset-password`
-  - redefinição de senha com token;
-  - consome `POST /auth/reset-password`.
-
-- `/design-system`
-  - vitrine de componentes visuais base da aplicação.
+| Rota               | Estado       | Evidência                                   | Observação                                                          |
+| ------------------ | ------------ | ------------------------------------------- | ------------------------------------------------------------------- |
+| `/`                | implementado | `apps/web/src/app/page.tsx`                 | Página institucional do projeto.                                    |
+| `/login`           | implementado | `apps/web/src/app/login/page.tsx`           | Formulário que consome `POST /auth/login`.                          |
+| `/forgot-password` | implementado | `apps/web/src/app/forgot-password/page.tsx` | Solicita recuperação de senha via API.                              |
+| `/reset-password`  | implementado | `apps/web/src/app/reset-password/page.tsx`  | Redefinição por token via API.                                      |
+| `/design-system`   | implementado | `apps/web/src/app/design-system/page.tsx`   | Vitrine de componentes, sem relação direta com escopo funcional V1. |
 
 ### Rotas autenticadas
 
-As rotas sob `/app` usam `AuthGuard`, que redireciona para `/login` quando não existe sessão local válida.
+As rotas abaixo ficam sob `apps/web/src/app/app` e dependem de sessão local validada pelo `AuthGuard`.
 
-- `/app`
-  - dashboard inicial;
-  - carrega KPIs e setores do Supabase;
-  - se os dados não estiverem disponíveis, usa KPIs de fallback para manter a experiência funcional.
+| Rota                  | Estado       | Evidência                                      | Observação                                                                     |
+| --------------------- | ------------ | ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| `/app`                | implementado | `apps/web/src/app/app/page.tsx`                | Dashboard inicial com KPIs e setores lidos direto do Supabase.                 |
+| `/app/reports`        | implementado | `apps/web/src/app/app/reports/page.tsx`        | Catálogo, filtros e execução de relatórios; o detalhe fica na mesma tela.      |
+| `/app/exports`        | parcial      | `apps/web/src/app/app/exports/page.tsx`        | Lista histórico de exportações do Supabase, mas não aciona export via backend. |
+| `/app/notifications`  | parcial      | `apps/web/src/app/app/notifications/page.tsx`  | Lista e marca notificações como lidas direto no Supabase.                      |
+| `/app/admin`          | implementado | `apps/web/src/app/app/admin/page.tsx`          | Hub administrativo com atalhos.                                                |
+| `/app/admin/users`    | implementado | `apps/web/src/app/app/admin/users/page.tsx`    | CRUD parcial de usuários via API.                                              |
+| `/app/admin/groups`   | implementado | `apps/web/src/app/app/admin/groups/page.tsx`   | CRUD parcial de grupos via API.                                                |
+| `/app/admin/settings` | parcial      | `apps/web/src/app/app/admin/settings/page.tsx` | Consulta configurações direto no Supabase; não há edição completa via backend. |
 
-- `/app/reports`
-  - catálogo de relatórios autorizados;
-  - filtros avançados;
-  - detalhe do relatório selecionado;
-  - execução de consulta parametrizada;
-  - consome a Reports API.
+### Rotas ausentes em relação ao escopo V1
 
-- `/app/exports`
-  - histórico das últimas exportações;
-  - consulta a tabela `export_jobs` no Supabase;
-  - exibe status, formato, tamanho, expiração e link de download quando disponível.
+Estas rotas não existem como páginas dedicadas hoje:
 
-- `/app/notifications`
-  - central de notificações;
-  - consulta a tabela `notifications` no Supabase;
-  - permite marcar uma notificação ou todas como lidas.
+- `/app/profile`
+- `/app/reports/[id]`
+- `/app/admin/reports`
+- `/app/admin/dashboards`
+- `/app/admin/dashboards/[id]/edit`
+- `/app/admin/logs`
+- qualquer rota dedicada a permissões finas por relatório/setor
 
-- `/app/admin`
-  - hub administrativo com atalhos para usuários, grupos e configurações.
-
-- `/app/admin/users`
-  - lista usuários;
-  - filtra por nome ou e-mail;
-  - cria usuários;
-  - desativa usuários;
-  - redefine senha;
-  - consome a API administrativa.
-
-- `/app/admin/groups`
-  - lista grupos;
-  - cria grupos;
-  - remove grupos;
-  - consome a API administrativa.
-
-- `/app/admin/settings`
-  - lista configurações globais do sistema;
-  - consulta diretamente a tabela `system_settings` no Supabase.
-
-## Funcionalidades já implementadas na Web
+## Web: módulos reais
 
 ### Autenticação
 
-- formulário de login com validação básica;
-- armazenamento da sessão autenticada em `localStorage`;
-- proteção de rotas autenticadas por `AuthGuard`;
-- fluxo de esqueci a senha;
-- fluxo de redefinição por token.
+Evidências principais:
+
+- `apps/web/src/components/auth/*`
+- `apps/web/src/lib/auth/api.ts`
+- `apps/web/src/lib/auth/session.ts`
+
+O que faz hoje:
+
+- login;
+- recuperação de senha;
+- redefinição de senha;
+- persistência de sessão em `localStorage`;
+- guarda de rotas do lado do cliente.
+
+Limites atuais:
+
+- não usa cookie seguro nem sessão server-side;
+- não há 2FA/TOTP;
+- não há integração com Supabase Auth;
+- a expiração/renovação depende do fluxo JWT da API, mas a Web continua baseada em armazenamento local.
 
 ### Dashboard
 
-- cards de KPI com tendência;
-- resumo com quantidade de KPIs, setores cobertos e delta médio;
-- agrupamento por setor;
-- fallback visual quando o Supabase não devolve dados.
+Evidências principais:
+
+- `apps/web/src/components/dashboard/dashboard-home.tsx`
+- `apps/web/src/lib/kpis.ts`
+
+O que faz hoje:
+
+- carrega `kpis` e `sectors` do Supabase;
+- calcula resumos e tendências;
+- usa fallback local quando a consulta falha ou volta vazia.
+
+Limites atuais:
+
+- não há gráficos com biblioteca dedicada;
+- não há drill-down;
+- não há dashboards personalizados;
+- não há editor visual.
 
 ### Relatórios
 
-- listagem paginada via API;
-- filtros avançados;
-- estados de carregamento e erro;
-- visualização de metadados do relatório;
-- montagem dinâmica de parâmetros;
-- execução de consulta e renderização tabular dos resultados.
+Evidências principais:
+
+- `apps/web/src/components/reports/*`
+- `apps/web/src/lib/reports-api.ts`
+
+O que faz hoje:
+
+- lista relatórios autorizados;
+- permite filtrar por setor, categoria e parâmetros;
+- exibe metadados do relatório selecionado;
+- executa `POST /reports/:id/query`;
+- renderiza os resultados em tabela.
+
+Limites atuais:
+
+- não existe rota própria de visualizador por ID;
+- não há export PDF/Excel disparado pela API;
+- não há visualização em gráfico;
+- não há favoritos integrados ao frontend atual.
 
 ### Administração
 
-- listagem e busca de usuários;
-- criação de novos usuários;
-- desativação de usuários;
-- redefinição de senha;
-- listagem e criação de grupos;
-- exclusão de grupos;
-- visualização de configurações globais.
+Evidências principais:
+
+- `apps/web/src/components/admin/*`
+
+O que faz hoje:
+
+- lista usuários;
+- cria usuários;
+- desativa usuários;
+- redefine senha;
+- lista grupos;
+- cria grupos;
+- remove grupos;
+- lê configurações do sistema no Supabase.
+
+Limites atuais:
+
+- não existe gestão dedicada de permissões;
+- não existe gestão administrativa de relatórios na Web, embora a API possua endpoints;
+- não existe tela de logs de auditoria;
+- não existe editor de dashboards.
 
 ### Exportações e notificações
 
-- leitura de exportações recentes pelo Supabase;
-- download de arquivos concluídos;
-- leitura de notificações;
-- marcação individual e em lote como lidas.
+Evidências principais:
 
-## Endpoints da API
+- `apps/web/src/components/exports/exports-list.tsx`
+- `apps/web/src/components/notifications/notifications-list.tsx`
 
-### Autenticação
+O que faz hoje:
 
-- `POST /auth/login`
-- `POST /auth/forgot-password`
-- `POST /auth/reset-password`
-- `POST /auth/refresh`
-- `POST /auth/logout`
+- lê `export_jobs` diretamente do Supabase;
+- lê `notifications` diretamente do Supabase;
+- marca notificações individualmente ou em lote como lidas.
 
-### Autorização de teste
+Limites atuais:
 
-- `GET /authz-test/view/:sector`
-- `GET /authz-test/download/:sector`
-- `GET /authz-test/admin`
+- não existe pipeline de geração de export no backend;
+- não há polling de job iniciado pela aplicação;
+- não há realtime;
+- o comportamento depende de dados já existentes no Supabase.
 
-### Saúde da aplicação
+## API: módulos e endpoints reais
 
-- `GET /health`
-- `GET /health/sql`
+### Módulos NestJS
 
-### Administração de usuários
+| Módulo                 | Evidência                      | Papel real                                                                 |
+| ---------------------- | ------------------------------ | -------------------------------------------------------------------------- |
+| `AuthModule`           | `apps/api/src/auth`            | Login, refresh, logout, recuperação e redefinição de senha.                |
+| `AdminModule`          | `apps/api/src/admin`           | CRUD de usuários e grupos.                                                 |
+| `ReportsModule`        | `apps/api/src/reports`         | Catálogo de relatórios, endpoints administrativos e execução de consultas. |
+| `HealthModule`         | `apps/api/src/health`          | Healthchecks da API e do SQL Server.                                       |
+| `ValidationTestModule` | `apps/api/src/validation-test` | Endpoint técnico para validar pipes e DTOs.                                |
+| `SqlServerModule`      | `apps/api/src/sql-server`      | Configuração, healthcheck e execução segura no SQL Server.                 |
 
-- `GET /admin/users`
-- `GET /admin/users/:id`
-- `POST /admin/users`
-- `PATCH /admin/users/:id`
-- `PATCH /admin/users/:id/deactivate`
-- `POST /admin/users/:id/reset-password`
-- `PUT /admin/users/:id/groups`
+Não há hoje módulos reais de:
 
-### Administração de grupos
+- auditoria dedicada;
+- exportação assíncrona;
+- dashboards personalizados;
+- notificações via API;
+- BullMQ/Redis;
+- WebSocket.
 
-- `GET /admin/groups`
-- `GET /admin/groups/:id`
-- `POST /admin/groups`
-- `PATCH /admin/groups/:id`
-- `DELETE /admin/groups/:id`
+### Endpoints implementados
 
-### Administração de relatórios
+#### Autenticação
 
-- `POST /admin/reports`
-- `GET /admin/reports`
-- `GET /admin/reports/:id`
-- `PATCH /admin/reports/:id`
-- `PATCH /admin/reports/:id/deactivate`
+| Método e rota                | Evidência                              |
+| ---------------------------- | -------------------------------------- |
+| `POST /auth/login`           | `apps/api/src/auth/auth.controller.ts` |
+| `POST /auth/forgot-password` | `apps/api/src/auth/auth.controller.ts` |
+| `POST /auth/reset-password`  | `apps/api/src/auth/auth.controller.ts` |
+| `POST /auth/refresh`         | `apps/api/src/auth/auth.controller.ts` |
+| `POST /auth/logout`          | `apps/api/src/auth/auth.controller.ts` |
 
-### Consumo de relatórios
+#### Testes de autorização
 
-- `GET /reports`
-- `GET /reports/:id`
-- `POST /reports/:id/query`
+| Método e rota                      | Evidência                                    |
+| ---------------------------------- | -------------------------------------------- |
+| `GET /authz-test/view/:sector`     | `apps/api/src/auth/authz-test.controller.ts` |
+| `GET /authz-test/download/:sector` | `apps/api/src/auth/authz-test.controller.ts` |
+| `GET /authz-test/admin`            | `apps/api/src/auth/authz-test.controller.ts` |
 
-### Endpoint técnico
+#### Saúde
 
-- `POST /validation-test`
+| Método e rota     | Evidência                                  |
+| ----------------- | ------------------------------------------ |
+| `GET /health`     | `apps/api/src/health/health.controller.ts` |
+| `GET /health/sql` | `apps/api/src/health/health.controller.ts` |
 
-## Como a API funciona hoje
+#### Administração de usuários
 
-### Estrutura
+| Método e rota                          | Evidência                                            |
+| -------------------------------------- | ---------------------------------------------------- |
+| `GET /admin/users`                     | `apps/api/src/admin/users/admin-users.controller.ts` |
+| `GET /admin/users/:id`                 | `apps/api/src/admin/users/admin-users.controller.ts` |
+| `POST /admin/users`                    | `apps/api/src/admin/users/admin-users.controller.ts` |
+| `PATCH /admin/users/:id`               | `apps/api/src/admin/users/admin-users.controller.ts` |
+| `PATCH /admin/users/:id/deactivate`    | `apps/api/src/admin/users/admin-users.controller.ts` |
+| `POST /admin/users/:id/reset-password` | `apps/api/src/admin/users/admin-users.controller.ts` |
+| `PUT /admin/users/:id/groups`          | `apps/api/src/admin/users/admin-users.controller.ts` |
 
-A API é organizada em módulos:
+#### Administração de grupos
 
-- `AuthModule`
-- `AdminModule`
-- `ReportsModule`
-- `HealthModule`
-- `ValidationTestModule`
-- `SqlServerModule`
+| Método e rota              | Evidência                                              |
+| -------------------------- | ------------------------------------------------------ |
+| `GET /admin/groups`        | `apps/api/src/admin/groups/admin-groups.controller.ts` |
+| `GET /admin/groups/:id`    | `apps/api/src/admin/groups/admin-groups.controller.ts` |
+| `POST /admin/groups`       | `apps/api/src/admin/groups/admin-groups.controller.ts` |
+| `PATCH /admin/groups/:id`  | `apps/api/src/admin/groups/admin-groups.controller.ts` |
+| `DELETE /admin/groups/:id` | `apps/api/src/admin/groups/admin-groups.controller.ts` |
 
-### Comportamentos principais
+#### Administração de definições de relatórios
 
-- usa `ConfigModule` global com leitura de `.env.local` e `.env`;
-- usa `ValidationPipe` global com `whitelist`, `forbidNonWhitelisted` e `transform`;
-- publica Swagger em `/docs`;
-- já está configurada com CORS para o frontend local em `http://localhost:3000` e `http://127.0.0.1:3000`.
+| Método e rota                         | Evidência                                                     |
+| ------------------------------------- | ------------------------------------------------------------- |
+| `POST /admin/reports`                 | `apps/api/src/reports/report-definitions.admin.controller.ts` |
+| `GET /admin/reports`                  | `apps/api/src/reports/report-definitions.admin.controller.ts` |
+| `GET /admin/reports/:id`              | `apps/api/src/reports/report-definitions.admin.controller.ts` |
+| `PATCH /admin/reports/:id`            | `apps/api/src/reports/report-definitions.admin.controller.ts` |
+| `PATCH /admin/reports/:id/deactivate` | `apps/api/src/reports/report-definitions.admin.controller.ts` |
 
-### Autenticação
+#### Consumo de relatórios
 
-- o login gera access token e refresh token;
-- a proteção de rotas usa `JwtAuthGuard`, `RolesGuard` e `SectorsGuard`;
-- o fluxo de recuperação de senha usa token temporário e serviço de e-mail em modo `mock` para desenvolvimento;
-- há controle de tentativas de login com bloqueio temporário.
+| Método e rota             | Evidência                                    |
+| ------------------------- | -------------------------------------------- |
+| `GET /reports`            | `apps/api/src/reports/reports.controller.ts` |
+| `GET /reports/:id`        | `apps/api/src/reports/reports.controller.ts` |
+| `POST /reports/:id/query` | `apps/api/src/reports/reports.controller.ts` |
 
-### Administração
+#### Endpoint técnico
 
-- usuários e grupos são manipulados por serviços dedicados;
-- a API expõe CRUD administrativo para usuários, grupos e definições de relatórios;
-- mensagens de erro retornam textos de domínio, em português.
+| Método e rota           | Evidência                                                    |
+| ----------------------- | ------------------------------------------------------------ |
+| `POST /validation-test` | `apps/api/src/validation-test/validation-test.controller.ts` |
 
-### Relatórios
-
-- o catálogo administrativo não aceita SQL livre;
-- `sourceName` deve seguir formato seguro;
-- a execução de relatórios aplica validação de parâmetros antes da consulta;
-- a autorização é validada antes da execução;
-- as respostas públicas evitam expor detalhes internos do SQL Server.
-
-### SQL Server
-
-- conexão via pool com `mssql`;
-- configuração validada por utilitário próprio;
-- healthcheck sanitizado;
-- erros de conexão e execução são mascarados para o cliente.
-
-## Dependências externas e estado atual
+## Dependências externas reais
 
 ### API
 
-- depende de variáveis de ambiente para autenticação;
-- pode subir sem SQL Server válido, mas o healthcheck específico do SQL reflete indisponibilidade;
-- usa SQL Server externo para consultas de relatórios.
+Dependências confirmadas no código:
+
+- `mssql` para SQL Server;
+- `bcrypt` para hash de senha;
+- `@nestjs/swagger` para Swagger;
+- `class-validator` e `class-transformer` para DTOs;
+- JWT via stack NestJS de autenticação.
+
+Ausências relevantes no código atual:
+
+- Prisma;
+- BullMQ;
+- Redis client em uso de aplicação;
+- WebSocket;
+- S3;
+- fila assíncrona para export.
 
 ### Web
 
-- depende da API para autenticação, administração e relatórios;
-- depende de credenciais válidas do Supabase para dados de dashboard, notificações, exportações e configurações;
-- quando o dashboard não encontra dados, usa fallback local;
-- exportações, notificações e configurações não têm fallback equivalente e mostram erro ou vazio quando a integração não responde.
+Dependências confirmadas no código:
 
-## Limites e pontos provisórios já visíveis
+- `next`, `react`, `react-dom`;
+- `@supabase/supabase-js`;
+- `zod`;
+- `lucide-react`;
+- Tailwind CSS.
 
-- o repositório documenta `infra/env/.env.example`, mas esse arquivo não está presente no clone atual;
-- a Web mistura duas estratégias de dados: parte via API própria e parte via Supabase direto;
-- o dashboard inicial já possui fallback local, mas exportações, notificações e configurações ainda dependem mais fortemente do Supabase;
-- há funcionalidades planejadas no histórico da sprint que ainda não estão concluídas, mas a base principal de autenticação, administração e relatórios já está implementada.
+Ausências relevantes no código atual:
+
+- React Query;
+- Recharts;
+- Chart.js;
+- React Hook Form;
+- ExcelJS;
+- Puppeteer;
+- WeasyPrint.
+
+## Mapa de persistência real
+
+| Recurso                             | Onde persiste hoje           | Evidência                                                            | Observação                                                     |
+| ----------------------------------- | ---------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Sessão do frontend                  | `localStorage`               | `apps/web/src/lib/auth/session.ts`                                   | Persistência local no navegador.                               |
+| Access token e refresh token da API | memória e fluxo JWT da API   | `apps/api/src/auth/*`                                                | Não há Redis funcional para sessão.                            |
+| Usuários e grupos da API            | memória do processo          | `apps/api/src/admin/**/repositories`                                 | Repositórios em memória no backend atual.                      |
+| Definições de relatórios da API     | memória do processo          | `apps/api/src/reports/repositories/report-definitions.repository.ts` | Catálogo administrativo não está persistido em banco pela API. |
+| Dados de execução de relatórios     | SQL Server                   | `apps/api/src/sql-server/*` e `apps/api/src/reports/*`               | Consultas parametrizadas em fonte externa.                     |
+| KPIs do dashboard                   | Supabase                     | `apps/web/src/components/dashboard/dashboard-home.tsx`               | Leitura direta pela Web.                                       |
+| Setores do dashboard                | Supabase                     | `apps/web/src/components/dashboard/dashboard-home.tsx`               | Leitura direta pela Web.                                       |
+| Histórico de exportações            | Supabase (`export_jobs`)     | `apps/web/src/components/exports/exports-list.tsx`                   | Apenas leitura no frontend.                                    |
+| Notificações                        | Supabase (`notifications`)   | `apps/web/src/components/notifications/notifications-list.tsx`       | Leitura e update direto no frontend.                           |
+| Configurações do sistema            | Supabase (`system_settings`) | `apps/web/src/components/admin/admin-settings.tsx`                   | Leitura direta no frontend.                                    |
+
+## Limitações, desvios e soluções provisórias
+
+### Mistura de estratégias de dados
+
+Hoje a aplicação usa dois caminhos de dados:
+
+- Web -> API NestJS para auth, admin e relatórios;
+- Web -> Supabase direto para dashboard, exportações, notificações e settings.
+
+Isso significa que não existe uma camada única de backend para toda a plataforma.
+
+### Persistência parcial e em memória
+
+Parte importante do domínio ainda está em memória no processo da API:
+
+- usuários e grupos usados pelos fluxos administrativos;
+- definições de relatórios.
+
+Isso impede considerar essas funções como persistência consolidada de produção.
+
+### Dashboard com fallback local
+
+O dashboard inicial possui fallback de KPIs locais quando o Supabase não responde ou retorna vazio.
+Esse comportamento mantém a tela utilizável, mas pode mascarar ausência de dados reais.
+
+### Exportações sem pipeline de geração
+
+A tela de exportações consulta registros no Supabase, porém:
+
+- a API não expõe `POST /reports/:id/export`;
+- a API não processa filas;
+- a aplicação não gera arquivos PDF/Excel no backend.
+
+Na prática, o módulo atual é um histórico/leitor, não um fluxo completo de export.
+
+### Notificações sem backend próprio
+
+As notificações existem apenas como leitura e atualização direta no Supabase.
+Não há serviço dedicado na API nem emissão em tempo real.
+
+### Arquivo de ambiente citado e ausente
+
+A documentação histórica menciona `infra/env/.env.example`, mas o clone atual não contém esse arquivo.
+Esse desvio precisa ser tratado como documentação desatualizada até que o arquivo seja recriado ou as docs sejam ajustadas.
+
+## Resumo executivo do estado real
+
+O projeto já possui base funcional para:
+
+- autenticação com JWT;
+- recuperação e redefinição de senha;
+- administração básica de usuários e grupos;
+- catálogo e execução de relatórios via SQL Server;
+- dashboard inicial com KPIs do Supabase;
+- leitura de notificações, exportações e settings no Supabase.
+
+O projeto ainda não possui implementação end-to-end para partes centrais do escopo V1, como:
+
+- 18 telas completas;
+- dashboards personalizados e editor visual;
+- exportação backend PDF/Excel;
+- gestão dedicada de permissões;
+- logs de auditoria;
+- 2FA/TOTP;
+- arquitetura prevista com Prisma, React Query, BullMQ, S3 e cache Redis funcional.
