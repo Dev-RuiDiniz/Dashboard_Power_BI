@@ -1,18 +1,16 @@
-# Qualidade de Código
+# Qualidade de código
 
 ## Objetivo
 
-Este documento define a base de qualidade da Sprint 1 para o monorepo do Dashboard Power BI.
-
-A TASK-02 configura lint, formatação, TypeScript strict, hooks locais e validação de mensagens de commit para manter o projeto consistente desde a fundação técnica.
+Este documento descreve a base de qualidade realmente mantida no repositório.
 
 ## Ferramentas
 
-- ESLint para análise estática.
-- Prettier para formatação.
-- TypeScript com configuração strict compartilhada.
-- Husky para hooks locais.
-- lint-staged para validar arquivos alterados antes do commit.
+- ESLint para análise estática;
+- Prettier para formatação;
+- TypeScript em modo strict;
+- Husky para hooks locais;
+- lint-staged para validar arquivos alterados antes do commit;
 - commitlint para validar mensagens no padrão Conventional Commits.
 
 ## Comandos
@@ -20,46 +18,37 @@ A TASK-02 configura lint, formatação, TypeScript strict, hooks locais e valida
 ```bash
 pnpm install
 pnpm verify:workspace
+pnpm verify:docker
+pnpm verify:docs
 pnpm lint
 pnpm lint:fix
 pnpm format
 pnpm format:check
 pnpm typecheck
+pnpm test
+pnpm build
 pnpm quality
 ```
-
-## Fluxo TDD da tarefa
-
-### Red
-
-A validação de qualidade parte de comandos inexistentes ou incompletos na TASK-01.
-
-### Green
-
-As configurações foram adicionadas para permitir a execução dos comandos de qualidade.
-
-### Refactor
-
-A configuração foi centralizada na raiz do monorepo para ser reutilizada pelas aplicações e pacotes que serão inicializados nas próximas tarefas.
 
 ## Padrão de commits
 
 As mensagens devem seguir Conventional Commits:
 
 ```bash
-tipo(escopo): descrição curta em português
+tipo(escopo): descrição curta
 ```
 
 Exemplos:
 
 ```bash
-chore(qualidade): configura tooling base do monorepo
-docs(readme): atualiza comandos de qualidade
-test(workspace): valida estrutura do monorepo
+chore(qualidade): ajusta validações do monorepo
+docs(readme): atualiza documentação principal
+test(api): cobre fluxo de autenticação
 ```
 
 ## Observações
 
-- Os hooks do Husky são instalados após `pnpm install`, por meio do script `prepare`.
-- O type-check usa `tsconfig.base.json` como configuração base. As aplicações futuras poderão criar `tsconfig.json` próprios estendendo esse arquivo.
-- Não versionar secrets, arquivos `.env` reais, tokens ou credenciais.
+- os hooks do Husky são instalados após `pnpm install`, via script `prepare`;
+- o typecheck usa `tsconfig.base.json` como base compartilhada;
+- arquivos `.env` reais, tokens e credenciais não devem ser versionados;
+- `pnpm quality` consolida as validações estruturais e de código do repositório.

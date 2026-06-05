@@ -2,18 +2,20 @@
 
 ## Objetivo
 
-A TASK-22 inaugura a Sprint 4 com uma Home de BI para exibir os principais KPIs da plataforma Dashboard Power BI.
+Este documento descreve a tela inicial em `/app` no estado atual do projeto.
 
-A tela fica disponível em `/app` e apresenta:
+## O que a tela faz hoje
 
-- cards principais de KPIs;
+A Home autenticada apresenta:
+
+- cards principais de KPI;
 - delta percentual em relação ao período anterior;
 - tendência positiva, negativa ou neutra;
 - resumo total de KPIs monitorados;
 - total de setores cobertos;
 - média de delta dos indicadores;
 - agrupamento de KPIs por setor;
-- estado vazio quando não houver indicadores.
+- estado vazio e fallback local quando a integração não entrega dados.
 
 ## Arquivos principais
 
@@ -24,6 +26,17 @@ A tela fica disponível em `/app` e apresenta:
 - `apps/web/src/components/dashboard/kpi-card.test.tsx`
 - `apps/web/src/components/dashboard/dashboard-home.tsx`
 - `apps/web/src/components/dashboard/dashboard-home.test.tsx`
+
+## Fonte de dados
+
+Hoje a tela lê:
+
+- `kpis`
+- `sectors`
+
+diretamente do Supabase.
+
+Se a leitura falha ou retorna vazia, a interface usa fallback local para continuar renderizando.
 
 ## Contrato de KPI
 
@@ -51,41 +64,32 @@ Quando `previousValue` é zero:
 - se `value` também for zero, o delta é `0`;
 - se `value` for diferente de zero, o delta é tratado como `100`.
 
-Essa decisão evita divisão por zero e mantém uma leitura operacional segura para indicadores novos.
-
 ## Unidades suportadas
 
-| Unidade | Formatação |
-|---|---|
-| `number` | `1.250` |
+| Unidade    | Formatação    |
+| ---------- | ------------- |
+| `number`   | `1.250`       |
 | `currency` | `R$ 1.200,00` |
-| `percent` | `82%` |
+| `percent`  | `82%`         |
 
-Valores percentuais entre `-1` e `1` são exibidos como proporção. Por exemplo, `0.82` é exibido como `82%`.
+Valores percentuais entre `-1` e `1` são exibidos como proporção.
 
 ## Tendências
 
 | Delta | Tendência |
-|---:|---|
-| `> 0` | positiva |
-| `< 0` | negativa |
-| `0` | neutra |
+| ----: | --------- |
+| `> 0` | positiva  |
+| `< 0` | negativa  |
+|   `0` | neutra    |
 
-## TDD aplicado
+## Limitações atuais
 
-Foram criados testes antes da implementação para:
+- não há endpoint próprio de KPIs na API;
+- não há gráficos com biblioteca dedicada;
+- não há filtros avançados por período e setor na Home;
+- não há dashboard personalizado do usuário.
 
-- cálculo de delta percentual;
-- tratamento de `previousValue = 0`;
-- classificação de tendência;
-- agregação de KPIs por setor;
-- formatação de número, moeda e percentual;
-- resumo geral da Home;
-- renderização dos cards;
-- renderização da Home com dados;
-- estado vazio.
-
-## Validação esperada
+## Validação
 
 ```bash
 pnpm --filter @dashboard-power-bi/web test
@@ -94,10 +98,3 @@ pnpm --filter @dashboard-power-bi/web build
 pnpm lint
 pnpm quality
 ```
-
-## Próximos passos
-
-- Criar endpoint de KPIs no backend.
-- Substituir dados controlados do frontend por consumo autenticado de API.
-- Permitir filtros por período e setor na Home.
-- Adicionar gráficos resumidos para evolução temporal.
