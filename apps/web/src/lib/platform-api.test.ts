@@ -1,5 +1,6 @@
 import {
   createExport,
+  fetchDashboardHome,
   downloadExportFile,
   fetchDashboardKpis,
   fetchExports,
@@ -25,10 +26,13 @@ describe('platform-api', () => {
 
   it('busca os KPIs do dashboard pela API', async () => {
     (apiGet as jest.Mock).mockResolvedValueOnce([]);
+    (apiGet as jest.Mock).mockResolvedValueOnce({ kpis: [] });
 
     await fetchDashboardKpis();
+    await fetchDashboardHome();
 
     expect(apiGet).toHaveBeenCalledWith('/dashboard/kpis');
+    expect(apiGet).toHaveBeenCalledWith('/dashboard/home');
   });
 
   it('busca exportacoes pela API', async () => {

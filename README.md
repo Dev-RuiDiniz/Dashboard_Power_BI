@@ -8,6 +8,7 @@ Este repositório já entrega uma base real de:
 
 - autenticação com API NestJS;
 - dashboard inicial;
+- dashboard home com payload consolidado de BI e charts reais;
 - catálogo e execução de relatórios;
 - administração básica de usuários e grupos;
 - rotas centralizadas de dashboard, notificações, exportações, settings e perfil via API;
@@ -222,7 +223,7 @@ Valide:
 
 ### Supabase indisponível
 
-Os fluxos de dashboard, notificações, exportações e settings agora passam pela API, mas continuam dependendo do Supabase no backend atual. Sem essa integração, essas rotas podem responder vazias ou degradadas.
+Os fluxos de dashboard, notificações, exportações e settings agora passam pela API, mas continuam dependendo do Supabase no backend atual. Sem essa integração, essas rotas podem responder vazias ou degradadas. A home de BI também depende dessa base para montar `GET /dashboard/home`.
 
 ## Segurança
 

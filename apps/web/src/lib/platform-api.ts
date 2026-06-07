@@ -1,5 +1,31 @@
 import { apiGet, apiGetBlob, apiPatch, apiPost } from '@/lib/admin-api';
-import type { KpiItem } from '@/lib/kpis';
+import type { KpiItem, SectorKpiSummary } from '@/lib/kpis';
+
+export type DashboardHomeResponse = {
+  summary: {
+    totalKpis: number;
+    totalSectors: number;
+    averageDelta: number;
+  };
+  kpis: KpiItem[];
+  sectorSummaries: SectorKpiSummary[];
+  charts: {
+    sectorDistribution: SectorKpiSummary[];
+    kpiPerformance: Array<{
+      id: string;
+      title: string;
+      sector: string;
+      value: number;
+      previousValue: number;
+      delta: number;
+    }>;
+  };
+  availableDrilldowns: Array<{
+    kpiId: string;
+    label: string;
+    dimension: 'sector';
+  }>;
+};
 
 export type ExportJob = {
   id: string;
@@ -47,6 +73,10 @@ export type AdminReportDefinition = {
   createdAt: string;
   updatedAt: string;
 };
+
+export async function fetchDashboardHome(): Promise<DashboardHomeResponse> {
+  return apiGet<DashboardHomeResponse>('/dashboard/home');
+}
 
 export async function fetchDashboardKpis(): Promise<KpiItem[]> {
   return apiGet<KpiItem[]>('/dashboard/kpis');

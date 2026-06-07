@@ -11,6 +11,12 @@ import { DashboardService } from './dashboard.service';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
+  @Get('home')
+  @ApiOkResponse({ description: 'Retorna payload consolidado da home de BI.' })
+  getHome() {
+    return this.dashboardService.getHome();
+  }
+
   @Get('kpis')
   @ApiOkResponse({ description: 'Lista KPIs ativos para o dashboard home.' })
   listKpis() {

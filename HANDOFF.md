@@ -33,6 +33,7 @@ Comece por estes arquivos:
 - perfil do usuário via `/auth/me` e `/auth/me/password`;
 - sessão de frontend em `sessionStorage`, com migração de legado e refresh automático único em `401`;
 - dashboard inicial com KPIs;
+- dashboard home com payload consolidado de BI e charts reais via API;
 - catálogo e execução de relatórios;
 - CRUD básico de usuários;
 - CRUD básico de grupos;
@@ -59,7 +60,6 @@ Comece por estes arquivos:
 - BullMQ;
 - Prisma;
 - React Query;
-- Recharts/Chart.js;
 - 2FA/TOTP;
 - Redis funcional na aplicação.
 
@@ -76,6 +76,7 @@ A Web usa a API NestJS como entrada principal dos fluxos autenticados, e a API c
 - exportações de relatórios agora têm backend real, mas o escopo total de BI/export do PDF ainda não está encerrado.
 - settings administrativos agora aceitam atualização via `PATCH /admin/settings/:key`;
 - criação, edição e exclusão de permissões agora registram eventos de auditoria.
+- a home de BI agora consome `GET /dashboard/home` e renderiza charts reais com Recharts, mas ainda sem drill-down.
 
 ## Próximo passo recomendado para qualquer continuidade
 

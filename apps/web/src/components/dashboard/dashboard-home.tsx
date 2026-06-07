@@ -1,33 +1,46 @@
 'use client';
 
-import { ChartBar as BarChart3, Layers as Layers3, TrendingUp } from 'lucide-react';
+import { ChartBar as BarChart3, Layers as Layers3, TriangleAlert, TrendingUp } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
-import { aggregateKpisBySector, formatDelta, summarizeKpis, type KpiItem } from '@/lib/kpis';
-import { fetchDashboardKpis } from '@/lib/platform-api';
+import { formatDelta, type KpiItem } from '@/lib/kpis';
+import { fetchDashboardHome, type DashboardHomeResponse } from '@/lib/platform-api';
 
 import { KpiCard } from './kpi-card';
 
 export function DashboardHome() {
-  const [kpis, setKpis] = useState<KpiItem[]>([]);
+  const [home, setHome] = useState<DashboardHomeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadKpis = useCallback(async () => {
+  const loadHome = useCallback(async () => {
     setIsLoading(true);
+    setErrorMessage(null);
     try {
-      const items = await fetchDashboardKpis();
-      setKpis(items.length > 0 ? items : getFallbackKpis());
+      setHome(await fetchDashboardHome());
     } catch {
-      setKpis(getFallbackKpis());
+      setHome(null);
+      setErrorMessage('Nao foi possivel carregar os indicadores de BI.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void loadKpis();
-  }, [loadKpis]);
+    void loadHome();
+  }, [loadHome]);
 
   if (isLoading) {
     return (
@@ -44,7 +57,21 @@ export function DashboardHome() {
     );
   }
 
-  if (kpis.length === 0) {
+  if (errorMessage) {
+    return (
+      <Card className="border-amber-200 bg-amber-50 text-center">
+        <CardHeader>
+          <TriangleAlert className="mx-auto h-8 w-8 text-amber-700" aria-hidden="true" />
+          <CardTitle>{errorMessage}</CardTitle>
+          <CardDescription>
+            Verifique a API da plataforma e a persistencia do dashboard.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (!home || home.kpis.length === 0) {
     return (
       <Card className="border-dashed text-center">
         <CardHeader>
@@ -56,9 +83,6 @@ export function DashboardHome() {
       </Card>
     );
   }
-
-  const summary = summarizeKpis(kpis);
-  const sectors = aggregateKpisBySector(kpis);
 
   return (
     <section className="space-y-6" aria-labelledby="dashboard-home-title">
@@ -73,25 +97,72 @@ export function DashboardHome() {
           Dashboard Home
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-          Visao executiva dos principais indicadores por setor, com delta percentual em relacao ao
-          periodo anterior e cards resumidos para acompanhamento rapido.
+          Visao executiva dos principais indicadores por setor, com series prontas para analise,
+          charts reais e base consolidada para drill-down.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard icon={BarChart3} label="KPIs monitorados" value={String(summary.totalKpis)} />
-        <SummaryCard icon={Layers3} label="Setores cobertos" value={String(summary.totalSectors)} />
+        <SummaryCard
+          icon={BarChart3}
+          label="KPIs monitorados"
+          value={String(home.summary.totalKpis)}
+        />
+        <SummaryCard
+          icon={Layers3}
+          label="Setores cobertos"
+          value={String(home.summary.totalSectors)}
+        />
         <SummaryCard
           icon={TrendingUp}
           label="Delta medio"
-          value={formatDelta(summary.averageDelta)}
+          value={formatDelta(home.summary.averageDelta)}
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {kpis.map((kpi) => (
-          <KpiCard key={kpi.id} kpi={kpi} />
+        {home.kpis.map((kpi) => (
+          <KpiCard key={kpi.id} kpi={kpi as KpiItem} />
         ))}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <ChartCard
+          title="Distribuicao por setor"
+          description="Quantidade de KPIs e delta medio agrupados por area."
+        >
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={home.charts.sectorDistribution}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="sector" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="total" fill="#1d4ed8" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard
+          title="Performance dos KPIs"
+          description="Serie comparando o valor atual com a referencia anterior."
+        >
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={home.charts.kpiPerformance}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="title" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="value" stroke="#1d4ed8" strokeWidth={3} />
+              <Line
+                type="monotone"
+                dataKey="previousValue"
+                stroke="#94a3b8"
+                strokeDasharray="4 4"
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
       <Card>
@@ -100,7 +171,7 @@ export function DashboardHome() {
           <CardDescription>Total de indicadores e delta medio agrupados por area.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
-          {sectors.map((sector) => (
+          {home.sectorSummaries.map((sector) => (
             <div key={sector.sector} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-semibold text-slate-950">{sector.sector}</p>
               <p className="mt-2 text-2xl font-bold text-slate-950">{sector.total}</p>
@@ -137,55 +208,22 @@ function SummaryCard({ icon: Icon, label, value }: SummaryCardProps) {
   );
 }
 
-function getFallbackKpis(): KpiItem[] {
-  return [
-    {
-      id: 'receita-mensal',
-      title: 'Receita mensal',
-      sector: 'Financeiro',
-      value: 120000,
-      previousValue: 100000,
-      unit: 'currency',
-    },
-    {
-      id: 'margem-operacional',
-      title: 'Margem operacional',
-      sector: 'Financeiro',
-      value: 0.32,
-      previousValue: 0.3,
-      unit: 'percent',
-    },
-    {
-      id: 'leads-qualificados',
-      title: 'Leads qualificados',
-      sector: 'Comercial',
-      value: 430,
-      previousValue: 400,
-      unit: 'number',
-    },
-    {
-      id: 'sla-operacional',
-      title: 'SLA operacional',
-      sector: 'Operacoes',
-      value: 0.92,
-      previousValue: 0.9,
-      unit: 'percent',
-    },
-    {
-      id: 'dashboards-ativos',
-      title: 'Dashboards ativos',
-      sector: 'BI',
-      value: 18,
-      previousValue: 16,
-      unit: 'number',
-    },
-    {
-      id: 'exportacoes-mensais',
-      title: 'Exportacoes mensais',
-      sector: 'BI',
-      value: 240,
-      previousValue: 220,
-      unit: 'number',
-    },
-  ];
+function ChartCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
 }

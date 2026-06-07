@@ -29,6 +29,7 @@ O repositório é um monorepo pnpm com duas aplicações principais:
 - settings administrativos agora são mutáveis pela API centralizada e auditados no backend;
 - mutações de permissões também entram na trilha de auditoria do runtime principal.
 - a sessão web saiu de `localStorage`, passou a usar `sessionStorage` e ganhou refresh automático único via `/auth/refresh` em respostas `401`.
+- a home de BI agora é abastecida por `GET /dashboard/home`, com resumo, KPIs e séries prontas para charts no frontend.
 
 ## Limitações atuais
 

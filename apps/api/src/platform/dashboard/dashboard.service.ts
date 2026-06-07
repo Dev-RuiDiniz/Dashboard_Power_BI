@@ -17,6 +17,40 @@ export type DashboardSector = {
   name: string;
 };
 
+export type DashboardSectorSummary = {
+  sector: string;
+  total: number;
+  averageDelta: number;
+};
+
+export type DashboardHomeChartPoint = {
+  id: string;
+  title: string;
+  sector: string;
+  value: number;
+  previousValue: number;
+  delta: number;
+};
+
+export type DashboardHomeResponse = {
+  summary: {
+    totalKpis: number;
+    totalSectors: number;
+    averageDelta: number;
+  };
+  kpis: DashboardKpi[];
+  sectorSummaries: DashboardSectorSummary[];
+  charts: {
+    sectorDistribution: DashboardSectorSummary[];
+    kpiPerformance: DashboardHomeChartPoint[];
+  };
+  availableDrilldowns: Array<{
+    kpiId: string;
+    label: string;
+    dimension: 'sector';
+  }>;
+};
+
 type DashboardKpiRow = {
   id: string;
   name: string;
@@ -33,6 +67,12 @@ type DashboardSectorRow = {
 @Injectable()
 export class DashboardService {
   constructor(private readonly supabaseService: SupabaseService) {}
+
+  async getHome(): Promise<DashboardHomeResponse> {
+    const kpis = await this.listKpis();
+
+    return buildDashboardHome(kpis);
+  }
 
   async listKpis(): Promise<DashboardKpi[]> {
     if (!this.supabaseService.isEnabled()) {
@@ -121,4 +161,75 @@ export class DashboardService {
       },
     ];
   }
+}
+
+function buildDashboardHome(kpis: DashboardKpi[]): DashboardHomeResponse {
+  const sectorSummaries = aggregateKpisBySector(kpis);
+  const totalSectors = new Set(kpis.map((kpi) => kpi.sector)).size;
+  const averageDelta =
+    kpis.length > 0
+      ? round(
+          kpis.reduce((sum, kpi) => sum + calculateKpiDelta(kpi.value, kpi.previousValue), 0) /
+            kpis.length,
+        )
+      : 0;
+
+  return {
+    summary: {
+      totalKpis: kpis.length,
+      totalSectors,
+      averageDelta,
+    },
+    kpis,
+    sectorSummaries,
+    charts: {
+      sectorDistribution: sectorSummaries,
+      kpiPerformance: kpis.map((kpi) => ({
+        id: kpi.id,
+        title: kpi.title,
+        sector: kpi.sector,
+        value: kpi.value,
+        previousValue: kpi.previousValue,
+        delta: calculateKpiDelta(kpi.value, kpi.previousValue),
+      })),
+    },
+    availableDrilldowns: kpis.map((kpi) => ({
+      kpiId: kpi.id,
+      label: kpi.title,
+      dimension: 'sector' as const,
+    })),
+  };
+}
+
+function aggregateKpisBySector(kpis: DashboardKpi[]): DashboardSectorSummary[] {
+  const bySector = kpis.reduce<Record<string, { total: number; deltaSum: number }>>((acc, kpi) => {
+    const delta = calculateKpiDelta(kpi.value, kpi.previousValue);
+
+    if (!acc[kpi.sector]) {
+      acc[kpi.sector] = { total: 0, deltaSum: 0 };
+    }
+
+    acc[kpi.sector]!.total += 1;
+    acc[kpi.sector]!.deltaSum += delta;
+
+    return acc;
+  }, {});
+
+  return Object.entries(bySector).map(([sector, summary]) => ({
+    sector,
+    total: summary.total,
+    averageDelta: round(summary.deltaSum / summary.total),
+  }));
+}
+
+function calculateKpiDelta(value: number, previousValue = 0): number {
+  if (previousValue === 0) {
+    return round(value === 0 ? 0 : 100);
+  }
+
+  return round(((value - previousValue) / Math.abs(previousValue)) * 100);
+}
+
+function round(value: number): number {
+  return Math.round(value * 100) / 100;
 }
