@@ -1,4 +1,14 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -9,13 +19,16 @@ import {
 import { Request } from 'express';
 
 import { AuthService } from './auth.service';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { ChangeMyPasswordDto } from './dto/change-my-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { PasswordResetService } from './services/password-reset.service';
-import { AuthTokens } from './types/auth.types';
+import { AuthenticatedRequestUser, AuthTokens } from './types/auth.types';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -30,7 +43,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Autentica usuário e emite access token e refresh token.' })
   @ApiOkResponse({ description: 'Autenticação realizada com sucesso.' })
   @ApiUnauthorizedResponse({ description: 'Credenciais inválidas.' })
-  @ApiTooManyRequestsResponse({ description: 'Muitas tentativas de login. Tente novamente mais tarde.' })
+  @ApiTooManyRequestsResponse({
+    description: 'Muitas tentativas de login. Tente novamente mais tarde.',
+  })
   login(@Body() body: LoginDto, @Req() request: Request): Promise<AuthTokens> {
     return this.authService.login(body.email, body.password, this.getClientIp(request));
   }
@@ -67,6 +82,26 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Refresh token inválido.' })
   logout(@Body() body: LogoutDto): Promise<{ success: true }> {
     return this.authService.logout(body.refreshToken);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Retorna o usuário autenticado.' })
+  @ApiOkResponse({ description: 'Perfil do usuário autenticado retornado com sucesso.' })
+  me(@CurrentUser() user: AuthenticatedRequestUser) {
+    return this.authService.getCurrentUser(user.sub);
+  }
+
+  @Patch('me/password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Atualiza a senha do usuário autenticado.' })
+  @ApiOkResponse({ description: 'Senha atualizada com sucesso.' })
+  changeMyPassword(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Body() body: ChangeMyPasswordDto,
+  ): Promise<{ success: true }> {
+    return this.authService.changePassword(user.sub, body.currentPassword, body.newPassword);
   }
 
   private getClientIp(request: Request): string {

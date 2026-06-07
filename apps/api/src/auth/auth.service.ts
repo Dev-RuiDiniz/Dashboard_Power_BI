@@ -1,5 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import {
+  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -14,6 +15,8 @@ import { RefreshTokenRepository } from './repositories/refresh-token.repository'
 import { LoginAttemptsService } from './services/login-attempts.service';
 import { TokenService } from './services/token.service';
 import { AuthTokens, AuthUser, RefreshSession } from './types/auth.types';
+
+export type AuthUserProfile = Omit<AuthUser, 'passwordHash'>;
 
 @Injectable()
 export class AuthService {
@@ -31,7 +34,9 @@ export class AuthService {
     try {
       this.loginAttemptsService.assertCanAttempt(email, ipAddress);
     } catch (error) {
-      this.logger.warn(`login_rate_limited email=${this.loginAttemptsService.maskEmail(email)} ip=${this.maskIp(ipAddress)}`);
+      this.logger.warn(
+        `login_rate_limited email=${this.loginAttemptsService.maskEmail(email)} ip=${this.maskIp(ipAddress)}`,
+      );
       throw error;
     }
 
@@ -76,13 +81,51 @@ export class AuthService {
     return { success: true };
   }
 
+  async getCurrentUser(userId: string): Promise<AuthUserProfile> {
+    const user = await this.usersRepository.findById(userId);
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Usuário autenticado inválido.');
+    }
+
+    return this.toProfile(user);
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: true }> {
+    if (newPassword.length < 8) {
+      throw new BadRequestException('A nova senha deve ter no mínimo 8 caracteres.');
+    }
+
+    const user = await this.usersRepository.findById(userId);
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Usuário autenticado inválido.');
+    }
+
+    const passwordMatches = await bcrypt.compare(currentPassword, user.passwordHash);
+
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Senha atual inválida.');
+    }
+
+    await this.usersRepository.updatePasswordHash(user.id, await this.hashPassword(newPassword));
+
+    return { success: true };
+  }
+
   private registerFailedLogin(email: string, ipAddress: string): void {
     const status = this.loginAttemptsService.recordFailure(email, ipAddress);
     const maskedEmail = this.loginAttemptsService.maskEmail(email);
     const maskedIp = this.maskIp(ipAddress);
 
     if (!status.allowed) {
-      this.logger.warn(`login_rate_limited email=${maskedEmail} ip=${maskedIp} retryAfterSeconds=${status.retryAfterSeconds}`);
+      this.logger.warn(
+        `login_rate_limited email=${maskedEmail} ip=${maskedIp} retryAfterSeconds=${status.retryAfterSeconds}`,
+      );
       throw new HttpException(
         {
           message: 'Muitas tentativas de login. Tente novamente mais tarde.',
@@ -92,7 +135,9 @@ export class AuthService {
       );
     }
 
-    this.logger.warn(`login_failed email=${maskedEmail} ip=${maskedIp} remainingAttempts=${status.remainingAttempts}`);
+    this.logger.warn(
+      `login_failed email=${maskedEmail} ip=${maskedIp} remainingAttempts=${status.remainingAttempts}`,
+    );
   }
 
   private async issueTokens(user: AuthUser): Promise<AuthTokens> {
@@ -153,12 +198,20 @@ export class AuthService {
     return bcrypt.hash(refreshToken, saltRounds);
   }
 
+  private async hashPassword(password: string): Promise<string> {
+    const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 10));
+
+    return bcrypt.hash(password, saltRounds);
+  }
+
   private createOpaqueRefreshToken(): string {
     return randomBytes(48).toString('base64url');
   }
 
   private getRefreshTokenExpiresAt(): Date {
-    const ttlSeconds = Number(this.configService.get<number>('JWT_REFRESH_EXPIRES_IN_SECONDS', 604800));
+    const ttlSeconds = Number(
+      this.configService.get<number>('JWT_REFRESH_EXPIRES_IN_SECONDS', 604800),
+    );
 
     return new Date(Date.now() + ttlSeconds * 1000);
   }
@@ -179,5 +232,11 @@ export class AuthService {
     }
 
     return `${parts[0]}.${parts[1]}.***.***`;
+  }
+
+  private toProfile(user: AuthUser): AuthUserProfile {
+    const { passwordHash: _passwordHash, ...profile } = user;
+
+    return profile;
   }
 }
