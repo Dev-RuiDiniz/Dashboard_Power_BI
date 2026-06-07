@@ -20,10 +20,11 @@ O repositório ainda não entrega a plataforma V1 completa descrita no PDF.
 Comece por estes arquivos:
 
 1. `README.md`
-2. `docs/system-map.md`
-3. `docs/scope-v1-gap-analysis.md`
-4. `SPRINT_STATUS.md`
-5. `docs/ARCHITECTURE_DETAILED.md`
+2. `SPRINT_STATUS.md`
+3. `docs/setup.md`
+4. `docs/architecture.md`
+5. `docs/api.md`
+6. `docs/web.md`
 
 ## O que está implementado
 
@@ -69,6 +70,7 @@ A Web usa a API NestJS para auth/admin/reports, consulta Supabase direto para ou
 ## Observações operacionais importantes
 
 - a documentação histórica do projeto superestimava o estado de entrega;
+- a pasta `docs/` foi reconstruída para refletir o runtime atual e servir como base mínima canônica;
 - `infra/env/.env.example` é citado por scripts e docs antigas, mas não está presente no clone atual;
 - parte do estado administrativo da API ainda depende de memória do processo;
 - exportações visíveis na Web não significam export backend funcional.

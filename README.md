@@ -177,21 +177,17 @@ A referência de variáveis está em `docs/environment.md`.
 
 ## Documentação complementar
 
-- `docs/system-map.md`: inventário canônico do sistema
-- `docs/scope-v1-gap-analysis.md`: comparação formal entre escopo V1 e estado real
 - `SPRINT_STATUS.md`: status verificado do projeto
-- `docs/ARCHITECTURE_DETAILED.md`: arquitetura real consolidada
-- `docs/architecture.md`: resumo arquitetural
+- `HANDOFF.md`: leitura rápida para continuidade
+- `docs/setup.md`: onboarding local
+- `docs/architecture.md`: resumo arquitetural do runtime
 - `docs/api.md`: API realmente implementada
 - `docs/web.md`: visão da aplicação web
-- `docs/frontend.md`: comportamento do frontend
-- `docs/reports.md`: módulo de relatórios no estado atual
-- `docs/setup.md`: onboarding local
 - `docs/design-system.md`: base visual
 - `docs/devops.md`: Docker e operações
 - `docs/environment.md`: variáveis de ambiente
-- `docs/deploy-vps.md`: deploy via GitHub Actions + SSH
 - `docs/quality.md`: qualidade e validações
+- `docs/decisions/`: decisões arquiteturais curtas
 
 ## Troubleshooting
 
