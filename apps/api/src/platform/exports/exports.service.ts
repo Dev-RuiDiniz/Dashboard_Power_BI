@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 import { randomUUID } from 'node:crypto';
 
+import { AuthenticatedRequestUser } from '../../auth/types/auth.types';
+import { ReportsApiService } from '../../reports/reports-api.service';
 import { SupabaseService } from '../../supabase/supabase.service';
-import { EXPORTS_QUEUE_NAME, ExportJobPayload } from './exports.queue';
+import { EXPORTS_QUEUE_NAME } from './exports.queue';
 
 export type ExportJobRecord = {
   id: string;
@@ -34,6 +36,7 @@ export class ExportsService {
   constructor(
     private readonly configService: ConfigService,
     private readonly supabaseService: SupabaseService,
+    private readonly reportsApiService: ReportsApiService,
   ) {
     this.initQueue();
   }
@@ -60,7 +63,16 @@ export class ExportsService {
     return (data ?? []) as ExportJobRecord[];
   }
 
-  async createForUser(userId: string, input: CreateExportInput): Promise<ExportJobRecord> {
+  async createForUser(
+    user: AuthenticatedRequestUser & { permissions?: string[] },
+    input: CreateExportInput,
+  ): Promise<ExportJobRecord> {
+    if (!input.reportId) {
+      throw new BadRequestException('reportId é obrigatório para criar exportações.');
+    }
+
+    await this.reportsApiService.getReportById(input.reportId, user);
+
     const jobId = randomUUID();
     const now = new Date().toISOString();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -84,7 +96,7 @@ export class ExportsService {
         .from('api_export_jobs')
         .insert({
           id: jobId,
-          api_user_id: userId,
+          api_user_id: user.sub,
           report_id: input.reportId ?? null,
           export_format: input.exportFormat,
           parameters: input.parameters ?? null,
@@ -103,10 +115,17 @@ export class ExportsService {
         'process-export',
         {
           jobId,
-          userId,
+          userId: user.sub,
           reportId: input.reportId,
           exportFormat: input.exportFormat,
           parameters: input.parameters,
+          requestContext: {
+            userId: user.sub,
+            email: user.email,
+            roles: [...user.roles],
+            sectors: [...user.sectors],
+            permissions: [...(user.permissions ?? [])],
+          },
         },
         { removeOnComplete: 100, removeOnFail: 100 },
       );

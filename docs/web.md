@@ -31,6 +31,8 @@ A sessão do frontend permanece em `localStorage`. Isso sustenta o fluxo atual, 
 
 - auth, perfil, dashboard, relatórios, exportações, notificações e settings usam a API NestJS como fonte oficial;
 - a Web não depende mais de leituras diretas do Supabase nesses fluxos principais da plataforma.
+- a tela de detalhe do relatório já consegue solicitar exportações em PDF e Excel;
+- a tela de exportações baixa arquivos pela API autenticada, sem depender de link público cru.
 
 ## Limitações atuais
 

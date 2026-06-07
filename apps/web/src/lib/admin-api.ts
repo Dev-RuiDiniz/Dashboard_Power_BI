@@ -33,6 +33,20 @@ export async function apiGet<T>(path: string): Promise<T> {
   return handleResponse<T>(response);
 }
 
+export async function apiGetBlob(path: string): Promise<Blob> {
+  const response = await fetch(`${getApiUrl()}${path}`, {
+    headers: getAuthHeaders(),
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ message: 'Erro inesperado.' }));
+    throw new Error(typeof body.message === 'string' ? body.message : 'Erro inesperado.');
+  }
+
+  return response.blob();
+}
+
 export async function apiPost<T>(path: string, body?: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${getApiUrl()}${path}`, {
     method: 'POST',

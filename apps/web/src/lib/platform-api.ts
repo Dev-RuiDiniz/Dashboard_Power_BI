@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from '@/lib/admin-api';
+import { apiGet, apiGetBlob, apiPatch, apiPost } from '@/lib/admin-api';
 import type { KpiItem } from '@/lib/kpis';
 
 export type ExportJob = {
@@ -62,6 +62,11 @@ export async function createExport(input: {
   parameters?: Record<string, unknown>;
 }): Promise<ExportJob> {
   return apiPost<ExportJob>('/exports', input);
+}
+
+export async function downloadExportFile(fileUrl: string): Promise<Blob> {
+  const url = new URL(fileUrl, 'http://localhost:3001');
+  return apiGetBlob(`${url.pathname}${url.search}`);
 }
 
 export async function fetchNotifications(): Promise<Notification[]> {

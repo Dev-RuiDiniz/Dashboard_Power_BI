@@ -6,8 +6,10 @@ import { ConfigService } from '@nestjs/config';
 import { Job, Worker } from 'bullmq';
 import IORedis from 'ioredis';
 
-import { NotificationsService } from '../notifications/notifications.service';
+import { AuditService } from '../../audit/audit.service';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { ExportJobRunnerService } from './export-job-runner.service';
 import { EXPORTS_QUEUE_NAME, ExportJobPayload } from './exports.queue';
 
 @Injectable()
@@ -20,6 +22,8 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
     private readonly configService: ConfigService,
     private readonly supabaseService: SupabaseService,
     private readonly notificationsService: NotificationsService,
+    private readonly exportJobRunnerService: ExportJobRunnerService,
+    private readonly auditService: AuditService,
   ) {}
 
   onModuleInit(): void {
@@ -33,13 +37,9 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
 
     try {
       this.connection = new IORedis({ host, port, maxRetriesPerRequest: null, lazyConnect: true });
-      this.worker = new Worker(
-        EXPORTS_QUEUE_NAME,
-        async (job) => this.processJob(job),
-        {
-          connection: this.connection as never,
-        },
-      );
+      this.worker = new Worker(EXPORTS_QUEUE_NAME, async (job) => this.processJob(job), {
+        connection: this.connection as never,
+      });
 
       this.worker.on('failed', (job, error) => {
         this.logger.error(`Export job ${job?.id} failed: ${error.message}`);
@@ -61,7 +61,7 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   private async processJob(job: Job<ExportJobPayload>): Promise<void> {
-    const { jobId, userId, reportId, exportFormat, parameters } = job.data;
+    const { jobId, userId, reportId, exportFormat, parameters, requestContext } = job.data;
     const storageDir = this.configService.get<string>(
       'EXPORT_STORAGE_DIR',
       join(process.cwd(), 'storage', 'exports'),
@@ -82,15 +82,14 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const content = this.buildExportContent(exportFormat, reportId, parameters);
-      const extension = exportFormat === 'excel' ? 'csv' : exportFormat;
-      const fileName = `${jobId}.${extension}`;
+      const builtFile = await this.exportJobRunnerService.run(job.data);
+      const fileName = `${jobId}.${builtFile.extension}`;
       const filePath = join(storageDir, fileName);
 
-      await writeFile(filePath, content, 'utf8');
+      await writeFile(filePath, builtFile.buffer);
 
       const fileUrl = `${publicBaseUrl.replace(/\/$/, '')}/${fileName}`;
-      const fileSizeBytes = Buffer.byteLength(content, 'utf8');
+      const fileSizeBytes = builtFile.buffer.byteLength;
       const completedAt = new Date().toISOString();
 
       if (this.supabaseService.isEnabled()) {
@@ -108,6 +107,21 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
 
         await this.notificationsService.createExportReadyNotification(userId, jobId);
       }
+
+      await this.auditService.log({
+        userId,
+        userEmail: requestContext.email,
+        action: 'export.completed',
+        resource: 'exports',
+        resourceId: jobId,
+        details: {
+          reportId,
+          exportFormat,
+          parameters: parameters ?? {},
+          fileName,
+          fileSizeBytes,
+        },
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido na exportação.';
 
@@ -123,32 +137,21 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
           .eq('id', jobId);
       }
 
+      await this.auditService.log({
+        userId,
+        userEmail: requestContext.email,
+        action: 'export.failed',
+        resource: 'exports',
+        resourceId: jobId,
+        details: {
+          reportId,
+          exportFormat,
+          parameters: parameters ?? {},
+          errorMessage: message,
+        },
+      });
+
       throw error;
     }
-  }
-
-  private buildExportContent(
-    format: ExportJobPayload['exportFormat'],
-    reportId?: string,
-    parameters?: Record<string, unknown>,
-  ): string {
-    const rows = [
-      { metric: 'Receita', value: 120000 },
-      { metric: 'Margem', value: 0.32 },
-      { metric: 'Leads', value: 430 },
-    ];
-
-    if (format === 'json') {
-      return JSON.stringify({ reportId, parameters: parameters ?? {}, rows }, null, 2);
-    }
-
-    const header = 'metric,value';
-    const body = rows.map((row) => `${row.metric},${row.value}`).join('\n');
-
-    if (format === 'csv' || format === 'excel') {
-      return `${header}\n${body}`;
-    }
-
-    return `Exportação ${format.toUpperCase()}\nRelatório: ${reportId ?? 'N/A'}\n\n${header}\n${body}`;
   }
 }

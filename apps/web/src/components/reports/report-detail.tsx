@@ -4,6 +4,7 @@ import {
   TriangleAlert as AlertTriangle,
   ArrowLeft,
   ChartBar as BarChart3,
+  Download,
   Loader as Loader2,
   Play,
 } from 'lucide-react';
@@ -24,9 +25,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableEmpty,
 } from '@/components/ui';
 import { apiGet, apiPost } from '@/lib/admin-api';
+import { createExport } from '@/lib/platform-api';
 
 type ReportParameter = {
   name: string;
@@ -67,6 +68,9 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
   const [isQuerying, setIsQuerying] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'excel' | null>(null);
 
   const loadReport = useCallback(async () => {
     setIsLoading(true);
@@ -90,20 +94,7 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
 
     setIsQuerying(true);
     setQueryError(null);
-
-    const filters: Record<string, unknown> = {};
-    for (const param of report.parameters) {
-      const value = paramValues[param.name];
-      if (value !== undefined && value.trim() !== '') {
-        if (param.type === 'int' || param.type === 'number') {
-          filters[param.name] = Number(value);
-        } else if (param.type === 'boolean') {
-          filters[param.name] = value === 'true';
-        } else {
-          filters[param.name] = value;
-        }
-      }
-    }
+    const filters = buildFilters(report.parameters, paramValues);
 
     try {
       const result = await apiPost<QueryResult>(`/reports/${reportId}/query`, {
@@ -116,6 +107,29 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
       setQueryError(err instanceof Error ? err.message : 'Erro ao executar consulta.');
     } finally {
       setIsQuerying(false);
+    }
+  }
+
+  async function handleCreateExport(format: 'pdf' | 'excel') {
+    if (!report) {
+      return;
+    }
+
+    setExportingFormat(format);
+    setExportError(null);
+    setExportSuccess(null);
+
+    try {
+      await createExport({
+        reportId: report.id,
+        exportFormat: format,
+        parameters: buildFilters(report.parameters, paramValues),
+      });
+      setExportSuccess(`Exportação em ${format.toUpperCase()} solicitada com sucesso.`);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Erro ao solicitar exportação.');
+    } finally {
+      setExportingFormat(null);
     }
   }
 
@@ -236,6 +250,23 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
         </Card>
       )}
 
+      {exportError && (
+        <Card className="border-amber-200 bg-amber-50 text-center">
+          <CardHeader>
+            <AlertTriangle className="mx-auto h-6 w-6 text-amber-700" aria-hidden="true" />
+            <CardTitle>{exportError}</CardTitle>
+          </CardHeader>
+        </Card>
+      )}
+
+      {exportSuccess && (
+        <Card className="border-emerald-200 bg-emerald-50 text-center">
+          <CardHeader>
+            <CardTitle>{exportSuccess}</CardTitle>
+          </CardHeader>
+        </Card>
+      )}
+
       {queryResult && (
         <Card>
           <CardHeader>
@@ -246,6 +277,24 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                onClick={() => void handleCreateExport('pdf')}
+                disabled={exportingFormat !== null}
+              >
+                <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                {exportingFormat === 'pdf' ? 'Solicitando PDF...' : 'Exportar PDF'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => void handleCreateExport('excel')}
+                disabled={exportingFormat !== null}
+              >
+                <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                {exportingFormat === 'excel' ? 'Solicitando Excel...' : 'Exportar Excel'}
+              </Button>
+            </div>
             {queryResult.items.length === 0 ? (
               <p className="py-8 text-center text-sm text-slate-500">
                 Nenhum resultado para a consulta.
@@ -277,4 +326,23 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
       )}
     </section>
   );
+}
+
+function buildFilters(parameters: ReportParameter[], paramValues: Record<string, string>) {
+  const filters: Record<string, unknown> = {};
+
+  for (const param of parameters) {
+    const value = paramValues[param.name];
+    if (value !== undefined && value.trim() !== '') {
+      if (param.type === 'int' || param.type === 'number') {
+        filters[param.name] = Number(value);
+      } else if (param.type === 'boolean') {
+        filters[param.name] = value === 'true';
+      } else {
+        filters[param.name] = value;
+      }
+    }
+  }
+
+  return filters;
 }

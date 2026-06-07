@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -24,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui';
-import { fetchExports, type ExportJob } from '@/lib/platform-api';
+import { downloadExportFile, fetchExports, type ExportJob } from '@/lib/platform-api';
 
 const formatLabel: Record<ExportJob['export_format'], string> = {
   pdf: 'PDF',
@@ -58,6 +59,7 @@ export function ExportsList() {
   const [exports, setExports] = useState<ExportJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const loadExports = useCallback(async () => {
     setIsLoading(true);
@@ -74,6 +76,33 @@ export function ExportsList() {
   useEffect(() => {
     void loadExports();
   }, [loadExports]);
+
+  async function handleDownload(item: ExportJob) {
+    if (!item.file_url) {
+      return;
+    }
+
+    setDownloadingId(item.id);
+    setErrorMessage(null);
+
+    try {
+      const blob = await downloadExportFile(item.file_url);
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const fileName = item.file_url.split('/').pop() ?? `${item.id}.${item.export_format}`;
+
+      anchor.href = objectUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch {
+      setErrorMessage('Não foi possível baixar o arquivo exportado.');
+    } finally {
+      setDownloadingId(null);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -172,14 +201,15 @@ export function ExportsList() {
                       <TableCell>{formatDate(item.expires_at)}</TableCell>
                       <TableCell className="text-right">
                         {item.status === 'completed' && item.file_url ? (
-                          <a
-                            href={item.file_url}
-                            download
-                            rel="noopener noreferrer"
-                            className="inline-flex h-9 items-center justify-center rounded-xl bg-background px-3 text-xs font-medium text-foreground ring-1 ring-border transition-colors hover:bg-muted"
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleDownload(item)}
+                            disabled={downloadingId === item.id}
                           >
-                            <Download className="mr-1 h-3 w-3" /> Baixar
-                          </a>
+                            <Download className="mr-1 h-3 w-3" />
+                            {downloadingId === item.id ? 'Baixando...' : 'Baixar'}
+                          </Button>
                         ) : (
                           <span className="text-xs text-slate-400">-</span>
                         )}

@@ -37,6 +37,7 @@ Comece por estes arquivos:
 - CRUD básico de usuários;
 - CRUD básico de grupos;
 - leituras de dashboard, exportações, notificações e settings pela API;
+- pipeline real de exportações de relatórios com PDF/XLSX, histórico, fila e download autenticado;
 - healthcheck da API e do SQL Server;
 - Swagger local.
 
@@ -45,7 +46,6 @@ Comece por estes arquivos:
 - dashboard interativo;
 - visualizador de relatório como experiência dedicada;
 - notificações end-to-end;
-- exportações end-to-end;
 - configurações do sistema;
 - arquitetura de persistência da plataforma;
 - gestão administrativa de relatórios na Web.
@@ -56,7 +56,6 @@ Comece por estes arquivos:
 - logs de auditoria;
 - editor de dashboards;
 - dashboards personalizados;
-- export pipeline backend;
 - BullMQ;
 - Prisma;
 - React Query;
@@ -74,7 +73,7 @@ A Web usa a API NestJS como entrada principal dos fluxos autenticados, e a API c
 - a pasta `docs/` foi reconstruída para refletir o runtime atual e servir como base mínima canônica;
 - `infra/env/.env.example` e `infra/env/.env.production.example` existem neste clone e seguem como referência de ambiente;
 - a persistência de definições administrativas de relatórios agora usa Supabase no runtime principal quando `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` estão configurados;
-- exportações visíveis na Web não significam export backend funcional.
+- exportações de relatórios agora têm backend real, mas o escopo total de BI/export do PDF ainda não está encerrado.
 
 ## Próximo passo recomendado para qualquer continuidade
 

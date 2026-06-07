@@ -26,7 +26,7 @@ export class ExportsController {
   @UseGuards(JwtAuthGuard)
   @ApiCreatedResponse({ description: 'Cria um job de exportação.' })
   create(@CurrentUser() user: AuthenticatedRequestUser, @Body() dto: CreateExportDto) {
-    return this.exportsService.createForUser(user.sub, dto);
+    return this.exportsService.createForUser(user, dto);
   }
 
   @Get('files/:fileName')
