@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { AuthenticatedLayout } from './authenticated-layout';
+import * as authApi from '@/lib/auth/api';
 import * as session from '@/lib/auth/session';
 
 const replace = jest.fn();
@@ -19,6 +20,10 @@ jest.mock('@/lib/auth/session', () => ({
     expiresIn: 900,
   })),
   clearAuthSession: jest.fn(),
+}));
+
+jest.mock('@/lib/auth/api', () => ({
+  logout: jest.fn().mockResolvedValue({ success: true }),
 }));
 
 describe('AuthenticatedLayout', () => {
@@ -50,6 +55,7 @@ describe('AuthenticatedLayout', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Sair' }));
 
+    expect(authApi.logout).toHaveBeenCalledWith('refresh');
     expect(session.clearAuthSession).toHaveBeenCalled();
     expect(replace).toHaveBeenCalledWith('/login');
   });

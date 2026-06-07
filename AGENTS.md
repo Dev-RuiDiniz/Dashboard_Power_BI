@@ -277,7 +277,7 @@ Prefira mensagens objetivas em portugues brasileiro, como:
 As proximas ondas de trabalho devem seguir esta ordem:
 
 1. aprofundar permissoes, auditoria e settings;
-2. revisar hardening final de sessao e seguranca;
+2. revisar hardening adicional de sessao e seguranca;
 3. entregar BI interativo e dashboards personalizados;
 4. fechar lacunas remanescentes de persistencia e governanca;
 5. revalidar aderencia completa das 18 telas e 6 modulos.

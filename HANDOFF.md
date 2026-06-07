@@ -31,7 +31,7 @@ Comece por estes arquivos:
 
 - login, refresh, logout e reset de senha;
 - perfil do usuário via `/auth/me` e `/auth/me/password`;
-- sessão de frontend em `localStorage`;
+- sessão de frontend em `sessionStorage`, com migração de legado e refresh automático único em `401`;
 - dashboard inicial com KPIs;
 - catálogo e execução de relatórios;
 - CRUD básico de usuários;

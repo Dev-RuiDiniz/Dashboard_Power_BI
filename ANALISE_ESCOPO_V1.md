@@ -70,18 +70,18 @@ Premissas desta analise:
 
 ## Matriz Dos 6 Modulos Funcionais
 
-| Modulo   | Status  | Ja entregue                                                                                                                   | Parcial                                                                                                         | Faltando para aderir ao V1                                                      |
-| -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| AUTH     | Parcial | Login, refresh, logout, forgot/reset password, rate limit e perfil do usuario                                                 | Sessao web segue em `localStorage`; CSRF existe em codigo, mas a estrategia final de seguranca ainda e limitada | 2FA/TOTP, sessao mais robusta, hardening final do PDF                           |
-| PERMISS. | Parcial | Roles, setores, grupos, tela admin e endpoints de permissoes ativos no runtime                                                | Regras mais finas, heranca e validacao mais profunda ainda precisam evoluir                                     | Aderencia completa ao modelo do PDF e cobertura operacional maior               |
-| SQL      | Parcial | Camada parametrizada, validacao de identificadores e leitura segura de relatorios                                             | O modulo de SQL atende relatorios, mas nao fecha observabilidade e cache do PDF                                 | Cache, cron, monitoramento e estrategia final pedida no escopo                  |
-| RELAT.   | Parcial | Catalogo, visualizacao, filtros, gestao admin basica, persistencia real das definicoes e pipeline de exportacao de relatorios | Favoritos e cobertura mais ampla do PDF ainda nao fecharam                                                      | Favoritos, dashboards/exports mais amplos e demais fluxos do escopo             |
-| BI       | Parcial | Dashboard home com KPIs e resumo por setor via API                                                                            | A home funciona, mas sem BI interativo real                                                                     | Graficos, drill-down, personalizacao e editor visual                            |
-| ADMIN    | Parcial | Usuarios, grupos, permissoes, auditoria, settings e parte de relatorios                                                       | Existe administracao funcional, mas abaixo do dashboard admin e da profundidade do PDF                          | Dashboard admin, mais hardening, melhor persistencia e fechamento de governanca |
+| Modulo   | Status  | Ja entregue                                                                                                                                | Parcial                                                                                            | Faltando para aderir ao V1                                                      |
+| -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| AUTH     | Parcial | Login, refresh, logout, forgot/reset password, rate limit, perfil do usuario e sessao web em `sessionStorage` com refresh automatico unico | O hardening avancou, mas CSRF, 2FA/TOTP e a estrategia final de seguranca ainda seguem incompletos | 2FA/TOTP, endurecimento adicional da sessao e hardening final do PDF            |
+| PERMISS. | Parcial | Roles, setores, grupos, tela admin e endpoints de permissoes ativos no runtime                                                             | Regras mais finas, heranca e validacao mais profunda ainda precisam evoluir                        | Aderencia completa ao modelo do PDF e cobertura operacional maior               |
+| SQL      | Parcial | Camada parametrizada, validacao de identificadores e leitura segura de relatorios                                                          | O modulo de SQL atende relatorios, mas nao fecha observabilidade e cache do PDF                    | Cache, cron, monitoramento e estrategia final pedida no escopo                  |
+| RELAT.   | Parcial | Catalogo, visualizacao, filtros, gestao admin basica, persistencia real das definicoes e pipeline de exportacao de relatorios              | Favoritos e cobertura mais ampla do PDF ainda nao fecharam                                         | Favoritos, dashboards/exports mais amplos e demais fluxos do escopo             |
+| BI       | Parcial | Dashboard home com KPIs e resumo por setor via API                                                                                         | A home funciona, mas sem BI interativo real                                                        | Graficos, drill-down, personalizacao e editor visual                            |
+| ADMIN    | Parcial | Usuarios, grupos, permissoes, auditoria, settings e parte de relatorios                                                                    | Existe administracao funcional, mas abaixo do dashboard admin e da profundidade do PDF             | Dashboard admin, mais hardening, melhor persistencia e fechamento de governanca |
 
 ### Pontos explicitos por modulo
 
-- `AUTH`: login, refresh, reset, rate limit e bcrypt existem; `GET /auth/me` e `PATCH /auth/me/password` agora existem; 2FA/TOTP continua ausente; a sessao web segue em `localStorage`.
+- `AUTH`: login, refresh, reset, rate limit e bcrypt existem; `GET /auth/me` e `PATCH /auth/me/password` agora existem; 2FA/TOTP continua ausente; a sessao web passou a usar `sessionStorage`, com migracao de legado e refresh automatico unico em `401`.
 - `PERMISS.`: roles, setores, grupos e a tela de permissoes agora estao no runtime; create/update/delete de permissoes ja geram auditoria, mas a implementacao continua parcial frente ao nivel esperado no PDF.
 - `SQL`: a camada parametrizada continua sendo um dos pontos mais solidos do repositorio.
 - `RELAT.`: catalogo, query, definicoes administrativas e exportacao de relatorios agora usam backend real; o modulo continua parcial por causa de favoritos e da aderencia mais ampla ao PDF.
@@ -262,7 +262,7 @@ Dependencias:
 ### Seguranca
 
 - [x] Login com rate limit e JWT existe
-- [ ] Sessao web saiu de `localStorage` ou foi assumida conscientemente como limite do V1
+- [x] Sessao web saiu de `localStorage` e ganhou hardening incremental no cliente
 - [ ] 2FA/TOTP e hardening final foram definidos e implementados, se continuarem no escopo
 
 ### Dados e persistencia

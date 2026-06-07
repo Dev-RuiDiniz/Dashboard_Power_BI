@@ -28,6 +28,7 @@ O repositório é um monorepo pnpm com duas aplicações principais:
 - a Web deixou de depender de `/auth/me` e `/auth/me/password` inexistentes.
 - settings administrativos agora são mutáveis pela API centralizada e auditados no backend;
 - mutações de permissões também entram na trilha de auditoria do runtime principal.
+- a sessão web saiu de `localStorage`, passou a usar `sessionStorage` e ganhou refresh automático único via `/auth/refresh` em respostas `401`.
 
 ## Limitações atuais
 

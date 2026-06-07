@@ -25,7 +25,7 @@
 
 ## Sessão
 
-A sessão do frontend permanece em `localStorage`. Isso sustenta o fluxo atual, mas não representa o hardening final previsto no escopo V1.
+A sessão do frontend agora fica em `sessionStorage`, remove a dependência operacional do `localStorage`, migra sessões legadas e tenta um refresh automático único quando a API devolve `401`. Ainda não é o hardening final previsto no escopo V1.
 
 ## Integração atual
 

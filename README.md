@@ -229,5 +229,5 @@ Os fluxos de dashboard, notificações, exportações e settings agora passam pe
 - Nunca versionar `.env` real.
 - Nunca commitar tokens, senhas ou strings de conexão.
 - A API usa JWT, `bcrypt` e consultas parametrizadas ao SQL Server.
-- A Web ainda usa sessão em `localStorage`, o que deve ser tratado como limitação do estado atual.
+- A Web agora persiste a sessão em `sessionStorage`, migra sessões legadas do `localStorage` e tenta um refresh automático único em respostas `401`.
 - O PDF V1 prevê camadas adicionais como 2FA/TOTP, CSRF e CSP, mas elas não estão implementadas hoje.
