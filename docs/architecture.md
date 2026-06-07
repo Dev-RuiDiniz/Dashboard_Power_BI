@@ -26,6 +26,8 @@ O repositório é um monorepo pnpm com duas aplicações principais:
 - a API é a fonte oficial dos fluxos autenticados de platform;
 - `PlatformModule`, `PermissionsModule`, `AuditModule` e `CommonModule` estão integrados ao runtime principal;
 - a Web deixou de depender de `/auth/me` e `/auth/me/password` inexistentes.
+- settings administrativos agora são mutáveis pela API centralizada e auditados no backend;
+- mutações de permissões também entram na trilha de auditoria do runtime principal.
 
 ## Limitações atuais
 

@@ -85,6 +85,10 @@ export async function fetchSystemSettings(): Promise<SystemSetting[]> {
   return apiGet<SystemSetting[]>('/admin/settings');
 }
 
+export async function updateSystemSetting(key: string, value: unknown): Promise<SystemSetting> {
+  return apiPatch<SystemSetting>(`/admin/settings/${encodeURIComponent(key)}`, { value });
+}
+
 export async function fetchAdminReports(): Promise<AdminReportDefinition[]> {
   return apiGet<AdminReportDefinition[]>('/admin/reports');
 }

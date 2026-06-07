@@ -11,6 +11,8 @@ Este repositório já entrega uma base real de:
 - catálogo e execução de relatórios;
 - administração básica de usuários e grupos;
 - rotas centralizadas de dashboard, notificações, exportações, settings e perfil via API;
+- atualização de settings via API com trilha de auditoria;
+- mutações de permissões com trilha de auditoria no backend;
 - infraestrutura de desenvolvimento em Docker Compose;
 - infraestrutura de produção com Docker Compose e deploy para VPS via GitHub Actions.
 

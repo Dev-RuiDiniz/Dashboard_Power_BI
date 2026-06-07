@@ -37,6 +37,8 @@ Comece por estes arquivos:
 - CRUD básico de usuários;
 - CRUD básico de grupos;
 - leituras de dashboard, exportações, notificações e settings pela API;
+- atualização de settings pela API com auditoria;
+- trilha de auditoria para criação, edição e exclusão de permissões;
 - pipeline real de exportações de relatórios com PDF/XLSX, histórico, fila e download autenticado;
 - healthcheck da API e do SQL Server;
 - Swagger local.
@@ -46,14 +48,12 @@ Comece por estes arquivos:
 - dashboard interativo;
 - visualizador de relatório como experiência dedicada;
 - notificações end-to-end;
-- configurações do sistema;
+- configurações do sistema ainda abaixo da profundidade do PDF, mas já editáveis via API;
 - arquitetura de persistência da plataforma;
 - gestão administrativa de relatórios na Web.
 
 ## O que está ausente
 
-- gestão dedicada de permissões;
-- logs de auditoria;
 - editor de dashboards;
 - dashboards personalizados;
 - BullMQ;
@@ -74,6 +74,8 @@ A Web usa a API NestJS como entrada principal dos fluxos autenticados, e a API c
 - `infra/env/.env.example` e `infra/env/.env.production.example` existem neste clone e seguem como referência de ambiente;
 - a persistência de definições administrativas de relatórios agora usa Supabase no runtime principal quando `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` estão configurados;
 - exportações de relatórios agora têm backend real, mas o escopo total de BI/export do PDF ainda não está encerrado.
+- settings administrativos agora aceitam atualização via `PATCH /admin/settings/:key`;
+- criação, edição e exclusão de permissões agora registram eventos de auditoria.
 
 ## Próximo passo recomendado para qualquer continuidade
 

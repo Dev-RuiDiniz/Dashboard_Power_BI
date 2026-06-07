@@ -7,6 +7,7 @@ import {
   fetchSystemSettings,
   markAllNotificationsAsRead,
   markNotificationAsRead,
+  updateSystemSetting,
 } from './platform-api';
 import { apiGet, apiGetBlob, apiPatch, apiPost } from './admin-api';
 
@@ -67,11 +68,16 @@ describe('platform-api', () => {
     expect(apiPatch).toHaveBeenNthCalledWith(2, '/notifications/read-all', {});
   });
 
-  it('busca configuracoes do sistema pela API', async () => {
+  it('busca e atualiza configuracoes do sistema pela API', async () => {
     (apiGet as jest.Mock).mockResolvedValueOnce([]);
+    (apiPatch as jest.Mock).mockResolvedValueOnce({ id: 's1' });
 
     await fetchSystemSettings();
+    await updateSystemSetting('smtp.host', { value: 'smtp.example.com' });
 
     expect(apiGet).toHaveBeenCalledWith('/admin/settings');
+    expect(apiPatch).toHaveBeenCalledWith('/admin/settings/smtp.host', {
+      value: { value: 'smtp.example.com' },
+    });
   });
 });

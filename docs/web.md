@@ -33,6 +33,7 @@ A sessão do frontend permanece em `localStorage`. Isso sustenta o fluxo atual, 
 - a Web não depende mais de leituras diretas do Supabase nesses fluxos principais da plataforma.
 - a tela de detalhe do relatório já consegue solicitar exportações em PDF e Excel;
 - a tela de exportações baixa arquivos pela API autenticada, sem depender de link público cru.
+- a tela de settings já permite editar valores não sensíveis via API centralizada.
 
 ## Limitações atuais
 

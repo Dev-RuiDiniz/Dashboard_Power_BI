@@ -1,15 +1,17 @@
 'use client';
 
 import { TriangleAlert as AlertTriangle, Loader as Loader2, Settings } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
   Table,
   TableBody,
   TableCell,
@@ -18,10 +20,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui';
-import { fetchSystemSettings, type SystemSetting } from '@/lib/platform-api';
+import { fetchSystemSettings, type SystemSetting, updateSystemSetting } from '@/lib/platform-api';
 
 export function AdminSettings() {
   const [settings, setSettings] = useState<SystemSetting[]>([]);
+  const [draftValues, setDraftValues] = useState<Record<string, string>>({});
+  const [savingKeys, setSavingKeys] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -29,7 +33,13 @@ export function AdminSettings() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      setSettings(await fetchSystemSettings());
+      const nextSettings = await fetchSystemSettings();
+      setSettings(nextSettings);
+      setDraftValues(
+        Object.fromEntries(
+          nextSettings.map((setting) => [setting.setting_key, getSettingInputValue(setting)]),
+        ),
+      );
     } catch {
       setErrorMessage('Não foi possível carregar as configurações.');
     } finally {
@@ -40,6 +50,28 @@ export function AdminSettings() {
   useEffect(() => {
     void loadSettings();
   }, [loadSettings]);
+
+  const draftByKey = useMemo(() => draftValues, [draftValues]);
+
+  async function handleSave(setting: SystemSetting) {
+    const nextValue = draftByKey[setting.setting_key] ?? '';
+
+    setSavingKeys((current) => ({ ...current, [setting.setting_key]: true }));
+    setErrorMessage(null);
+
+    try {
+      const updated = await updateSystemSetting(setting.setting_key, { value: nextValue });
+      setSettings((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      setDraftValues((current) => ({
+        ...current,
+        [updated.setting_key]: getSettingInputValue(updated),
+      }));
+    } catch {
+      setErrorMessage('Não foi possível salvar a configuração selecionada.');
+    } finally {
+      setSavingKeys((current) => ({ ...current, [setting.setting_key]: false }));
+    }
+  }
 
   if (isLoading) {
     return (
@@ -92,6 +124,7 @@ export function AdminSettings() {
           <CardDescription>
             Parâmetros globais que controlam o comportamento da plataforma.
           </CardDescription>
+          {errorMessage ? <p className="text-sm font-medium text-danger">{errorMessage}</p> : null}
         </CardHeader>
         <CardContent>
           <Table>
@@ -102,29 +135,60 @@ export function AdminSettings() {
                 <TableHead>Descrição</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Atualizado em</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {settings.length === 0 ? (
-                <TableEmpty colSpan={5}>Nenhuma configuração encontrada.</TableEmpty>
+                <TableEmpty colSpan={6}>Nenhuma configuração encontrada.</TableEmpty>
               ) : (
-                settings.map((setting) => (
-                  <TableRow key={setting.id}>
-                    <TableCell className="font-mono text-xs font-medium">
-                      {setting.setting_key}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate font-mono text-xs">
-                      {setting.is_sensitive ? '****' : JSON.stringify(setting.setting_value)}
-                    </TableCell>
-                    <TableCell>{setting.description ?? '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={setting.is_sensitive ? 'warning' : 'default'}>
-                        {setting.is_sensitive ? 'Sensível' : 'Público'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(setting.updated_at)}</TableCell>
-                  </TableRow>
-                ))
+                settings.map((setting) => {
+                  const isSaving = savingKeys[setting.setting_key] ?? false;
+
+                  return (
+                    <TableRow key={setting.id}>
+                      <TableCell className="font-mono text-xs font-medium">
+                        {setting.setting_key}
+                      </TableCell>
+                      <TableCell className="max-w-xs">
+                        {setting.is_sensitive ? (
+                          <span className="font-mono text-xs">****</span>
+                        ) : (
+                          <Input
+                            aria-label={`Valor ${setting.setting_key}`}
+                            value={draftValues[setting.setting_key] ?? ''}
+                            onChange={(event) =>
+                              setDraftValues((current) => ({
+                                ...current,
+                                [setting.setting_key]: event.target.value,
+                              }))
+                            }
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>{setting.description ?? '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={setting.is_sensitive ? 'warning' : 'default'}>
+                          {setting.is_sensitive ? 'Sensível' : 'Público'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatDate(setting.updated_at)}</TableCell>
+                      <TableCell className="text-right">
+                        {setting.is_sensitive ? (
+                          <span className="text-xs text-slate-500">Somente visualização</span>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => void handleSave(setting)}
+                            disabled={isSaving}
+                          >
+                            {isSaving ? 'Salvando...' : 'Salvar'}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -132,6 +196,23 @@ export function AdminSettings() {
       </Card>
     </section>
   );
+}
+
+function getSettingInputValue(setting: SystemSetting): string {
+  if (
+    setting.setting_value &&
+    typeof setting.setting_value === 'object' &&
+    'value' in setting.setting_value &&
+    typeof setting.setting_value.value === 'string'
+  ) {
+    return setting.setting_value.value;
+  }
+
+  if (typeof setting.setting_value === 'string') {
+    return setting.setting_value;
+  }
+
+  return JSON.stringify(setting.setting_value ?? '');
 }
 
 function formatDate(value: string) {
