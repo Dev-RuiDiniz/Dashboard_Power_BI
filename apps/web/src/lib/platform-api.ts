@@ -27,6 +27,21 @@ export type DashboardHomeResponse = {
   }>;
 };
 
+export type DashboardDrilldownResponse = {
+  kpiId: string;
+  label: string;
+  dimension: 'sector';
+  series: Array<{
+    label: string;
+    value: number;
+  }>;
+  rows: Array<{
+    period: string;
+    value: number;
+    delta: number;
+  }>;
+};
+
 export type ExportJob = {
   id: string;
   report_id: string | null;
@@ -80,6 +95,10 @@ export async function fetchDashboardHome(): Promise<DashboardHomeResponse> {
 
 export async function fetchDashboardKpis(): Promise<KpiItem[]> {
   return apiGet<KpiItem[]>('/dashboard/kpis');
+}
+
+export async function fetchDashboardDrilldown(kpiId: string): Promise<DashboardDrilldownResponse> {
+  return apiGet<DashboardDrilldownResponse>(`/dashboard/kpis/${kpiId}/drilldown`);
 }
 
 export async function fetchExports(): Promise<ExportJob[]> {

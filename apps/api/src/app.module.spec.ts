@@ -37,6 +37,7 @@ describe('AppModule integration', () => {
   it.each([
     '/dashboard/home',
     '/dashboard/kpis',
+    '/dashboard/kpis/receita-mensal/drilldown',
     '/dashboard/sectors',
     '/notifications',
     '/exports',

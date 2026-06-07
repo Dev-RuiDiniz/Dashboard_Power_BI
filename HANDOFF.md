@@ -76,7 +76,7 @@ A Web usa a API NestJS como entrada principal dos fluxos autenticados, e a API c
 - exportações de relatórios agora têm backend real, mas o escopo total de BI/export do PDF ainda não está encerrado.
 - settings administrativos agora aceitam atualização via `PATCH /admin/settings/:key`;
 - criação, edição e exclusão de permissões agora registram eventos de auditoria.
-- a home de BI agora consome `GET /dashboard/home` e renderiza charts reais com Recharts, mas ainda sem drill-down.
+- a home de BI agora consome `GET /dashboard/home`, renderiza charts reais com Recharts e abriu o primeiro fluxo de drill-down via `GET /dashboard/kpis/:kpiId/drilldown`.
 
 ## Próximo passo recomendado para qualquer continuidade
 

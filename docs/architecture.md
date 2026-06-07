@@ -30,6 +30,7 @@ O repositório é um monorepo pnpm com duas aplicações principais:
 - mutações de permissões também entram na trilha de auditoria do runtime principal.
 - a sessão web saiu de `localStorage`, passou a usar `sessionStorage` e ganhou refresh automático único via `/auth/refresh` em respostas `401`.
 - a home de BI agora é abastecida por `GET /dashboard/home`, com resumo, KPIs e séries prontas para charts no frontend.
+- o drill-down inicial de KPI também sai da API em `GET /dashboard/kpis/:kpiId/drilldown`, mantendo o frontend centralizado em clients HTTP e sem retorno ao Supabase direto nesse fluxo.
 
 ## Limitações atuais
 

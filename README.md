@@ -223,7 +223,7 @@ Valide:
 
 ### Supabase indisponível
 
-Os fluxos de dashboard, notificações, exportações e settings agora passam pela API, mas continuam dependendo do Supabase no backend atual. Sem essa integração, essas rotas podem responder vazias ou degradadas. A home de BI também depende dessa base para montar `GET /dashboard/home`.
+Os fluxos de dashboard, notificações, exportações e settings agora passam pela API, mas continuam dependendo do Supabase no backend atual. Sem essa integração, essas rotas podem responder vazias ou degradadas. A home de BI depende dessa base para montar `GET /dashboard/home`, e o drill-down inicial de KPI já usa `GET /dashboard/kpis/:kpiId/drilldown`.
 
 ## Segurança
 

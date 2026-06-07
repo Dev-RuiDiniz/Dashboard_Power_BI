@@ -1,9 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { DashboardHome } from './dashboard-home';
-import { fetchDashboardHome } from '@/lib/platform-api';
+import { fetchDashboardDrilldown, fetchDashboardHome } from '@/lib/platform-api';
 
 jest.mock('@/lib/platform-api', () => ({
+  fetchDashboardDrilldown: jest.fn(),
   fetchDashboardHome: jest.fn(),
 }));
 
@@ -83,6 +85,19 @@ describe('DashboardHome', () => {
       },
       availableDrilldowns: [{ kpiId: 'receita', label: 'Receita mensal', dimension: 'sector' }],
     });
+    (fetchDashboardDrilldown as jest.Mock).mockResolvedValue({
+      kpiId: 'receita',
+      label: 'Receita mensal',
+      dimension: 'sector',
+      series: [
+        { label: 'Atual', value: 120000 },
+        { label: 'Anterior', value: 108000 },
+      ],
+      rows: [
+        { period: 'Atual', value: 120000, delta: 11.11 },
+        { period: 'Anterior', value: 108000, delta: 0 },
+      ],
+    });
   });
 
   it('renderiza cards principais, resumo por setor e charts de BI', async () => {
@@ -109,5 +124,23 @@ describe('DashboardHome', () => {
         screen.getByText('Nao foi possivel carregar os indicadores de BI.'),
       ).toBeInTheDocument();
     });
+  });
+
+  it('abre drilldown ao clicar em um KPI e permite voltar', async () => {
+    const user = userEvent.setup();
+
+    render(<DashboardHome />);
+
+    await user.click(
+      await screen.findByRole('button', { name: /abrir drilldown receita mensal/i }),
+    );
+
+    expect(fetchDashboardDrilldown).toHaveBeenCalledWith('receita');
+    expect(await screen.findByText('Drill-down · Receita mensal')).toBeInTheDocument();
+    expect(screen.getByText('Atual')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /voltar ao resumo/i }));
+
+    expect(screen.queryByText('Drill-down · Receita mensal')).not.toBeInTheDocument();
   });
 });

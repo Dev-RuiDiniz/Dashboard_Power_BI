@@ -37,4 +37,24 @@ describe('DashboardService', () => {
       ]),
     );
   });
+
+  it('retorna drilldown tabular de um KPI', async () => {
+    const service = new DashboardService({
+      isEnabled: () => false,
+    } as never);
+
+    const drilldown = await service.getKpiDrilldown('receita-mensal');
+
+    expect(drilldown.kpiId).toBe('receita-mensal');
+    expect(drilldown.dimension).toBe('sector');
+    expect(drilldown.series).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: 'Atual', value: 120000 }),
+        expect.objectContaining({ label: 'Anterior', value: 100000 }),
+      ]),
+    );
+    expect(drilldown.rows).toEqual(
+      expect.arrayContaining([expect.objectContaining({ period: 'Atual', value: 120000 })]),
+    );
+  });
 });

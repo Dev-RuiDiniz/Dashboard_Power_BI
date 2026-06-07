@@ -16,12 +16,18 @@ import {
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { formatDelta, type KpiItem } from '@/lib/kpis';
-import { fetchDashboardHome, type DashboardHomeResponse } from '@/lib/platform-api';
+import {
+  fetchDashboardDrilldown,
+  fetchDashboardHome,
+  type DashboardDrilldownResponse,
+  type DashboardHomeResponse,
+} from '@/lib/platform-api';
 
 import { KpiCard } from './kpi-card';
 
 export function DashboardHome() {
   const [home, setHome] = useState<DashboardHomeResponse | null>(null);
+  const [drilldown, setDrilldown] = useState<DashboardDrilldownResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -30,6 +36,7 @@ export function DashboardHome() {
     setErrorMessage(null);
     try {
       setHome(await fetchDashboardHome());
+      setDrilldown(null);
     } catch {
       setHome(null);
       setErrorMessage('Nao foi possivel carregar os indicadores de BI.');
@@ -41,6 +48,15 @@ export function DashboardHome() {
   useEffect(() => {
     void loadHome();
   }, [loadHome]);
+
+  const handleOpenDrilldown = useCallback(async (kpi: KpiItem) => {
+    setErrorMessage(null);
+    try {
+      setDrilldown(await fetchDashboardDrilldown(kpi.id));
+    } catch {
+      setErrorMessage('Nao foi possivel carregar o drill-down do indicador.');
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -122,9 +138,73 @@ export function DashboardHome() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {home.kpis.map((kpi) => (
-          <KpiCard key={kpi.id} kpi={kpi as KpiItem} />
+          <div key={kpi.id} className="space-y-3">
+            <KpiCard kpi={kpi as KpiItem} />
+            <button
+              type="button"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-blue-200 hover:text-blue-700"
+              onClick={() => void handleOpenDrilldown(kpi as KpiItem)}
+              aria-label={`Abrir drilldown ${kpi.title}`}
+            >
+              Abrir drill-down
+            </button>
+          </div>
         ))}
       </div>
+
+      {drilldown ? (
+        <Card>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>{`Drill-down · ${drilldown.label}`}</CardTitle>
+              <CardDescription>
+                Detalhe tabular do indicador com comparativo entre valor atual e referencia
+                anterior.
+              </CardDescription>
+            </div>
+            <button
+              type="button"
+              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-200 hover:text-blue-700"
+              onClick={() => setDrilldown(null)}
+            >
+              Voltar ao resumo
+            </button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {drilldown.series.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center"
+                >
+                  <p className="text-sm font-semibold text-slate-600">{`Serie ${item.label}`}</p>
+                  <p className="mt-2 text-2xl font-bold text-slate-950">{item.value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="overflow-hidden rounded-xl border border-slate-200">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 text-left text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Periodo</th>
+                    <th className="px-4 py-3 font-medium">Valor</th>
+                    <th className="px-4 py-3 font-medium">Delta</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {drilldown.rows.map((row) => (
+                    <tr key={row.period}>
+                      <td className="px-4 py-3 font-medium text-slate-950">{row.period}</td>
+                      <td className="px-4 py-3 text-slate-700">{row.value}</td>
+                      <td className="px-4 py-3 text-slate-700">{formatDelta(row.delta)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartCard

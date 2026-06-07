@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { SupabaseService } from '../../supabase/supabase.service';
 
@@ -51,6 +51,21 @@ export type DashboardHomeResponse = {
   }>;
 };
 
+export type DashboardDrilldownResponse = {
+  kpiId: string;
+  label: string;
+  dimension: 'sector';
+  series: Array<{
+    label: string;
+    value: number;
+  }>;
+  rows: Array<{
+    period: string;
+    value: number;
+    delta: number;
+  }>;
+};
+
 type DashboardKpiRow = {
   id: string;
   name: string;
@@ -72,6 +87,38 @@ export class DashboardService {
     const kpis = await this.listKpis();
 
     return buildDashboardHome(kpis);
+  }
+
+  async getKpiDrilldown(kpiId: string): Promise<DashboardDrilldownResponse> {
+    const kpi = (await this.listKpis()).find((item) => item.id === kpiId);
+
+    if (!kpi) {
+      throw new NotFoundException('KPI nao encontrado.');
+    }
+
+    const delta = calculateKpiDelta(kpi.value, kpi.previousValue);
+
+    return {
+      kpiId: kpi.id,
+      label: kpi.title,
+      dimension: 'sector',
+      series: [
+        { label: 'Atual', value: kpi.value },
+        { label: 'Anterior', value: kpi.previousValue },
+      ],
+      rows: [
+        {
+          period: 'Atual',
+          value: kpi.value,
+          delta,
+        },
+        {
+          period: 'Anterior',
+          value: kpi.previousValue,
+          delta: 0,
+        },
+      ],
+    };
   }
 
   async listKpis(): Promise<DashboardKpi[]> {

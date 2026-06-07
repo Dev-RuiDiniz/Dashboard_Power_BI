@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -21,6 +21,12 @@ export class DashboardController {
   @ApiOkResponse({ description: 'Lista KPIs ativos para o dashboard home.' })
   listKpis() {
     return this.dashboardService.listKpis();
+  }
+
+  @Get('kpis/:kpiId/drilldown')
+  @ApiOkResponse({ description: 'Retorna o drill-down tabular do KPI selecionado.' })
+  getKpiDrilldown(@Param('kpiId') kpiId: string) {
+    return this.dashboardService.getKpiDrilldown(kpiId);
   }
 
   @Get('sectors')
