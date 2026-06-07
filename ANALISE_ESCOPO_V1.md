@@ -191,12 +191,12 @@ Leitura correta: o `AGENTS.md` serve como orientacao de engenharia e alvo de mat
 
 ## Roadmap Recomendado Para Fechar O V1
 
-### Fase 2 - Fechar aderencia funcional que segue parcial
+### Fase 2 - Fechada em 7 de junho de 2026
 
 Entregas:
 
-- aprofundar permissoes, auditoria e settings alem do minimo atual;
-- revisar a sessao do frontend e seguranca operacional.
+- permissoes, auditoria e settings foram aprofundados alem do minimo inicial;
+- a sessao do frontend saiu de `localStorage` e ganhou hardening incremental no cliente.
 
 Dependencias:
 
@@ -230,11 +230,10 @@ Dependencias:
 
 ### Ordem recomendada
 
-1. Consolidar permissoes, auditoria, settings e persistencias restantes de platform.
-2. Revisar hardening de sessao e seguranca operacional.
-3. Entregar BI interativo e dashboards personalizados.
-4. Revisar hardening final e operacao.
-5. Validar de novo a matriz das 18 telas e dos 6 modulos.
+1. Entregar BI interativo e dashboards personalizados.
+2. Fechar lacunas remanescentes de persistencia e governanca.
+3. Revisar hardening final, 2FA/TOTP e operacao.
+4. Validar de novo a matriz das 18 telas e dos 6 modulos.
 
 ## Checklist Final De Conclusao Do V1
 
