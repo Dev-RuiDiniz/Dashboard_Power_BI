@@ -125,9 +125,7 @@ export function UserProfile() {
   return (
     <section className="space-y-6" aria-labelledby="profile-title">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
-          Meu Perfil
-        </p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Meu Perfil</p>
         <h1 id="profile-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
           Perfil do usuário
         </h1>
@@ -192,10 +190,7 @@ export function UserProfile() {
                   <p className="text-sm text-slate-500">Nenhuma role atribuída</p>
                 ) : (
                   user.roles.map((role) => (
-                    <Badge
-                      key={role}
-                      className="border border-slate-200 bg-white text-slate-700"
-                    >
+                    <Badge key={role} className="border border-slate-200 bg-white text-slate-700">
                       {role}
                     </Badge>
                   ))
@@ -209,10 +204,7 @@ export function UserProfile() {
                   <p className="text-sm text-slate-500">Nenhum setor atribuído</p>
                 ) : (
                   user.sectors.map((sector) => (
-                    <Badge
-                      key={sector}
-                      className="border border-blue-200 bg-blue-50 text-blue-700"
-                    >
+                    <Badge key={sector} className="border border-blue-200 bg-blue-50 text-blue-700">
                       {sector}
                     </Badge>
                   ))
@@ -237,6 +229,7 @@ export function UserProfile() {
           ) : (
             <form onSubmit={handlePasswordUpdate} className="space-y-4 max-w-md">
               <Input
+                id="current-password"
                 label="Senha atual"
                 type="password"
                 value={currentPassword}
@@ -244,6 +237,7 @@ export function UserProfile() {
                 required
               />
               <Input
+                id="new-password"
                 label="Nova senha"
                 type="password"
                 value={newPassword}
@@ -252,6 +246,7 @@ export function UserProfile() {
                 helperText="Mínimo 8 caracteres"
               />
               <Input
+                id="confirm-password"
                 label="Confirmar nova senha"
                 type="password"
                 value={confirmPassword}

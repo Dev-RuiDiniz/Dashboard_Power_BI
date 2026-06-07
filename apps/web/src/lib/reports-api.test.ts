@@ -45,7 +45,8 @@ describe('fetchReports', () => {
       cache: 'no-store',
     });
     expect(response.items).toHaveLength(1);
-    expect(response.items[0]).toMatchObject({
+    expect(response.items[0]).toBeDefined();
+    expect(response.items[0]!).toMatchObject({
       id: 'financeiro-dre',
       sourceType: 'view',
       status: 'available',
@@ -136,7 +137,8 @@ describe('fetchReports', () => {
 
     const response = await fetchReports({ page: 1, pageSize: 20 });
 
-    expect(response.items[0].sourceType).toBe('procedure');
+    expect(response.items[0]).toBeDefined();
+    expect(response.items[0]!.sourceType).toBe('procedure');
   });
 
   it('retorna erro controlado quando a API falha', async () => {

@@ -17,6 +17,19 @@ export type DashboardSector = {
   name: string;
 };
 
+type DashboardKpiRow = {
+  id: string;
+  name: string;
+  sector_id: string;
+  target_value: number | string | null;
+  unit: DashboardKpi['unit'] | null;
+};
+
+type DashboardSectorRow = {
+  id: string;
+  name: string;
+};
+
 @Injectable()
 export class DashboardService {
   constructor(private readonly supabaseService: SupabaseService) {}
@@ -41,11 +54,11 @@ export class DashboardService {
     }
 
     const sectorMap = new Map<string, { name: string }>();
-    for (const sector of sectorsResult.data ?? []) {
+    for (const sector of (sectorsResult.data ?? []) as DashboardSectorRow[]) {
       sectorMap.set(sector.id, { name: sector.name });
     }
 
-    const items = (kpisResult.data ?? []).map((kpi) => {
+    const items = ((kpisResult.data ?? []) as DashboardKpiRow[]).map((kpi) => {
       const sector = sectorMap.get(kpi.sector_id);
       const value = Number(kpi.target_value ?? 0);
 

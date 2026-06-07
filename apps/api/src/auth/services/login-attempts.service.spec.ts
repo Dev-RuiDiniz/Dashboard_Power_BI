@@ -1,4 +1,4 @@
-import { TooManyRequestsException } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { LoginAttemptsService } from './login-attempts.service';
@@ -42,7 +42,9 @@ describe('LoginAttemptsService', () => {
     expect(secondStatus.remainingAttempts).toBe(0);
     expect(blockedStatus.allowed).toBe(false);
     expect(blockedStatus.retryAfterSeconds).toBeGreaterThan(0);
-    expect(() => service.assertCanAttempt('admin@example.com', '127.0.0.1')).toThrow(TooManyRequestsException);
+    expect(() => service.assertCanAttempt('admin@example.com', '127.0.0.1')).toThrow(
+      expect.objectContaining({ status: HttpStatus.TOO_MANY_REQUESTS }),
+    );
   });
 
   it('deve limpar falhas após login bem-sucedido', () => {

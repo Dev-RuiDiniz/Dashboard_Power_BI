@@ -2,6 +2,8 @@ import { ReportDefinitionsAdminController } from './report-definitions.admin.con
 import { ReportDefinitionsService } from './report-definitions.service';
 
 describe('ReportDefinitionsAdminController', () => {
+  let controller: ReportDefinitionsAdminController;
+
   const report = {
     id: 'report-1',
     name: 'Relatório Financeiro',
@@ -38,7 +40,7 @@ describe('ReportDefinitionsAdminController', () => {
 
   it('deve listar catálogo administrativo', async () => {
     service.list.mockResolvedValue([report]);
-    const controller = new ReportDefinitionsAdminController(service);
+    controller = new ReportDefinitionsAdminController(service);
 
     await expect(controller.list()).resolves.toEqual([report]);
   });

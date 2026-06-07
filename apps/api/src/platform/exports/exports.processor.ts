@@ -13,7 +13,7 @@ import { EXPORTS_QUEUE_NAME, ExportJobPayload } from './exports.queue';
 @Injectable()
 export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ExportsProcessor.name);
-  private worker: Worker<ExportJobPayload> | null = null;
+  private worker: Worker | null = null;
   private connection: IORedis | null = null;
 
   constructor(
@@ -33,11 +33,11 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
 
     try {
       this.connection = new IORedis({ host, port, maxRetriesPerRequest: null, lazyConnect: true });
-      this.worker = new Worker<ExportJobPayload>(
+      this.worker = new Worker(
         EXPORTS_QUEUE_NAME,
         async (job) => this.processJob(job),
         {
-          connection: this.connection,
+          connection: this.connection as never,
         },
       );
 

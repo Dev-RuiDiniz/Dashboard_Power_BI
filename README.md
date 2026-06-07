@@ -10,7 +10,7 @@ Este repositório já entrega uma base real de:
 - dashboard inicial;
 - catálogo e execução de relatórios;
 - administração básica de usuários e grupos;
-- leitura de notificações, exportações e settings no Supabase;
+- rotas centralizadas de dashboard, notificações, exportações, settings e perfil via API;
 - infraestrutura de desenvolvimento em Docker Compose;
 - infraestrutura de produção com Docker Compose e deploy para VPS via GitHub Actions.
 
@@ -32,7 +32,7 @@ Documentos canônicos do estado atual:
 - Next.js 14 para Web
 - Tailwind CSS
 - SQL Server externo
-- Supabase consumido diretamente em partes da Web
+- Supabase consumido pela API em fluxos de platform
 - Docker Compose para desenvolvimento e produção
 - GitHub Actions para deploy na VPS
 
@@ -139,7 +139,8 @@ Fluxo real atual:
 
 ```text
 Web Next.js -> API NestJS -> SQL Server externo
-          \-> Supabase direto
+                        \-> Supabase
+                        \-> memória em partes do domínio
 ```
 
 ## Decisões arquiteturais
@@ -177,21 +178,17 @@ A referência de variáveis está em `docs/environment.md`.
 
 ## Documentação complementar
 
-- `docs/system-map.md`: inventário canônico do sistema
-- `docs/scope-v1-gap-analysis.md`: comparação formal entre escopo V1 e estado real
 - `SPRINT_STATUS.md`: status verificado do projeto
-- `docs/ARCHITECTURE_DETAILED.md`: arquitetura real consolidada
-- `docs/architecture.md`: resumo arquitetural
+- `HANDOFF.md`: leitura rápida para continuidade
+- `docs/setup.md`: onboarding local
+- `docs/architecture.md`: resumo arquitetural do runtime
 - `docs/api.md`: API realmente implementada
 - `docs/web.md`: visão da aplicação web
-- `docs/frontend.md`: comportamento do frontend
-- `docs/reports.md`: módulo de relatórios no estado atual
-- `docs/setup.md`: onboarding local
 - `docs/design-system.md`: base visual
 - `docs/devops.md`: Docker e operações
 - `docs/environment.md`: variáveis de ambiente
-- `docs/deploy-vps.md`: deploy via GitHub Actions + SSH
 - `docs/quality.md`: qualidade e validações
+- `docs/decisions/`: decisões arquiteturais curtas
 
 ## Troubleshooting
 
@@ -223,15 +220,7 @@ Valide:
 
 ### Supabase indisponível
 
-Partes da Web dependem de:
-
-- `kpis`
-- `sectors`
-- `export_jobs`
-- `notifications`
-- `system_settings`
-
-Sem essas integrações, dashboard, notificações, exportações e settings podem degradar ou ficar vazios.
+Os fluxos de dashboard, notificações, exportações e settings agora passam pela API, mas continuam dependendo do Supabase no backend atual. Sem essa integração, essas rotas podem responder vazias ou degradadas.
 
 ## Segurança
 

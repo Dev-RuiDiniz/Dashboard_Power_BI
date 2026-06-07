@@ -19,11 +19,17 @@ describe('auth api client', () => {
 
   it('deve mapear 401 para credenciais inválidas', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 401, json: async () => ({}) });
-    await expect(login('admin@example.com', 'errada')).rejects.toMatchObject<AuthClientError>({ code: 'invalid_credentials' });
+    await expect(login('admin@example.com', 'errada')).rejects.toMatchObject({
+      code: 'invalid_credentials',
+      name: 'AuthClientError',
+    } satisfies Partial<AuthClientError>);
   });
 
   it('deve mapear 429 para limite de tentativas', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 429, json: async () => ({}) });
-    await expect(login('admin@example.com', 'errada')).rejects.toMatchObject<AuthClientError>({ code: 'rate_limited' });
+    await expect(login('admin@example.com', 'errada')).rejects.toMatchObject({
+      code: 'rate_limited',
+      name: 'AuthClientError',
+    } satisfies Partial<AuthClientError>);
   });
 });

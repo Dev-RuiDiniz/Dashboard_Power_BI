@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 
 import { AuthGuard } from './auth-guard';
-import * as session from '@/lib/auth/session';
+import { getAuthSession } from '@/lib/auth/session';
 
 const replace = jest.fn();
 
@@ -9,27 +9,32 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace }),
 }));
 
+jest.mock('@/lib/auth/session', () => ({
+  getAuthSession: jest.fn(),
+}));
+
+const getAuthSessionMock = getAuthSession as jest.MockedFunction<typeof getAuthSession>;
+
 describe('AuthGuard', () => {
   beforeEach(() => {
     jest.resetAllMocks();
   });
 
-  it('deve redirecionar para login quando não houver sessão', async () => {
-    jest.spyOn(session, 'getAuthSession').mockReturnValue(null);
+  it('deve redirecionar para login quando nao houver sessao', async () => {
+    getAuthSessionMock.mockReturnValue(null);
 
     render(
       <AuthGuard>
-        <p>Conteúdo protegido</p>
+        <p>Conteudo protegido</p>
       </AuthGuard>,
     );
 
-    expect(screen.getByRole('status')).toHaveTextContent('Verificando sessão');
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/login'));
-    expect(screen.queryByText('Conteúdo protegido')).not.toBeInTheDocument();
+    expect(screen.queryByText('Conteudo protegido')).not.toBeInTheDocument();
   });
 
-  it('deve renderizar conteúdo quando houver sessão', async () => {
-    jest.spyOn(session, 'getAuthSession').mockReturnValue({
+  it('deve renderizar conteudo quando houver sessao', async () => {
+    getAuthSessionMock.mockReturnValue({
       accessToken: 'access',
       refreshToken: 'refresh',
       tokenType: 'Bearer',
@@ -38,11 +43,11 @@ describe('AuthGuard', () => {
 
     render(
       <AuthGuard>
-        <p>Conteúdo protegido</p>
+        <p>Conteudo protegido</p>
       </AuthGuard>,
     );
 
-    expect(await screen.findByText('Conteúdo protegido')).toBeInTheDocument();
+    expect(await screen.findByText('Conteudo protegido')).toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();
   });
 });

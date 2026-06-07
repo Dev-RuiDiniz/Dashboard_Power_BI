@@ -12,18 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
-
-type Notification = {
-  id: string;
-  notification_type: 'report_available' | 'access_granted' | 'export_ready' | 'alert';
-  title: string;
-  message: string;
-  related_resource_id?: string;
-  is_read: boolean;
-  read_at?: string;
-  created_at: string;
-};
+import {
+  fetchNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+  type Notification,
+} from '@/lib/platform-api';
 
 const typeLabel: Record<Notification['notification_type'], string> = {
   report_available: 'Relatório disponível',
@@ -51,13 +45,7 @@ export function NotificationsList() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      setNotifications(data ?? []);
+      setNotifications(await fetchNotifications());
     } catch {
       setErrorMessage('Não foi possível carregar as notificações.');
     } finally {
@@ -71,14 +59,16 @@ export function NotificationsList() {
 
   async function markAsRead(id: string) {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true, read_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
+      const updated = await markNotificationAsRead(id);
       setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n,
+        prev.map((notification) =>
+          notification.id === id
+            ? {
+                ...notification,
+                is_read: updated.is_read,
+                read_at: updated.read_at ?? notification.read_at,
+              }
+            : notification,
         ),
       );
     } catch {
@@ -87,25 +77,24 @@ export function NotificationsList() {
   }
 
   async function markAllAsRead() {
-    const unread = notifications.filter((n) => !n.is_read);
+    const unread = notifications.filter((notification) => !notification.is_read);
     if (unread.length === 0) return;
 
     try {
-      const ids = unread.map((n) => n.id);
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true, read_at: new Date().toISOString() })
-        .in('id', ids);
-      if (error) throw error;
+      await markAllNotificationsAsRead();
       setNotifications((prev) =>
-        prev.map((n) => ({ ...n, is_read: true, read_at: n.read_at ?? new Date().toISOString() })),
+        prev.map((notification) => ({
+          ...notification,
+          is_read: true,
+          read_at: notification.read_at ?? new Date().toISOString(),
+        })),
       );
     } catch {
       alert('Erro ao marcar notificações como lidas.');
     }
   }
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const unreadCount = notifications.filter((notification) => !notification.is_read).length;
 
   if (isLoading) {
     return (

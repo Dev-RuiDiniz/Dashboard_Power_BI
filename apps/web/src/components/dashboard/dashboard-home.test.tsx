@@ -1,20 +1,47 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 import { DashboardHome } from './dashboard-home';
+import { fetchDashboardKpis } from '@/lib/platform-api';
+
+jest.mock('@/lib/platform-api', () => ({
+  fetchDashboardKpis: jest.fn(),
+}));
 
 describe('DashboardHome', () => {
-  it('renderiza cards principais e resumo por setor', () => {
-    render(
-      <DashboardHome
-        kpis={[
-          { id: 'receita', title: 'Receita mensal', sector: 'Financeiro', value: 120000, previousValue: 100000, unit: 'currency' },
-          { id: 'leads', title: 'Leads qualificados', sector: 'Comercial', value: 430, previousValue: 400, unit: 'number' },
-          { id: 'sla', title: 'SLA operacional', sector: 'Operacoes', value: 0.92, previousValue: 0.9, unit: 'percent' },
-        ]}
-      />,
-    );
+  beforeEach(() => {
+    jest.resetAllMocks();
+    (fetchDashboardKpis as jest.Mock).mockResolvedValue([
+      {
+        id: 'receita',
+        title: 'Receita mensal',
+        sector: 'Financeiro',
+        value: 120000,
+        previousValue: 108000,
+        unit: 'currency',
+      },
+      {
+        id: 'leads',
+        title: 'Leads qualificados',
+        sector: 'Comercial',
+        value: 430,
+        previousValue: 387,
+        unit: 'number',
+      },
+      {
+        id: 'sla',
+        title: 'SLA operacional',
+        sector: 'Operacoes',
+        value: 0.92,
+        previousValue: 0.83,
+        unit: 'percent',
+      },
+    ]);
+  });
 
-    expect(screen.getByRole('heading', { name: 'Dashboard Home' })).toBeInTheDocument();
+  it('renderiza cards principais e resumo por setor', async () => {
+    render(<DashboardHome />);
+
+    expect(await screen.findByRole('heading', { name: 'Dashboard Home' })).toBeInTheDocument();
     expect(screen.getByText('Receita mensal')).toBeInTheDocument();
     expect(screen.getByText('Leads qualificados')).toBeInTheDocument();
     expect(screen.getByText('SLA operacional')).toBeInTheDocument();
@@ -23,10 +50,13 @@ describe('DashboardHome', () => {
     expect(screen.getAllByText('Operacoes').length).toBeGreaterThan(0);
   });
 
-  it('renderiza estado vazio quando nao ha kpis', () => {
-    render(<DashboardHome kpis={[]} />);
+  it('renderiza fallback quando a carga falha', async () => {
+    (fetchDashboardKpis as jest.Mock).mockRejectedValueOnce(new Error('falha'));
 
-    expect(screen.getByText('Nenhum KPI disponivel')).toBeInTheDocument();
-    expect(screen.getByText('Cadastre ou conecte indicadores para visualizar a home de BI.')).toBeInTheDocument();
+    render(<DashboardHome />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Receita mensal')).toBeInTheDocument();
+    });
   });
 });
