@@ -28,7 +28,7 @@ export type CreateExportInput = {
 
 @Injectable()
 export class ExportsService {
-  private queue: Queue<ExportJobPayload> | null = null;
+  private queue: Queue | null = null;
   private connection: IORedis | null = null;
 
   constructor(
@@ -153,7 +153,7 @@ export class ExportsService {
 
     try {
       this.connection = new IORedis({ host, port, maxRetriesPerRequest: null, lazyConnect: true });
-      this.queue = new Queue<ExportJobPayload>(EXPORTS_QUEUE_NAME, { connection: this.connection });
+      this.queue = new Queue(EXPORTS_QUEUE_NAME, { connection: this.connection as never });
     } catch {
       this.queue = null;
     }

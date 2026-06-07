@@ -1,20 +1,63 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 import { DashboardHome } from './dashboard-home';
 
-describe('DashboardHome', () => {
-  it('renderiza cards principais e resumo por setor', () => {
-    render(
-      <DashboardHome
-        kpis={[
-          { id: 'receita', title: 'Receita mensal', sector: 'Financeiro', value: 120000, previousValue: 100000, unit: 'currency' },
-          { id: 'leads', title: 'Leads qualificados', sector: 'Comercial', value: 430, previousValue: 400, unit: 'number' },
-          { id: 'sla', title: 'SLA operacional', sector: 'Operacoes', value: 0.92, previousValue: 0.9, unit: 'percent' },
-        ]}
-      />,
-    );
+jest.mock('@/lib/supabase', () => {
+  const from = jest.fn((table: string) => ({
+    select: jest.fn(() => ({
+      eq: jest.fn(async () => {
+        if (table === 'kpis') {
+          return {
+            data: [
+              {
+                id: 'receita',
+                name: 'Receita mensal',
+                sector_id: 'financeiro',
+                unit: 'currency',
+                target_value: 120000,
+                is_active: true,
+              },
+              {
+                id: 'leads',
+                name: 'Leads qualificados',
+                sector_id: 'comercial',
+                unit: 'number',
+                target_value: 430,
+                is_active: true,
+              },
+              {
+                id: 'sla',
+                name: 'SLA operacional',
+                sector_id: 'operacoes',
+                unit: 'percent',
+                target_value: 0.92,
+                is_active: true,
+              },
+            ],
+          };
+        }
 
-    expect(screen.getByRole('heading', { name: 'Dashboard Home' })).toBeInTheDocument();
+        return {
+          data: [
+            { id: 'financeiro', code: 'FIN', name: 'Financeiro' },
+            { id: 'comercial', code: 'COM', name: 'Comercial' },
+            { id: 'operacoes', code: 'OPE', name: 'Operacoes' },
+          ],
+        };
+      }),
+    })),
+  }));
+
+  return {
+    supabase: { from },
+  };
+});
+
+describe('DashboardHome', () => {
+  it('renderiza cards principais e resumo por setor', async () => {
+    render(<DashboardHome />);
+
+    expect(await screen.findByRole('heading', { name: 'Dashboard Home' })).toBeInTheDocument();
     expect(screen.getByText('Receita mensal')).toBeInTheDocument();
     expect(screen.getByText('Leads qualificados')).toBeInTheDocument();
     expect(screen.getByText('SLA operacional')).toBeInTheDocument();
@@ -23,10 +66,23 @@ describe('DashboardHome', () => {
     expect(screen.getAllByText('Operacoes').length).toBeGreaterThan(0);
   });
 
-  it('renderiza estado vazio quando nao ha kpis', () => {
-    render(<DashboardHome kpis={[]} />);
+  it('renderiza fallback quando a carga falha', async () => {
+    const { supabase } = jest.requireMock('@/lib/supabase') as {
+      supabase: { from: jest.Mock };
+    };
 
-    expect(screen.getByText('Nenhum KPI disponivel')).toBeInTheDocument();
-    expect(screen.getByText('Cadastre ou conecte indicadores para visualizar a home de BI.')).toBeInTheDocument();
+    supabase.from.mockImplementationOnce(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(async () => {
+          throw new Error('falha');
+        }),
+      })),
+    }));
+
+    render(<DashboardHome />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Receita mensal')).toBeInTheDocument();
+    });
   });
 });

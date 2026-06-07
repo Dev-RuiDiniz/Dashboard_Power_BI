@@ -116,8 +116,8 @@ export class AuditLogsRepository {
       resource: row.resource,
       resourceId: row.resource_id ?? undefined,
       details: row.details ?? undefined,
-      ipAddress: row.ipAddress ?? undefined,
-      userAgent: row.userAgent ?? undefined,
+      ipAddress: row.ip_address ?? undefined,
+      userAgent: row.user_agent ?? undefined,
       createdAt: new Date(row.created_at),
     };
   }

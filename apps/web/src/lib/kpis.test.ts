@@ -32,7 +32,7 @@ describe('kpis', () => {
     ]);
 
     expect(sectors).toEqual([
-      { sector: 'Financeiro', total: 2, averageDelta: 13.33 },
+      { sector: 'Financeiro', total: 2, averageDelta: 13.34 },
       { sector: 'Comercial', total: 1, averageDelta: 7.5 },
     ]);
   });

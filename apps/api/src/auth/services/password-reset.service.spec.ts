@@ -51,13 +51,17 @@ describe('PasswordResetService', () => {
     const response = await service.forgotPassword('admin@example.com');
     const sentEmails = emailService.getSentEmails();
     const activeTokens = await passwordResetTokenRepository.findActiveByUserId('demo-admin');
+    const firstEmail = sentEmails[0];
+    const firstToken = activeTokens[0];
 
     expect(response.success).toBe(true);
     expect(sentEmails).toHaveLength(1);
-    expect(sentEmails[0].to).toBe('admin@example.com');
-    expect(sentEmails[0].resetUrl).toContain('token=');
+    expect(firstEmail).toBeDefined();
+    expect(firstEmail!.to).toBe('admin@example.com');
+    expect(firstEmail!.resetUrl).toContain('token=');
     expect(activeTokens).toHaveLength(1);
-    expect(sentEmails[0].resetUrl).not.toContain(activeTokens[0].tokenHash);
+    expect(firstToken).toBeDefined();
+    expect(firstEmail!.resetUrl).not.toContain(firstToken!.tokenHash);
   });
 
   it('deve rejeitar token inválido', async () => {
@@ -68,7 +72,9 @@ describe('PasswordResetService', () => {
 
   it('deve rejeitar token já utilizado', async () => {
     await service.forgotPassword('admin@example.com');
-    const token = new URL(emailService.getSentEmails()[0].resetUrl).searchParams.get('token') as string;
+    const firstEmail = emailService.getSentEmails()[0];
+    expect(firstEmail).toBeDefined();
+    const token = new URL(firstEmail!.resetUrl).searchParams.get('token') as string;
 
     await service.resetPassword(token, 'NovaSenha123!');
 
@@ -99,14 +105,18 @@ describe('PasswordResetService', () => {
     );
 
     await service.forgotPassword('admin@example.com');
-    const token = new URL(emailService.getSentEmails()[0].resetUrl).searchParams.get('token') as string;
+    const firstEmail = emailService.getSentEmails()[0];
+    expect(firstEmail).toBeDefined();
+    const token = new URL(firstEmail!.resetUrl).searchParams.get('token') as string;
 
     await expect(service.resetPassword(token, 'NovaSenha123!')).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('deve atualizar senha com bcrypt e permitir validação da nova senha', async () => {
     await service.forgotPassword('admin@example.com');
-    const token = new URL(emailService.getSentEmails()[0].resetUrl).searchParams.get('token') as string;
+    const firstEmail = emailService.getSentEmails()[0];
+    expect(firstEmail).toBeDefined();
+    const token = new URL(firstEmail!.resetUrl).searchParams.get('token') as string;
 
     await service.resetPassword(token, 'NovaSenha123!');
 

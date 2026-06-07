@@ -2,6 +2,8 @@ import { ReportsApiService } from './reports-api.service';
 import { ReportsController } from './reports.controller';
 
 describe('ReportsController', () => {
+  let controller: ReportsController;
+
   const response = {
     items: [],
     page: 1,
@@ -42,7 +44,7 @@ describe('ReportsController', () => {
       name: 'Relatório Financeiro',
       description: 'Visão consolidada.',
       sector: 'financeiro',
-      sourceType: 'view',
+      sourceType: 'view' as const,
       parameters: [],
       requiredPermissions: [],
     });

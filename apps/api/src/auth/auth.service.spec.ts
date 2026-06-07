@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { TooManyRequestsException, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, UnauthorizedException } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
@@ -67,12 +67,12 @@ describe('AuthService', () => {
     await expect(authService.login('admin@example.com', 'SenhaErrada123!', '127.0.0.1')).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
-    await expect(authService.login('admin@example.com', 'SenhaErrada123!', '127.0.0.1')).rejects.toBeInstanceOf(
-      TooManyRequestsException,
-    );
-    await expect(authService.login('admin@example.com', 'Admin123!', '127.0.0.1')).rejects.toBeInstanceOf(
-      TooManyRequestsException,
-    );
+    await expect(authService.login('admin@example.com', 'SenhaErrada123!', '127.0.0.1')).rejects.toMatchObject({
+      status: HttpStatus.TOO_MANY_REQUESTS,
+    });
+    await expect(authService.login('admin@example.com', 'Admin123!', '127.0.0.1')).rejects.toMatchObject({
+      status: HttpStatus.TOO_MANY_REQUESTS,
+    });
   });
 
   it('deve limpar falhas após login válido', async () => {
@@ -88,10 +88,14 @@ describe('AuthService', () => {
   it('deve armazenar refresh token apenas como hash bcrypt', async () => {
     const tokens = await authService.login('admin@example.com', 'Admin123!', '127.0.0.1');
     const sessions = await refreshTokenRepository.findActiveByUserId('demo-admin');
+    const firstSession = sessions[0];
 
     expect(sessions).toHaveLength(1);
-    expect(sessions[0].refreshTokenHash).not.toBe(tokens.refreshToken);
-    await expect(bcrypt.compare(tokens.refreshToken, sessions[0].refreshTokenHash)).resolves.toBe(true);
+    expect(firstSession).toBeDefined();
+    expect(firstSession!.refreshTokenHash).not.toBe(tokens.refreshToken);
+    await expect(bcrypt.compare(tokens.refreshToken, firstSession!.refreshTokenHash)).resolves.toBe(
+      true,
+    );
   });
 
   it('deve rotacionar refresh token e invalidar o token anterior', async () => {
