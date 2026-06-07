@@ -6,6 +6,8 @@ import { ReportsModule } from '../reports/reports.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { DashboardController } from './dashboard/dashboard.controller';
 import { DashboardService } from './dashboard/dashboard.service';
+import { DashboardsController } from './dashboards/dashboards.controller';
+import { DashboardsService } from './dashboards/dashboards.service';
 import { ExportsController } from './exports/exports.controller';
 import { ExportFileBuilderService } from './exports/export-file-builder.service';
 import { ExportJobRunnerService } from './exports/export-job-runner.service';
@@ -20,12 +22,14 @@ import { SettingsService } from './settings/settings.service';
   imports: [AuthModule, SupabaseModule, ReportsModule, AuditModule],
   controllers: [
     DashboardController,
+    DashboardsController,
     ExportsController,
     NotificationsController,
     SettingsController,
   ],
   providers: [
     DashboardService,
+    DashboardsService,
     ExportsService,
     ExportFileBuilderService,
     ExportJobRunnerService,

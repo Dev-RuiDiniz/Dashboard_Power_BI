@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ChartBar as BarChart3,
   Download,
+  Star,
   Loader as Loader2,
   Play,
 } from 'lucide-react';
@@ -27,7 +28,7 @@ import {
   TableRow,
 } from '@/components/ui';
 import { apiGet, apiPost } from '@/lib/admin-api';
-import { createExport } from '@/lib/platform-api';
+import { createExport, favoriteReport } from '@/lib/platform-api';
 
 type ReportParameter = {
   name: string;
@@ -71,6 +72,7 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
   const [exportingFormat, setExportingFormat] = useState<'pdf' | 'excel' | null>(null);
+  const [isFavoriting, setIsFavoriting] = useState(false);
 
   const loadReport = useCallback(async () => {
     setIsLoading(true);
@@ -133,6 +135,25 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
     }
   }
 
+  async function handleFavoriteReport() {
+    if (!report) {
+      return;
+    }
+
+    setIsFavoriting(true);
+    setExportError(null);
+    setExportSuccess(null);
+
+    try {
+      await favoriteReport(report.id);
+      setExportSuccess('Relatorio favoritado com sucesso.');
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Erro ao favoritar relatorio.');
+    } finally {
+      setIsFavoriting(false);
+    }
+  }
+
   if (isLoading) {
     return (
       <Card className="border-dashed text-center">
@@ -177,6 +198,14 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
             {report.name}
           </h1>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => void handleFavoriteReport()}
+          disabled={isFavoriting}
+        >
+          <Star className="mr-2 h-4 w-4" aria-hidden="true" />
+          {isFavoriting ? 'Favoritando...' : 'Favoritar relatorio'}
+        </Button>
       </div>
 
       <Card>

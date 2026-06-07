@@ -1,5 +1,6 @@
-import { apiGet, apiGetBlob, apiPatch, apiPost } from '@/lib/admin-api';
+import { apiDelete, apiGet, apiGetBlob, apiPatch, apiPost } from '@/lib/admin-api';
 import type { KpiItem, SectorKpiSummary } from '@/lib/kpis';
+import type { PaginatedReports } from '@/lib/reports-api';
 
 export type DashboardHomeResponse = {
   summary: {
@@ -40,6 +41,34 @@ export type DashboardDrilldownResponse = {
     value: number;
     delta: number;
   }>;
+};
+
+export type UserDashboard = {
+  id: string;
+  name: string;
+  description: string;
+  isDefault: boolean;
+  layout: Record<string, unknown>;
+  widgets: Array<{
+    id: string;
+    dashboardId: string;
+    widgetType: 'chart' | 'kpi' | 'table';
+    title: string;
+    chartType: string | null;
+    reportId: string | null;
+    kpiId: string | null;
+    displayOrder: number;
+    config: Record<string, unknown>;
+    position: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+    createdAt: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ExportJob = {
@@ -99,6 +128,30 @@ export async function fetchDashboardKpis(): Promise<KpiItem[]> {
 
 export async function fetchDashboardDrilldown(kpiId: string): Promise<DashboardDrilldownResponse> {
   return apiGet<DashboardDrilldownResponse>(`/dashboard/kpis/${kpiId}/drilldown`);
+}
+
+export async function fetchDashboards(): Promise<UserDashboard[]> {
+  return apiGet<UserDashboard[]>('/dashboards');
+}
+
+export async function createDashboard(input: {
+  name: string;
+  description?: string;
+  isDefault?: boolean;
+}): Promise<UserDashboard> {
+  return apiPost<UserDashboard>('/dashboards', input);
+}
+
+export async function fetchFavoriteReports(): Promise<PaginatedReports['items']> {
+  return apiGet<PaginatedReports['items']>('/reports/favorites');
+}
+
+export async function favoriteReport(reportId: string): Promise<{ ok: true }> {
+  return apiPost<{ ok: true }>(`/reports/${reportId}/favorite`);
+}
+
+export async function unfavoriteReport(reportId: string): Promise<{ ok: true }> {
+  return apiDelete<{ ok: true }>(`/reports/${reportId}/favorite`);
 }
 
 export async function fetchExports(): Promise<ExportJob[]> {

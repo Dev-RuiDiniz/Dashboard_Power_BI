@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import {
-  ChartBar as BarChart3,
   Bell,
+  ChartBar as BarChart3,
   Download,
   LayoutDashboard,
   Settings,
+  Star,
   UserCog,
   Users,
 } from 'lucide-react';
@@ -23,44 +24,50 @@ type NavItem = {
 const navItems: NavItem[] = [
   {
     href: '/app',
-    label: 'Visão geral',
+    label: 'Visao geral',
     description: 'Dashboard com KPIs e indicadores.',
     icon: LayoutDashboard,
   },
   {
     href: '/app/reports',
-    label: 'Relatórios',
-    description: 'Catálogo de dashboards e consultas.',
+    label: 'Relatorios',
+    description: 'Catalogo de dashboards e consultas.',
     icon: BarChart3,
   },
   {
+    href: '/app/dashboards',
+    label: 'Personalizados',
+    description: 'Dashboards, favoritos e atalhos do usuario.',
+    icon: Star,
+  },
+  {
     href: '/app/exports',
-    label: 'Exportações',
-    description: 'Histórico de exportações em PDF e Excel.',
+    label: 'Exportacoes',
+    description: 'Historico de exportacoes em PDF e Excel.',
     icon: Download,
   },
   {
     href: '/app/notifications',
-    label: 'Notificações',
+    label: 'Notificacoes',
     description: 'Alertas e avisos importantes.',
     icon: Bell,
   },
   {
     href: '/app/admin/users',
-    label: 'Usuários',
-    description: 'Gerenciamento de usuários.',
+    label: 'Usuarios',
+    description: 'Gerenciamento de usuarios.',
     icon: UserCog,
   },
   {
     href: '/app/admin/groups',
     label: 'Grupos',
-    description: 'Grupos de acesso e permissões.',
+    description: 'Grupos de acesso e permissoes.',
     icon: Users,
   },
   {
     href: '/app/admin/settings',
-    label: 'Configurações',
-    description: 'Parâmetros globais do sistema.',
+    label: 'Configuracoes',
+    description: 'Parametros globais do sistema.',
     icon: Settings,
   },
 ];
@@ -74,10 +81,10 @@ export function AppSidebar() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-400">
           Dashboard Power BI
         </p>
-        <h2 className="mt-3 text-xl font-bold text-white">Área autenticada</h2>
+        <h2 className="mt-3 text-xl font-bold text-white">Area autenticada</h2>
       </div>
 
-      <nav aria-label="Navegação autenticada" className="space-y-1">
+      <nav aria-label="Navegacao autenticada" className="space-y-1">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href || (item.href !== '/app' && pathname.startsWith(item.href));
@@ -97,11 +104,7 @@ export function AppSidebar() {
                 aria-hidden="true"
               />
               <div>
-                <span
-                  className={`block text-sm font-semibold ${isActive ? 'text-white' : 'text-white'}`}
-                >
-                  {item.label}
-                </span>
+                <span className="block text-sm font-semibold text-white">{item.label}</span>
                 <span className="block text-xs leading-5 text-slate-400">{item.description}</span>
               </div>
             </Link>

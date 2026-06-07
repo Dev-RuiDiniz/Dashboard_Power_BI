@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 
 import { ReportDetail } from './report-detail';
 import { apiGet, apiPost } from '@/lib/admin-api';
-import { createExport } from '@/lib/platform-api';
+import { createExport, favoriteReport } from '@/lib/platform-api';
 
 jest.mock('@/lib/admin-api', () => ({
   apiGet: jest.fn(),
@@ -12,6 +12,7 @@ jest.mock('@/lib/admin-api', () => ({
 
 jest.mock('@/lib/platform-api', () => ({
   createExport: jest.fn(),
+  favoriteReport: jest.fn(),
 }));
 
 describe('ReportDetail', () => {
@@ -64,6 +65,28 @@ describe('ReportDetail', () => {
         exportFormat: 'pdf',
         parameters: { ano: 2026 },
       });
+    });
+  });
+
+  it('permite favoritar o relatorio aberto', async () => {
+    const user = userEvent.setup();
+    (apiGet as jest.Mock).mockResolvedValue({
+      id: 'report-1',
+      name: 'Relatorio Financeiro',
+      description: 'Visao consolidada',
+      sector: 'financeiro',
+      sourceType: 'view',
+      parameters: [],
+      requiredPermissions: [],
+    });
+    (favoriteReport as jest.Mock).mockResolvedValue({ ok: true });
+
+    render(<ReportDetail reportId="report-1" onBack={jest.fn()} />);
+
+    await user.click(await screen.findByRole('button', { name: /favoritar relatorio/i }));
+
+    await waitFor(() => {
+      expect(favoriteReport).toHaveBeenCalledWith('report-1');
     });
   });
 });

@@ -7,6 +7,7 @@ import { ReportDefinitionsRepository } from './repositories/report-definitions.r
 import { ReportAuthorizationService } from './report-authorization.service';
 import { ReportDefinitionsAdminController } from './report-definitions.admin.controller';
 import { ReportDefinitionsService } from './report-definitions.service';
+import { ReportFavoritesService } from './report-favorites.service';
 import { ReportsApiService } from './reports-api.service';
 import { ReportsController } from './reports.controller';
 
@@ -17,12 +18,14 @@ import { ReportsController } from './reports.controller';
     ReportDefinitionsRepository,
     ReportDefinitionsService,
     ReportAuthorizationService,
+    ReportFavoritesService,
     ReportsApiService,
   ],
   exports: [
     ReportDefinitionsRepository,
     ReportDefinitionsService,
     ReportAuthorizationService,
+    ReportFavoritesService,
     ReportsApiService,
   ],
 })

@@ -1,23 +1,29 @@
 import {
   createExport,
+  createDashboard,
+  favoriteReport,
+  fetchDashboards,
   fetchDashboardDrilldown,
   fetchDashboardHome,
   downloadExportFile,
   fetchDashboardKpis,
   fetchExports,
+  fetchFavoriteReports,
   fetchNotifications,
   fetchSystemSettings,
   markAllNotificationsAsRead,
   markNotificationAsRead,
+  unfavoriteReport,
   updateSystemSetting,
 } from './platform-api';
-import { apiGet, apiGetBlob, apiPatch, apiPost } from './admin-api';
+import { apiDelete, apiGet, apiGetBlob, apiPatch, apiPost } from './admin-api';
 
 jest.mock('./admin-api', () => ({
   apiGet: jest.fn(),
   apiGetBlob: jest.fn(),
   apiPatch: jest.fn(),
   apiPost: jest.fn(),
+  apiDelete: jest.fn(),
 }));
 
 describe('platform-api', () => {
@@ -87,5 +93,29 @@ describe('platform-api', () => {
     expect(apiPatch).toHaveBeenCalledWith('/admin/settings/smtp.host', {
       value: { value: 'smtp.example.com' },
     });
+  });
+
+  it('lista dashboards e favoritos e envia mutacoes desses fluxos', async () => {
+    (apiGet as jest.Mock).mockResolvedValueOnce([{ id: 'dashboard-1', widgets: [] }]);
+    (apiGet as jest.Mock).mockResolvedValueOnce([{ id: 'report-1', name: 'Receita' }]);
+    (apiPost as jest.Mock).mockResolvedValueOnce({ id: 'dashboard-2', widgets: [] });
+    (apiPost as jest.Mock).mockResolvedValueOnce({ ok: true });
+    (apiDelete as jest.Mock).mockResolvedValueOnce({ ok: true });
+
+    await fetchDashboards();
+    await fetchFavoriteReports();
+    await createDashboard({ name: 'Comercial', description: 'Pipeline', isDefault: false });
+    await favoriteReport('report-1');
+    await unfavoriteReport('report-1');
+
+    expect(apiGet).toHaveBeenNthCalledWith(1, '/dashboards');
+    expect(apiGet).toHaveBeenNthCalledWith(2, '/reports/favorites');
+    expect(apiPost).toHaveBeenNthCalledWith(1, '/dashboards', {
+      name: 'Comercial',
+      description: 'Pipeline',
+      isDefault: false,
+    });
+    expect(apiPost).toHaveBeenNthCalledWith(2, '/reports/report-1/favorite');
+    expect(apiDelete).toHaveBeenCalledWith('/reports/report-1/favorite');
   });
 });
