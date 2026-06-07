@@ -19,25 +19,12 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableEmpty,
   TableHead,
   TableHeader,
   TableRow,
-  TableEmpty,
 } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
-
-type ExportJob = {
-  id: string;
-  report_id: string;
-  export_format: 'pdf' | 'excel' | 'csv' | 'json';
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  file_url?: string;
-  file_size_bytes?: number;
-  error_message?: string;
-  created_at: string;
-  completed_at?: string;
-  expires_at: string;
-};
+import { fetchExports, type ExportJob } from '@/lib/platform-api';
 
 const formatLabel: Record<ExportJob['export_format'], string> = {
   pdf: 'PDF',
@@ -76,13 +63,7 @@ export function ExportsList() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { data, error } = await supabase
-        .from('export_jobs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      setExports(data ?? []);
+      setExports(await fetchExports());
     } catch {
       setErrorMessage('Não foi possível carregar o histórico de exportações.');
     } finally {
@@ -116,8 +97,8 @@ export function ExportsList() {
     );
   }
 
-  const completedCount = exports.filter((e) => e.status === 'completed').length;
-  const failedCount = exports.filter((e) => e.status === 'failed').length;
+  const completedCount = exports.filter((item) => item.status === 'completed').length;
+  const failedCount = exports.filter((item) => item.status === 'failed').length;
 
   return (
     <section className="space-y-6" aria-labelledby="exports-title">
@@ -169,31 +150,33 @@ export function ExportsList() {
               {exports.length === 0 ? (
                 <TableEmpty colSpan={6}>Nenhuma exportação encontrada.</TableEmpty>
               ) : (
-                exports.map((exp) => {
-                  const Icon = formatIcon[exp.export_format];
+                exports.map((item) => {
+                  const Icon = formatIcon[item.export_format];
                   return (
-                    <TableRow key={exp.id}>
+                    <TableRow key={item.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Icon className="h-4 w-4 text-slate-500" aria-hidden="true" />
-                          {formatLabel[exp.export_format]}
+                          {formatLabel[item.export_format]}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant[exp.status]}>{statusLabel[exp.status]}</Badge>
+                        <Badge variant={statusVariant[item.status]}>
+                          {statusLabel[item.status]}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        {exp.file_size_bytes ? formatFileSize(exp.file_size_bytes) : '-'}
+                        {item.file_size_bytes ? formatFileSize(item.file_size_bytes) : '-'}
                       </TableCell>
-                      <TableCell>{formatDate(exp.created_at)}</TableCell>
-                      <TableCell>{formatDate(exp.expires_at)}</TableCell>
+                      <TableCell>{formatDate(item.created_at)}</TableCell>
+                      <TableCell>{formatDate(item.expires_at)}</TableCell>
                       <TableCell className="text-right">
-                        {exp.status === 'completed' && exp.file_url ? (
+                        {item.status === 'completed' && item.file_url ? (
                           <a
-                            href={exp.file_url}
+                            href={item.file_url}
                             download
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center rounded-xl bg-background text-foreground ring-1 ring-border hover:bg-muted h-9 px-3 text-xs font-medium transition-colors"
+                            className="inline-flex h-9 items-center justify-center rounded-xl bg-background px-3 text-xs font-medium text-foreground ring-1 ring-border transition-colors hover:bg-muted"
                           >
                             <Download className="mr-1 h-3 w-3" /> Baixar
                           </a>

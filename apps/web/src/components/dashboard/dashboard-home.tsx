@@ -5,27 +5,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { aggregateKpisBySector, formatDelta, summarizeKpis, type KpiItem } from '@/lib/kpis';
-import { supabase } from '@/lib/supabase';
+import { fetchDashboardKpis } from '@/lib/platform-api';
 
 import { KpiCard } from './kpi-card';
-
-type KpiRow = {
-  id: string;
-  name: string;
-  description?: string;
-  sector_id: string;
-  unit: 'number' | 'currency' | 'percent';
-  target_value?: number;
-  warning_threshold?: number;
-  critical_threshold?: number;
-  is_active: boolean;
-};
-
-type SectorRow = {
-  id: string;
-  code: string;
-  name: string;
-};
 
 export function DashboardHome() {
   const [kpis, setKpis] = useState<KpiItem[]>([]);
@@ -34,29 +16,7 @@ export function DashboardHome() {
   const loadKpis = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [kpisResult, sectorsResult] = await Promise.all([
-        supabase.from('kpis').select('*').eq('is_active', true),
-        supabase.from('sectors').select('*').eq('is_active', true),
-      ]);
-
-      const sectorMap = new Map<string, SectorRow>();
-      for (const s of sectorsResult.data ?? []) {
-        sectorMap.set(s.id, s);
-      }
-
-      const items: KpiItem[] = (kpisResult.data ?? []).map((kpi: KpiRow) => {
-        const sector = sectorMap.get(kpi.sector_id);
-        const value = kpi.target_value ?? 0;
-        return {
-          id: kpi.id,
-          title: kpi.name,
-          sector: sector?.name ?? kpi.sector_id,
-          value,
-          previousValue: Math.round(value * 0.9),
-          unit: kpi.unit,
-        };
-      });
-
+      const items = await fetchDashboardKpis();
       setKpis(items.length > 0 ? items : getFallbackKpis());
     } catch {
       setKpis(getFallbackKpis());
@@ -221,7 +181,7 @@ function getFallbackKpis(): KpiItem[] {
     },
     {
       id: 'exportacoes-mensais',
-      title: 'Exportações mensais',
+      title: 'Exportacoes mensais',
       sector: 'BI',
       value: 240,
       previousValue: 220,

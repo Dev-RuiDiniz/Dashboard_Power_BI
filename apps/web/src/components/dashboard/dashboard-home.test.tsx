@@ -1,59 +1,43 @@
 import { render, screen, waitFor } from '@testing-library/react';
 
 import { DashboardHome } from './dashboard-home';
+import { fetchDashboardKpis } from '@/lib/platform-api';
 
-jest.mock('@/lib/supabase', () => {
-  const from = jest.fn((table: string) => ({
-    select: jest.fn(() => ({
-      eq: jest.fn(async () => {
-        if (table === 'kpis') {
-          return {
-            data: [
-              {
-                id: 'receita',
-                name: 'Receita mensal',
-                sector_id: 'financeiro',
-                unit: 'currency',
-                target_value: 120000,
-                is_active: true,
-              },
-              {
-                id: 'leads',
-                name: 'Leads qualificados',
-                sector_id: 'comercial',
-                unit: 'number',
-                target_value: 430,
-                is_active: true,
-              },
-              {
-                id: 'sla',
-                name: 'SLA operacional',
-                sector_id: 'operacoes',
-                unit: 'percent',
-                target_value: 0.92,
-                is_active: true,
-              },
-            ],
-          };
-        }
-
-        return {
-          data: [
-            { id: 'financeiro', code: 'FIN', name: 'Financeiro' },
-            { id: 'comercial', code: 'COM', name: 'Comercial' },
-            { id: 'operacoes', code: 'OPE', name: 'Operacoes' },
-          ],
-        };
-      }),
-    })),
-  }));
-
-  return {
-    supabase: { from },
-  };
-});
+jest.mock('@/lib/platform-api', () => ({
+  fetchDashboardKpis: jest.fn(),
+}));
 
 describe('DashboardHome', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    (fetchDashboardKpis as jest.Mock).mockResolvedValue([
+      {
+        id: 'receita',
+        title: 'Receita mensal',
+        sector: 'Financeiro',
+        value: 120000,
+        previousValue: 108000,
+        unit: 'currency',
+      },
+      {
+        id: 'leads',
+        title: 'Leads qualificados',
+        sector: 'Comercial',
+        value: 430,
+        previousValue: 387,
+        unit: 'number',
+      },
+      {
+        id: 'sla',
+        title: 'SLA operacional',
+        sector: 'Operacoes',
+        value: 0.92,
+        previousValue: 0.83,
+        unit: 'percent',
+      },
+    ]);
+  });
+
   it('renderiza cards principais e resumo por setor', async () => {
     render(<DashboardHome />);
 
@@ -67,17 +51,7 @@ describe('DashboardHome', () => {
   });
 
   it('renderiza fallback quando a carga falha', async () => {
-    const { supabase } = jest.requireMock('@/lib/supabase') as {
-      supabase: { from: jest.Mock };
-    };
-
-    supabase.from.mockImplementationOnce(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(async () => {
-          throw new Error('falha');
-        }),
-      })),
-    }));
+    (fetchDashboardKpis as jest.Mock).mockRejectedValueOnce(new Error('falha'));
 
     render(<DashboardHome />);
 

@@ -5,31 +5,20 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
   Table,
   TableBody,
   TableCell,
+  TableEmpty,
   TableHead,
   TableHeader,
   TableRow,
-  TableEmpty,
 } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
-
-type SystemSetting = {
-  id: string;
-  setting_key: string;
-  setting_value: unknown;
-  description?: string;
-  is_sensitive: boolean;
-  updated_at: string;
-};
+import { fetchSystemSettings, type SystemSetting } from '@/lib/platform-api';
 
 export function AdminSettings() {
   const [settings, setSettings] = useState<SystemSetting[]>([]);
@@ -40,12 +29,7 @@ export function AdminSettings() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('*')
-        .order('setting_key');
-      if (error) throw error;
-      setSettings(data ?? []);
+      setSettings(await fetchSystemSettings());
     } catch {
       setErrorMessage('Não foi possível carregar as configurações.');
     } finally {
@@ -75,7 +59,7 @@ export function AdminSettings() {
           <AlertTriangle className="mx-auto h-8 w-8 text-amber-700" aria-hidden="true" />
           <CardTitle>{errorMessage}</CardTitle>
           <CardDescription>
-            Verifique a conexão com o Supabase e as permissões de acesso.
+            Verifique a conexão com a API e as permissões de acesso.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -126,7 +110,7 @@ export function AdminSettings() {
               ) : (
                 settings.map((setting) => (
                   <TableRow key={setting.id}>
-                    <TableCell className="font-medium font-mono text-xs">
+                    <TableCell className="font-mono text-xs font-medium">
                       {setting.setting_key}
                     </TableCell>
                     <TableCell className="max-w-xs truncate font-mono text-xs">
