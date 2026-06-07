@@ -1,9 +1,9 @@
-import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 
 import { CsrfMiddleware } from './middleware/csrf.middleware';
 
 @Module({})
-export class CommonModule {
+export class CommonModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(CsrfMiddleware)
