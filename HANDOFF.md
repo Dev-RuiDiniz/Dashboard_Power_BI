@@ -9,9 +9,10 @@
 O repositório já possui uma base navegável com:
 
 - API NestJS de auth, admin e relatórios;
+- API NestJS também como fonte oficial de dashboard, notificações, exportações, settings e perfil;
 - Web Next.js com login, dashboard, relatórios e admin básico;
 - integração real com SQL Server;
-- uso direto de Supabase em partes da Web.
+- uso de Supabase concentrado no backend para partes da plataforma.
 
 O repositório ainda não entrega a plataforma V1 completa descrita no PDF.
 
@@ -29,12 +30,13 @@ Comece por estes arquivos:
 ## O que está implementado
 
 - login, refresh, logout e reset de senha;
+- perfil do usuário via `/auth/me` e `/auth/me/password`;
 - sessão de frontend em `localStorage`;
 - dashboard inicial com KPIs;
 - catálogo e execução de relatórios;
 - CRUD básico de usuários;
 - CRUD básico de grupos;
-- leitura de exportações, notificações e settings no Supabase;
+- leituras de dashboard, exportações, notificações e settings pela API;
 - healthcheck da API e do SQL Server;
 - Swagger local.
 
@@ -50,7 +52,6 @@ Comece por estes arquivos:
 
 ## O que está ausente
 
-- perfil do usuário;
 - gestão dedicada de permissões;
 - logs de auditoria;
 - editor de dashboards;
@@ -65,13 +66,13 @@ Comece por estes arquivos:
 
 ## Arquitetura real em uma frase
 
-A Web usa a API NestJS para auth/admin/reports, consulta Supabase direto para outras áreas e a API usa SQL Server mais estruturas em memória para sustentar parte do domínio.
+A Web usa a API NestJS como entrada principal dos fluxos autenticados, e a API combina SQL Server, Supabase e estruturas em memória para sustentar o domínio atual.
 
 ## Observações operacionais importantes
 
 - a documentação histórica do projeto superestimava o estado de entrega;
 - a pasta `docs/` foi reconstruída para refletir o runtime atual e servir como base mínima canônica;
-- `infra/env/.env.example` é citado por scripts e docs antigas, mas não está presente no clone atual;
+- `infra/env/.env.example` e `infra/env/.env.production.example` existem neste clone e seguem como referência de ambiente;
 - parte do estado administrativo da API ainda depende de memória do processo;
 - exportações visíveis na Web não significam export backend funcional.
 
@@ -81,5 +82,5 @@ Antes de implementar novas features, alinhar primeiro:
 
 1. qual arquitetura desejada será mantida;
 2. quais dados devem sair de memória;
-3. se a Web continuará acessando Supabase diretamente;
+3. quais persistências ainda precisam sair de memória;
 4. quais itens do escopo V1 serão realmente perseguidos na próxima etapa.

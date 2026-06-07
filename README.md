@@ -10,7 +10,7 @@ Este repositório já entrega uma base real de:
 - dashboard inicial;
 - catálogo e execução de relatórios;
 - administração básica de usuários e grupos;
-- leitura de notificações, exportações e settings no Supabase;
+- rotas centralizadas de dashboard, notificações, exportações, settings e perfil via API;
 - infraestrutura de desenvolvimento em Docker Compose;
 - infraestrutura de produção com Docker Compose e deploy para VPS via GitHub Actions.
 
@@ -32,7 +32,7 @@ Documentos canônicos do estado atual:
 - Next.js 14 para Web
 - Tailwind CSS
 - SQL Server externo
-- Supabase consumido diretamente em partes da Web
+- Supabase consumido pela API em fluxos de platform
 - Docker Compose para desenvolvimento e produção
 - GitHub Actions para deploy na VPS
 
@@ -139,7 +139,8 @@ Fluxo real atual:
 
 ```text
 Web Next.js -> API NestJS -> SQL Server externo
-          \-> Supabase direto
+                        \-> Supabase
+                        \-> memória em partes do domínio
 ```
 
 ## Decisões arquiteturais
@@ -219,15 +220,7 @@ Valide:
 
 ### Supabase indisponível
 
-Partes da Web dependem de:
-
-- `kpis`
-- `sectors`
-- `export_jobs`
-- `notifications`
-- `system_settings`
-
-Sem essas integrações, dashboard, notificações, exportações e settings podem degradar ou ficar vazios.
+Os fluxos de dashboard, notificações, exportações e settings agora passam pela API, mas continuam dependendo do Supabase no backend atual. Sem essa integração, essas rotas podem responder vazias ou degradadas.
 
 ## Segurança
 
