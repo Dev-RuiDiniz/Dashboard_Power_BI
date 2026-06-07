@@ -73,7 +73,7 @@ A Web usa a API NestJS como entrada principal dos fluxos autenticados, e a API c
 - a documentação histórica do projeto superestimava o estado de entrega;
 - a pasta `docs/` foi reconstruída para refletir o runtime atual e servir como base mínima canônica;
 - `infra/env/.env.example` e `infra/env/.env.production.example` existem neste clone e seguem como referência de ambiente;
-- parte do estado administrativo da API ainda depende de memória do processo;
+- a persistência de definições administrativas de relatórios agora usa Supabase no runtime principal quando `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` estão configurados;
 - exportações visíveis na Web não significam export backend funcional.
 
 ## Próximo passo recomendado para qualquer continuidade

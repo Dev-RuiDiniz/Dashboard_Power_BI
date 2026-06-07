@@ -5,7 +5,7 @@
 ```text
 apps/web -> apps/api -> SQL Server
                     \-> Supabase
-                    \-> memória em partes do domínio
+                    \-> fallbacks em memória em partes do domínio
 ```
 
 ## Resumo
@@ -19,7 +19,7 @@ O repositório é um monorepo pnpm com duas aplicações principais:
 
 - SQL Server: consultas de relatórios via API
 - Supabase: usado pela API nos fluxos de dashboard, notificações, exportações, settings, permissões e auditoria
-- memória de processo: parte dos dados administrativos e definições de relatórios ainda não está persistida de forma definitiva
+- memória de processo: ainda existe como fallback em partes do domínio, mas definições administrativas de relatórios já persistem via Supabase no runtime principal
 
 ## Estado após a Fase 1
 

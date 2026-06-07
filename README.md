@@ -140,7 +140,7 @@ Fluxo real atual:
 ```text
 Web Next.js -> API NestJS -> SQL Server externo
                         \-> Supabase
-                        \-> memória em partes do domínio
+                        \-> fallbacks em memória em partes do domínio
 ```
 
 ## Decisões arquiteturais

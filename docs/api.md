@@ -32,7 +32,7 @@
 
 ## Limitações atuais
 
-- parte do domínio administrativo ainda usa repositórios em memória;
-- definições de relatórios ainda não estão em persistência final;
+- parte do domínio administrativo ainda usa fallbacks em memória quando dependências de persistência não estão disponíveis;
+- definições administrativas de relatórios persistem em `api_report_definitions` via Supabase no runtime principal quando `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` estão configurados;
 - parte desses fluxos ainda usa Supabase e memória como persistência real por trás da API;
 - exportações ainda não configuram um pipeline de produção completo só por terem rotas ativas.

@@ -41,6 +41,19 @@ describe('ReportDefinitionsService', () => {
     await expect(service.create(createInput)).rejects.toThrow(ConflictException);
   });
 
+  it('deve converter conflito de unicidade do Supabase em erro controlado', async () => {
+    const repository = {
+      existsBySourceAndSector: jest.fn().mockResolvedValue(false),
+      create: jest.fn().mockRejectedValue({
+        code: '23505',
+        message: 'duplicate key value violates unique constraint',
+      }),
+    };
+    const service = new ReportDefinitionsService(repository as never);
+
+    await expect(service.create(createInput)).rejects.toThrow(ConflictException);
+  });
+
   it('deve listar somente relatórios ativos por setor', async () => {
     const { service } = createService();
 
@@ -79,6 +92,8 @@ describe('ReportDefinitionsService', () => {
     const { service } = createService();
 
     await expect(service.getById('report-inexistente')).rejects.toThrow(NotFoundException);
-    await expect(service.update('report-inexistente', { name: 'x' })).rejects.toThrow(NotFoundException);
+    await expect(service.update('report-inexistente', { name: 'x' })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });
