@@ -290,6 +290,76 @@ Se houver ambiguidade:
 3. documente a suposicao;
 4. se a ambiguidade mudar arquitetura, fluxo de permissao ou persistencia, pare e alinhe antes.
 
+## Workflow de entrega
+
+### Commits por tarefa
+
+Cada tarefa concluída deve gerar **pelo menos um commit independente** usando mensagens em **português brasileiro** no padrão Conventional Commits:
+
+```text
+<tipo>(escopo opcional): descrição curta em pt-BR
+
+- corpo com detalhes quando necessário
+- refs: #<issue ou task id>
+```
+
+Tipos permitidos:
+
+- `feat:` — nova funcionalidade
+- `fix:` — correção de bug
+- `docs:` — documentação
+- `style:` — formatação, sem mudança funcional
+- `refactor:` — refatoração de código
+- `test:` — testes
+- `chore:` — tarefas de build, config, dependências
+- `security:` — hardening, headers, patches
+
+Exemplos:
+
+- `feat: implementar tela de perfil do usuário (/app/profile)`
+- `feat(api): adicionar endpoints GET/POST /auth/me e /auth/me/password`
+- `feat: criar módulo de gestão de permissões com CRUD completo`
+- `feat: criar módulo de logs de auditoria (AuditModule)`
+- `feat: adicionar React Query ao frontend`
+- `security: implementar CSRF middleware e headers CSP/HSTS/X-Frame-Options`
+- `chore: instalar recharts para gráficos no dashboard`
+- `docs: atualizar SPRINT_STATUS.md e README.md com estado atual`
+
+### Regra de documentação
+
+**Toda tarefa deve atualizar documentação.** Nunca finalize uma tarefa sem:
+
+1. Atualizar `README.md` se o escopo mudar funcionalidades visíveis;
+2. Atualizar `SPRINT_STATUS.md` com o que foi entregue ou removido da lista de pendentes;
+3. Atualizar `ROADMAP.md` com marcos alcançados;
+4. Atualizar `docs/api.md` se novos endpoints foram criados;
+5. Atualizar `docs/web.md` se novas telas foram criadas;
+6. Registrar em `HANDOFF.md` qualquer contexto importante para a próxima sessão.
+
+### Regra de ROADMAP
+
+O arquivo `ROADMAP.md` deve ser mantido como fonte única da direção do projeto. A cada tarefa:
+
+- Mova o item de `## Em andamento / Pendente` para `## Concluído`;
+- Adicione data de conclusão;
+- Registre breve nota sobre o que foi entregue.
+
+### Pull Request ao final de onda
+
+Ao final de cada onda de trabalho (conjunto de tarefas relacionadas):
+
+1. Garanta que todos os commits da onda estão na branch;
+2. Crie um PR com título descritivo em pt-BR:
+   ```text
+   feat: entrega de <tema da onda> — <data>
+   ```
+3. Descrição do PR deve conter:
+   - Resumo do que foi implementado (lista de tarefas);
+   - Arquivos/rotas novos ou modificados;
+   - Comandos de validação que passaram;
+   - Limitações ou débitos técnicos remanescentes;
+   - Screenshots ou evidências quando houver UI.
+
 ## Definition of Done
 
 Uma tarefa esta pronta quando:
@@ -297,6 +367,7 @@ Uma tarefa esta pronta quando:
 - o escopo pedido foi cumprido;
 - os testes aplicaveis foram criados ou atualizados;
 - os comandos relevantes passaram, ou a limitacao ficou explicitada;
-- a documentacao relevante foi ajustada;
+- a documentacao relevante foi ajustada (README, SPRINT_STATUS, ROADMAP, api.md, web.md);
+- o commit foi feito com mensagem em pt-BR no padrão Conventional Commits;
 - nao ha segredo no diff;
 - nada importante foi descrito como pronto sem estar no runtime real.

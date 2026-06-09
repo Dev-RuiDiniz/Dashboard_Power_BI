@@ -1,7 +1,7 @@
 # Status Atual do Projeto
 
 **Projeto:** Dashboard Power BI  
-**Data de verificação:** 2026-06-05  
+**Data de verificação:** 2026-06-09  
 **Base da análise:** estado real do código no repositório
 
 ## Como ler este documento
@@ -57,20 +57,21 @@ Para rastreabilidade detalhada:
 
 - o fluxo JWT existe, mas a sessão do frontend ainda é local e client-side;
 - há controle de tentativas de login, mas a cobertura de hardening do PDF não está completa;
-- não existe 2FA/TOTP;
-- não há confirmação de CSRF/CSP/HSTS na aplicação atual.
+- CSRF e headers de segurança (CSP, HSTS, X-Frame-Options etc.) implementados;
+- não existe 2FA/TOTP (`otplib` instalado, endpoints/UI pendentes).
 
 ### Relatórios
 
 - o catálogo e a execução estão implementados;
 - o visualizador é acoplado à tela `/app/reports`, não uma experiência dedicada completa;
 - há endpoints administrativos para relatórios, mas falta a interface web correspondente;
-- o domínio de relatórios na API ainda depende de persistência em memória para definições.
+- o domínio de relatórios na API ainda depende de persistência em memória para definições;
+- a tela de administração de relatórios (`/app/admin/reports`) está funcional.
 
 ### Dashboard e BI
 
 - existe dashboard inicial com KPIs;
-- não há gráficos com biblioteca dedicada;
+- Recharts instalado, mas ainda não integrado em telas ativas;
 - não há drill-down;
 - não há dashboards personalizados;
 - não há editor visual.
@@ -78,9 +79,9 @@ Para rastreabilidade detalhada:
 ### Administração
 
 - usuários e grupos estão disponíveis;
-- permissões finas não têm tela dedicada;
-- configurações do sistema existem como leitura direta no Supabase, não como gestão completa via backend;
-- não há logs administrativos/auditoria expostos.
+- permissões finas têm tela dedicada (`/app/admin/permissions`) e API CRUD;
+- logs de auditoria expostos via API e tela (`/app/admin/audit`);
+- configurações do sistema existem como leitura direta no Supabase, não como gestão completa via backend.
 
 ### Exportações e notificações
 
@@ -91,20 +92,16 @@ Para rastreabilidade detalhada:
 
 ## Ausente
 
-- tela de perfil do usuário;
-- gestão dedicada de permissões;
 - editor de dashboards;
 - dashboards personalizados do usuário;
-- logs de auditoria end-to-end;
 - exportação PDF/Excel no backend;
 - BullMQ;
-- React Query;
 - Prisma;
-- Recharts/Chart.js;
 - S3 ou storage equivalente para export;
 - cache Redis funcional na aplicação;
 - cron/refresh agendado;
-- WebSocket/realtime da aplicação.
+- WebSocket/realtime da aplicação;
+- 2FA/TOTP completo (backend parcial: `otplib` instalado).
 
 ## Riscos e documentação desatualizada
 

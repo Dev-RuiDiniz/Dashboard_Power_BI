@@ -17,6 +17,16 @@ Este repositório já entrega uma base real de:
 - infraestrutura de desenvolvimento em Docker Compose;
 - infraestrutura de produção com Docker Compose e deploy para VPS via GitHub Actions.
 
+Funcionalidades recentemente entregues:
+
+- tela de perfil do usuário (`/app/profile`) com dados pessoais, roles, setores e alteração de senha;
+- gestão de permissões granulares (`/app/admin/permissions`) com CRUD completo via API;
+- logs de auditoria administrativos (`/app/admin/audit`) com filtragem por usuário, ação e recurso;
+- React Query (`@tanstack/react-query`) para gerenciamento de estado no frontend;
+- headers de segurança (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy);
+- proteção CSRF com middleware customizado;
+- Recharts instalado para gráficos no dashboard.
+
 Ele ainda não representa a plataforma V1 completa descrita no PDF de escopo.
 
 Documentos canônicos do estado atual:
@@ -231,4 +241,6 @@ Os fluxos de dashboard, notificações, exportações e settings agora passam pe
 - Nunca commitar tokens, senhas ou strings de conexão.
 - A API usa JWT, `bcrypt` e consultas parametrizadas ao SQL Server.
 - A Web agora persiste a sessão em `sessionStorage`, migra sessões legadas do `localStorage` e tenta um refresh automático único em respostas `401`.
-- O PDF V1 prevê camadas adicionais como 2FA/TOTP, CSRF e CSP, mas elas não estão implementadas hoje.
+- Headers de segurança ativos: CSP, HSTS (produção), X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy.
+- Proteção CSRF implementada via middleware customizado com token em cookie + header `x-csrf-token`.
+- 2FA/TOTP ainda não implementado (dependência `otplib` instalada, pendente endpoints e UI).
