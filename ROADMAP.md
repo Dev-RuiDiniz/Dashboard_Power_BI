@@ -1,73 +1,97 @@
-# ROADMAP
+# ROADMAP — Dashboard Power BI
 
-Fonte única da direção do projeto Dashboard Power BI.
+**Fonte única de verdade para acompanhamento do projeto com base no escopo V1.**
 
-## Concluído
+- **Base do escopo:** `ESCOPO_DASHBOARD_Plataforma_BI_V1.pdf`
+- **Análise de aderência:** `ANALISE_ESCOPO_V1.md`
+- **Metodologia:** SDD (Spec-Driven Development) + TDD (Test-Driven Development)
+- **Última atualização:** 2026-06-09
 
-### Junho 2025 — Onda 1: Fundação de Persistência e Administração
+---
 
-- [x] **docs: documentar configuração do Supabase para persistência**
-  - Data: 2026-06-05
-  - Arquivo: `docs/supabase-persistence.md`
-  - Nota: Documentação guia para ativar persistência real via Supabase (URL + service role key + migrations).
+## Como usar este ROADMAP
 
-- [x] **feat: criar tela de gestão de relatórios na Web (/app/admin/reports)**
-  - Data: 2026-06-05
-  - Rota: `/app/admin/reports`
-  - Nota: Tela já existia em `admin-reports.tsx`; rota de página Next.js confirmada funcional.
+Cada item segue o padrão **SDD + TDD**:
 
-- [x] **feat: implementar tela de perfil do usuário (/app/profile)**
-  - Data: 2026-06-05
-  - Rotas: `/app/profile`
-  - API: `GET /auth/me`, `POST /auth/me/password`
-  - Nota: Componente `UserProfile` com dados do usuário, roles, setores e alteração de senha.
+- **SDD — Especificação:** o que deve ser entregue, critérios funcionais, dependências
+- **TDD — Testes:** testes unitários, integração, E2E, validação manual, comandos de verificação
+- **Entregáveis:** arquivos, rotas, data de conclusão, notas e débitos técnicos
 
-- [x] **feat: criar módulo de gestão de permissões com tela UI**
-  - Data: 2026-06-05
-  - API: `GET/POST/PATCH/DELETE /admin/permissions`
-  - Rota Web: `/app/admin/permissions`
-  - Migration: `supabase/migrations/20260605200000_005_permissions_table.sql`
-  - Nota: CRUD completo de permissões granulares (code, name, resource, action) com repositório híbrido memória/Supabase.
+Documentos detalhados por categoria:
 
-- [x] **feat: criar módulo de logs de auditoria (AuditModule)**
-  - Data: 2026-06-05
-  - API: `GET /admin/audit`
-  - Rota Web: `/app/admin/audit`
-  - Migration: `supabase/migrations/20260605210000_006_audit_logs_table.sql`
-  - Nota: Repositório híbrido para registrar e consultar logs de auditoria administrativos.
+- [📋 Telas (18 do escopo V1)](docs/roadmap/01-telas.md)
+- [📋 Módulos (6 funcionais)](docs/roadmap/02-modulos.md)
+- [📋 Tarefas técnicas e infraestrutura](docs/roadmap/03-tarefas-tecnicas.md)
 
-- [x] **feat: adicionar React Query ao frontend**
-  - Data: 2026-06-05
-  - Dependência: `@tanstack/react-query`
-  - Nota: `QueryClientProvider` integrado no layout `/app`, cliente configurado com staleTime de 5 min.
+---
 
-- [x] **security: implementar CSRF middleware e headers de segurança**
-  - Data: 2026-06-05
-  - Headers: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, HSTS (prod)
-  - CSRF: middleware customizado com token em cookie + header `x-csrf-token`
-  - Nota: Excluídas rotas públicas de login, health e docs da validação CSRF.
+## Visão Geral de Progresso
 
-- [x] **chore: instalar recharts para gráficos no dashboard**
-  - Data: 2026-06-05
-  - Dependência: `recharts`
-  - Nota: Biblioteca instalada no `apps/web`; pronta para uso em dashboards e relatórios.
+| Categoria            | Concluído | Parcial | Pendente | Total |
+| -------------------- | :-------: | :-----: | :------: | :---: |
+| **Telas**            |    11     |    5    |    2     |  18   |
+| **Módulos**          |     0     |    6    |    0     |   6   |
+| **Tarefas Técnicas** |     6     |    1    |    5     |  12   |
 
-## Em andamento / Pendente
+---
 
-### Média prioridade
+## Fases de Entrega
 
-- [ ] **feat: adicionar 2FA/TOTP à autenticação**
-  - Dependência: `otplib` já instalado no backend
-  - Falta: endpoints de ativação/verificação de TOTP e UI de configuração
+| Fase       | Nome                       | Objetivo                                                                | Status             |
+| ---------- | -------------------------- | ----------------------------------------------------------------------- | ------------------ |
+| **Fase 0** | Fundação técnica           | Monorepo, Docker, CI/CD, testes base                                    | ✅ Concluído       |
+| **Fase 1** | Auth e plataforma base     | Login, JWT, refresh, admin users/groups, relatórios                     | ✅ Concluído       |
+| **Fase 2** | Administração e governança | Permissões, auditoria, settings, profile, segurança                     | ✅ Concluído       |
+| **Fase 3** | BI avançado e dashboards   | Gráficos Recharts, drill-down, dashboards personalizados, editor visual | 🔄 Em planejamento |
+| **Fase 4** | Hardening e fechamento     | 2FA/TOTP, testes E2E, documentação final de aceite                      | 📋 Pendente        |
 
-### Baixa prioridade
+---
 
-- [ ] **feat: implementar export pipeline backend (BullMQ + storage)**
-- [ ] **feat: implementar notificações com backend próprio e realtime**
-- [ ] **feat: implementar dashboards personalizados**
-- [ ] **feat: implementar editor visual de dashboards**
+## Resumo por Tela
 
-## Notas
+| ID  | Tela                                         | Status       | Fase   |
+| --- | -------------------------------------------- | ------------ | ------ |
+| T01 | Login                                        | ✅ Concluído | Fase 1 |
+| T02 | Recuperação de senha                         | ✅ Concluído | Fase 1 |
+| T03 | Dashboard Home (KPIs)                        | ✅ Concluído | Fase 1 |
+| T04 | Catálogo de relatórios                       | ✅ Concluído | Fase 1 |
+| T05 | Visualização de relatório                    | ✅ Concluído | Fase 1 |
+| T06 | Filtros avançados                            | ✅ Concluído | Fase 1 |
+| T07 | Dashboard interativo (gráficos + drill-down) | 🔄 Parcial   | Fase 3 |
+| T08 | Dashboards personalizados e favoritos        | 🔄 Parcial   | Fase 3 |
+| T09 | Exportação PDF/Excel com histórico           | 🔄 Parcial   | Fase 3 |
+| T10 | Meu perfil                                   | ✅ Concluído | Fase 2 |
+| T11 | Central de notificações                      | ✅ Concluído | Fase 1 |
+| T12 | Dashboard administrativo                     | 📋 Pendente  | Fase 4 |
+| T13 | Gestão de usuários                           | ✅ Concluído | Fase 1 |
+| T14 | Gestão de permissões                         | ✅ Concluído | Fase 2 |
+| T15 | Gestão de relatórios (admin)                 | 🔄 Parcial   | Fase 2 |
+| T16 | Editor visual drag-and-drop                  | 📋 Pendente  | Fase 3 |
+| T17 | Auditoria com filtros                        | ✅ Concluído | Fase 2 |
+| T18 | Configurações do sistema                     | ✅ Concluído | Fase 1 |
 
-- Data de última atualização: 2026-06-09
-- Próxima onda planejada: finalizar 2FA/TOTP e iniciar dashboards personalizados
+---
+
+## Resumo por Módulo
+
+| Módulo      | Status     |                             Concluído                              |       Parcial        |         Pendente          |
+| ----------- | ---------- | :----------------------------------------------------------------: | :------------------: | :-----------------------: |
+| AUTH        | 🔄 Parcial | Login, JWT, refresh, logout, reset, rate limit, profile, CSRF, CSP |       2FA/TOTP       |      Hardening final      |
+| PERMISSIONS | 🔄 Parcial |      Roles, setores, grupos, permissões granulares, auditoria      |  Herança via grupos  |       Regras finas        |
+| SQL         | 🔄 Parcial |        Queries parametrizadas, validação de identificadores        | Cache, monitoramento |   Cron, observabilidade   |
+| REPORTS     | 🔄 Parcial |  Catálogo, visualização, filtros, admin básico, persistência real  |   Export pipeline    |     Ampliar favoritos     |
+| BI          | 🔄 Parcial |    KPIs, payload consolidado, charts reais, drill-down inicial     |    Editor visual     | Drill-down multi-dimensão |
+| ADMIN       | 🔄 Parcial |         Usuários, grupos, permissões, auditoria, settings          |   Dashboard admin    |    Governança completa    |
+
+---
+
+## Notas e Próximos Passos
+
+1. **Próxima onda:** Fase 3 — BI avançado e dashboards personalizados
+2. **Prioridade imediata:** Integrar Recharts em telas ativas (T07)
+3. **Débito técnico crítico:** 2FA/TOTP (Fase 4)
+4. **Verificação antes de cada commit:** `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`
+
+---
+
+_Este ROADMAP é a fonte única de verdade. Toda mudança de escopo ou prioridade deve ser refletida aqui e nos documentos vinculados em `docs/roadmap/`._
