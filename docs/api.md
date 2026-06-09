@@ -18,6 +18,7 @@
 - `PATCH /admin/settings/:key`
 - `GET /dashboard/home`
 - `GET /dashboard/kpis/:kpiId/drilldown`
+- `GET /dashboard/kpis/:kpiId/history` — serie historica de 12 meses do KPI
 - fluxo de recuperação e redefinição de senha
 - CRUD básico administrativo de usuários
 - CRUD básico administrativo de grupos

@@ -2,25 +2,22 @@
 
 import { ChartBar as BarChart3, Layers as Layers3, TriangleAlert, TrendingUp } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import {
+  BarChartWidget,
+  LineChartWidget,
+  PieChartWidget,
+  AreaChartWidget,
+} from '@/components/charts';
 import { formatDelta, type KpiItem } from '@/lib/kpis';
 import {
   fetchDashboardDrilldown,
   fetchDashboardHome,
+  fetchKpiHistory,
   type DashboardDrilldownResponse,
   type DashboardHomeResponse,
+  type KpiHistoryResponse,
 } from '@/lib/platform-api';
 
 import { KpiCard } from './kpi-card';
@@ -28,6 +25,7 @@ import { KpiCard } from './kpi-card';
 export function DashboardHome() {
   const [home, setHome] = useState<DashboardHomeResponse | null>(null);
   const [drilldown, setDrilldown] = useState<DashboardDrilldownResponse | null>(null);
+  const [history, setHistory] = useState<KpiHistoryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -51,8 +49,14 @@ export function DashboardHome() {
 
   const handleOpenDrilldown = useCallback(async (kpi: KpiItem) => {
     setErrorMessage(null);
+    setHistory(null);
     try {
-      setDrilldown(await fetchDashboardDrilldown(kpi.id));
+      const [drilldownData, historyData] = await Promise.all([
+        fetchDashboardDrilldown(kpi.id),
+        fetchKpiHistory(kpi.id),
+      ]);
+      setDrilldown(drilldownData);
+      setHistory(historyData);
     } catch {
       setErrorMessage('Nao foi possivel carregar o drill-down do indicador.');
     }
@@ -165,7 +169,10 @@ export function DashboardHome() {
             <button
               type="button"
               className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-200 hover:text-blue-700"
-              onClick={() => setDrilldown(null)}
+              onClick={() => {
+                setDrilldown(null);
+                setHistory(null);
+              }}
             >
               Voltar ao resumo
             </button>
@@ -182,67 +189,117 @@ export function DashboardHome() {
                 </div>
               ))}
             </div>
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50 text-left text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Periodo</th>
-                    <th className="px-4 py-3 font-medium">Valor</th>
-                    <th className="px-4 py-3 font-medium">Delta</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {drilldown.rows.map((row) => (
-                    <tr key={row.period}>
-                      <td className="px-4 py-3 font-medium text-slate-950">{row.period}</td>
-                      <td className="px-4 py-3 text-slate-700">{row.value}</td>
-                      <td className="px-4 py-3 text-slate-700">{formatDelta(row.delta)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+
+            {history && history.periods.length > 0 && (
+              <div className="space-y-4">
+                <LineChartWidget
+                  title="Evolucao historica (12 meses)"
+                  description="Serie temporal comparando valor atual com referencia anterior."
+                  data={history.periods.map((p) => ({
+                    period: p.period,
+                    value: p.value,
+                    previousValue: p.previousValue,
+                  }))}
+                  xKey="period"
+                  series={[
+                    { dataKey: 'value', name: 'Atual', color: '#1d4ed8' },
+                    {
+                      dataKey: 'previousValue',
+                      name: 'Anterior',
+                      color: '#94a3b8',
+                      strokeDasharray: '4 4',
+                    },
+                  ]}
+                  unit={history.unit}
+                />
+
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead className="bg-slate-50 text-left text-slate-500">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Periodo</th>
+                        <th className="px-4 py-3 font-medium">Valor</th>
+                        <th className="px-4 py-3 font-medium">Delta</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {history.periods.map((row) => (
+                        <tr key={row.period}>
+                          <td className="px-4 py-3 font-medium text-slate-950">{row.period}</td>
+                          <td className="px-4 py-3 text-slate-700">{row.value}</td>
+                          <td className="px-4 py-3 text-slate-700">{formatDelta(row.delta)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       ) : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <ChartCard
+        <BarChartWidget
           title="Distribuicao por setor"
           description="Quantidade de KPIs e delta medio agrupados por area."
-        >
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={home.charts.sectorDistribution}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="sector" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="total" fill="#1d4ed8" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+          data={home.charts.sectorDistribution.map((s) => ({
+            sector: s.sector,
+            total: s.total,
+          }))}
+          xKey="sector"
+          yKey="total"
+          unit="number"
+        />
 
-        <ChartCard
+        <LineChartWidget
           title="Performance dos KPIs"
           description="Serie comparando o valor atual com a referencia anterior."
-        >
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={home.charts.kpiPerformance}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="title" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="value" stroke="#1d4ed8" strokeWidth={3} />
-              <Line
-                type="monotone"
-                dataKey="previousValue"
-                stroke="#94a3b8"
-                strokeDasharray="4 4"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
+          data={home.charts.kpiPerformance.map((k) => ({
+            title: k.title,
+            value: k.value,
+            previousValue: k.previousValue,
+          }))}
+          xKey="title"
+          series={[
+            { dataKey: 'value', name: 'Atual', color: '#1d4ed8' },
+            {
+              dataKey: 'previousValue',
+              name: 'Anterior',
+              color: '#94a3b8',
+              strokeDasharray: '4 4',
+            },
+          ]}
+          unit="number"
+        />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <PieChartWidget
+          title="Distribuicao percentual por setor"
+          description="Proporcao de KPIs monitorados por area."
+          data={home.charts.sectorDistribution.map((s) => ({
+            sector: s.sector,
+            total: s.total,
+          }))}
+          nameKey="sector"
+          valueKey="total"
+          unit="number"
+        />
+
+        <AreaChartWidget
+          title="Tendencia de delta medio"
+          description="Evolucao do delta medio por setor ao longo do tempo."
+          data={home.charts.sectorDistribution.map((s) => ({
+            sector: s.sector,
+            averageDelta: s.averageDelta,
+          }))}
+          xKey="sector"
+          series={[
+            { dataKey: 'averageDelta', name: 'Delta medio', color: '#1d4ed8', fillOpacity: 0.3 },
+          ]}
+          unit="percent"
+        />
       </div>
 
       <Card>
@@ -284,26 +341,6 @@ function SummaryCard({ icon: Icon, label, value }: SummaryCardProps) {
           <p className="mt-1 text-2xl font-bold text-slate-950">{value}</p>
         </div>
       </CardContent>
-    </Card>
-  );
-}
-
-function ChartCard({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>{children}</CardContent>
     </Card>
   );
 }

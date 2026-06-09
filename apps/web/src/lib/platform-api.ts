@@ -43,6 +43,20 @@ export type DashboardDrilldownResponse = {
   }>;
 };
 
+export type KpiHistoryItem = {
+  period: string;
+  value: number;
+  previousValue: number;
+  delta: number;
+};
+
+export type KpiHistoryResponse = {
+  kpiId: string;
+  label: string;
+  unit: 'number' | 'currency' | 'percent';
+  periods: KpiHistoryItem[];
+};
+
 export type UserDashboard = {
   id: string;
   name: string;
@@ -128,6 +142,10 @@ export async function fetchDashboardKpis(): Promise<KpiItem[]> {
 
 export async function fetchDashboardDrilldown(kpiId: string): Promise<DashboardDrilldownResponse> {
   return apiGet<DashboardDrilldownResponse>(`/dashboard/kpis/${kpiId}/drilldown`);
+}
+
+export async function fetchKpiHistory(kpiId: string): Promise<KpiHistoryResponse> {
+  return apiGet<KpiHistoryResponse>(`/dashboard/kpis/${kpiId}/history`);
 }
 
 export async function fetchDashboards(): Promise<UserDashboard[]> {

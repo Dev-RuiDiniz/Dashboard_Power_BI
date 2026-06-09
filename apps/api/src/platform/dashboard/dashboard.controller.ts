@@ -29,6 +29,12 @@ export class DashboardController {
     return this.dashboardService.getKpiDrilldown(kpiId);
   }
 
+  @Get('kpis/:kpiId/history')
+  @ApiOkResponse({ description: 'Retorna serie historica do KPI (12 meses).' })
+  getKpiHistory(@Param('kpiId') kpiId: string) {
+    return this.dashboardService.getKpiHistory(kpiId);
+  }
+
   @Get('sectors')
   @ApiOkResponse({ description: 'Lista setores ativos.' })
   listSectors() {

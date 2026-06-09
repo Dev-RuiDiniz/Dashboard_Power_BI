@@ -57,7 +57,7 @@ Documentos detalhados por categoria:
 | T04 | Catálogo de relatórios                       | ✅ Concluído | Fase 1 |
 | T05 | Visualização de relatório                    | ✅ Concluído | Fase 1 |
 | T06 | Filtros avançados                            | ✅ Concluído | Fase 1 |
-| T07 | Dashboard interativo (gráficos + drill-down) | 🔄 Parcial   | Fase 3 |
+| T07 | Dashboard interativo (gráficos + drill-down) | ✅ Concluído | Fase 3 |
 | T08 | Dashboards personalizados e favoritos        | 🔄 Parcial   | Fase 3 |
 | T09 | Exportação PDF/Excel com histórico           | 🔄 Parcial   | Fase 3 |
 | T10 | Meu perfil                                   | ✅ Concluído | Fase 2 |

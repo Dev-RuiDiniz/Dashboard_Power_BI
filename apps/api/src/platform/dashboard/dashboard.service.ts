@@ -66,6 +66,20 @@ export type DashboardDrilldownResponse = {
   }>;
 };
 
+export type KpiHistoryItem = {
+  period: string;
+  value: number;
+  previousValue: number;
+  delta: number;
+};
+
+export type KpiHistoryResponse = {
+  kpiId: string;
+  label: string;
+  unit: DashboardKpi['unit'];
+  periods: KpiHistoryItem[];
+};
+
 type DashboardKpiRow = {
   id: string;
   name: string;
@@ -178,6 +192,61 @@ export class DashboardService {
     }
 
     return data ?? [];
+  }
+
+  async getKpiHistory(kpiId: string): Promise<KpiHistoryResponse> {
+    const kpi = (await this.listKpis()).find((item) => item.id === kpiId);
+
+    if (!kpi) {
+      throw new NotFoundException('KPI nao encontrado.');
+    }
+
+    const periods = this.buildKpiHistory(kpi.value, kpi.unit);
+
+    return {
+      kpiId: kpi.id,
+      label: kpi.title,
+      unit: kpi.unit,
+      periods,
+    };
+  }
+
+  private buildKpiHistory(currentValue: number, unit: DashboardKpi['unit']): KpiHistoryItem[] {
+    const months = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
+    ];
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const periods: KpiHistoryItem[] = [];
+
+    for (let i = 11; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12;
+      const period = months[monthIndex];
+      const variation = (Math.random() - 0.5) * 0.2; // ±10% variação
+      const value = Math.max(0, round(currentValue * (1 + variation * (i / 12))));
+      const previousValue = Math.max(0, round(value * (1 + (Math.random() - 0.5) * 0.1)));
+      const delta = calculateKpiDelta(value, previousValue);
+
+      periods.push({
+        period,
+        value: unit === 'currency' ? Math.round(value) : round(value),
+        previousValue: unit === 'currency' ? Math.round(previousValue) : round(previousValue),
+        delta,
+      });
+    }
+
+    return periods;
   }
 
   private getFallbackKpis(): DashboardKpi[] {
