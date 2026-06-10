@@ -59,7 +59,7 @@ Documentos detalhados por categoria:
 | T06 | Filtros avançados                            | ✅ Concluído | Fase 1 |
 | T07 | Dashboard interativo (gráficos + drill-down) | ✅ Concluído | Fase 3 |
 | T08 | Dashboards personalizados e favoritos        | ✅ Concluído | Fase 3 |
-| T09 | Exportação PDF/Excel com histórico           | 🔄 Parcial   | Fase 3 |
+| T09 | Exportação PDF/Excel com histórico           | ✅ Concluído | Fase 3 |
 | T10 | Meu perfil                                   | ✅ Concluído | Fase 2 |
 | T11 | Central de notificações                      | ✅ Concluído | Fase 1 |
 | T12 | Dashboard administrativo                     | 📋 Pendente  | Fase 4 |
@@ -74,14 +74,14 @@ Documentos detalhados por categoria:
 
 ## Resumo por Módulo
 
-| Módulo      | Status     |                             Concluído                              |       Parcial        |         Pendente          |
-| ----------- | ---------- | :----------------------------------------------------------------: | :------------------: | :-----------------------: |
-| AUTH        | 🔄 Parcial | Login, JWT, refresh, logout, reset, rate limit, profile, CSRF, CSP |       2FA/TOTP       |      Hardening final      |
-| PERMISSIONS | 🔄 Parcial |      Roles, setores, grupos, permissões granulares, auditoria      |  Herança via grupos  |       Regras finas        |
-| SQL         | 🔄 Parcial |        Queries parametrizadas, validação de identificadores        | Cache, monitoramento |   Cron, observabilidade   |
-| REPORTS     | 🔄 Parcial |  Catálogo, visualização, filtros, admin básico, persistência real  |   Export pipeline    |     Ampliar favoritos     |
-| BI          | 🔄 Parcial |    KPIs, payload consolidado, charts reais, drill-down inicial     |    Editor visual     | Drill-down multi-dimensão |
-| ADMIN       | 🔄 Parcial |         Usuários, grupos, permissões, auditoria, settings          |   Dashboard admin    |    Governança completa    |
+| Módulo      | Status     |                                     Concluído                                     |       Parcial        |         Pendente          |
+| ----------- | ---------- | :-------------------------------------------------------------------------------: | :------------------: | :-----------------------: |
+| AUTH        | 🔄 Parcial |        Login, JWT, refresh, logout, reset, rate limit, profile, CSRF, CSP         |       2FA/TOTP       |      Hardening final      |
+| PERMISSIONS | 🔄 Parcial |             Roles, setores, grupos, permissões granulares, auditoria              |  Herança via grupos  |       Regras finas        |
+| SQL         | 🔄 Parcial |               Queries parametrizadas, validação de identificadores                | Cache, monitoramento |   Cron, observabilidade   |
+| REPORTS     | 🔄 Parcial | Catálogo, visualização, filtros, admin básico, persistência real, export pipeline |  Ampliar favoritos   |             —             |
+| BI          | 🔄 Parcial |            KPIs, payload consolidado, charts reais, drill-down inicial            |    Editor visual     | Drill-down multi-dimensão |
+| ADMIN       | 🔄 Parcial |                 Usuários, grupos, permissões, auditoria, settings                 |   Dashboard admin    |    Governança completa    |
 
 ---
 

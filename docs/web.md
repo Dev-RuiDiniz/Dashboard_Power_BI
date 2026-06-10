@@ -34,8 +34,12 @@ A sessão do frontend agora fica em `sessionStorage`, remove a dependência oper
 - a home autenticada agora usa `GET /dashboard/home` e renderiza charts reais com Recharts (BarChart, LineChart, PieChart, AreaChart);
 - componentes de gráfico reutilizáveis em `components/charts/` (BarChartWidget, LineChartWidget, PieChartWidget, AreaChartWidget, ChartTooltip);
 - cada KPI da home já abre um drill-down completo consumindo `GET /dashboard/kpis/:kpiId/drilldown` + `GET /dashboard/kpis/:kpiId/history`, com resumo, gráfico de evolução de 12 meses e tabela comparativa;
-- a tela de detalhe do relatório já consegue solicitar exportações em PDF e Excel;
-- a tela de exportações baixa arquivos pela API autenticada, sem depender de link público cru.
+- a tela de detalhe do relatório já consegue solicitar exportações via modal com seleção de formato (PDF, Excel, CSV, JSON);
+- a tela de exportações baixa arquivos pela API autenticada, sem depender de link público cru;
+- polling automático de status de exportações (atualiza a cada 5s enquanto houver jobs pendentes);
+- filtros por formato e status na lista de exportações;
+- skeleton loading e empty state ilustrativo na lista de exportações;
+- fallback em memória para exportações quando Supabase não configurado;
 - a tela de settings já permite editar valores não sensíveis via API centralizada;
 - dashboards personalizados com CRUD completo: criar, visualizar (`/app/dashboards/:id`), editar e excluir;
 - widgets de dashboard: KPI, Gráfico (bar, line, pie, area) e Tabela (placeholder);

@@ -71,7 +71,13 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
-  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'excel' | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'excel' | 'csv' | 'json' | null>(
+    null,
+  );
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedExportFormat, setSelectedExportFormat] = useState<
+    'pdf' | 'excel' | 'csv' | 'json'
+  >('pdf');
   const [isFavoriting, setIsFavoriting] = useState(false);
 
   const loadReport = useCallback(async () => {
@@ -112,7 +118,7 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
     }
   }
 
-  async function handleCreateExport(format: 'pdf' | 'excel') {
+  async function handleCreateExport(format: 'pdf' | 'excel' | 'csv' | 'json') {
     if (!report) {
       return;
     }
@@ -128,6 +134,7 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
         parameters: buildFilters(report.parameters, paramValues),
       });
       setExportSuccess(`Exportação em ${format.toUpperCase()} solicitada com sucesso.`);
+      setShowExportModal(false);
     } catch (error) {
       setExportError(error instanceof Error ? error.message : 'Erro ao solicitar exportação.');
     } finally {
@@ -309,19 +316,13 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
             <div className="mb-4 flex flex-wrap gap-3">
               <Button
                 variant="outline"
-                onClick={() => void handleCreateExport('pdf')}
-                disabled={exportingFormat !== null}
+                onClick={() => {
+                  setSelectedExportFormat('pdf');
+                  setShowExportModal(true);
+                }}
               >
                 <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-                {exportingFormat === 'pdf' ? 'Solicitando PDF...' : 'Exportar PDF'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => void handleCreateExport('excel')}
-                disabled={exportingFormat !== null}
-              >
-                <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-                {exportingFormat === 'excel' ? 'Solicitando Excel...' : 'Exportar Excel'}
+                Exportar
               </Button>
             </div>
             {queryResult.items.length === 0 ? (
@@ -352,6 +353,61 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {showExportModal && report && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Exportar relatório</CardTitle>
+              <CardDescription>
+                Escolha o formato de exportação para <strong>{report.name}</strong>.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                {(['pdf', 'excel', 'csv', 'json'] as const).map((fmt) => (
+                  <button
+                    key={fmt}
+                    type="button"
+                    onClick={() => setSelectedExportFormat(fmt)}
+                    className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
+                      selectedExportFormat === fmt
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {fmt.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              {report.parameters.length > 0 && (
+                <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-xs font-medium text-slate-500">Parâmetros aplicados:</p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {Object.entries(buildFilters(report.parameters, paramValues))
+                      .map(([k, v]) => `${k}=${String(v)}`)
+                      .join(', ') || 'Nenhum parâmetro preenchido'}
+                  </p>
+                </div>
+              )}
+              {exportError && <p className="text-sm text-red-600">{exportError}</p>}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowExportModal(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => void handleCreateExport(selectedExportFormat)}
+                  disabled={exportingFormat !== null}
+                >
+                  {exportingFormat === selectedExportFormat
+                    ? 'Solicitando...'
+                    : `Exportar ${selectedExportFormat.toUpperCase()}`}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </section>
   );

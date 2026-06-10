@@ -232,7 +232,7 @@ export class DashboardService {
 
     for (let i = 11; i >= 0; i--) {
       const monthIndex = (currentMonth - i + 12) % 12;
-      const period = months[monthIndex];
+      const period = months[monthIndex] ?? '';
       const variation = (Math.random() - 0.5) * 0.2; // ±10% variação
       const value = Math.max(0, round(currentValue * (1 + variation * (i / 12))));
       const previousValue = Math.max(0, round(value * (1 + (Math.random() - 0.5) * 0.1)));

@@ -85,17 +85,16 @@ Para rastreabilidade detalhada:
 
 ### Exportações e notificações
 
-- a Web lê dados existentes no Supabase;
-- não há pipeline backend de geração de exportações;
-- não há worker, fila, polling de job ou storage de arquivo gerado pela aplicação;
+- pipeline de exportações com fallback em memória, worker BullMQ e fila;
+- polling automático de status no frontend;
+- filtros por formato e status na lista;
+- modal de exportação com seleção de formato (PDF, Excel, CSV, JSON);
+- skeleton loading e empty state ilustrativo;
 - notificações não têm backend próprio nem realtime.
 
 ## Ausente
 
-- editor de dashboards;
-- dashboards personalizados do usuário;
-- exportação PDF/Excel no backend;
-- BullMQ;
+- editor de dashboards drag-and-drop;
 - Prisma;
 - S3 ou storage equivalente para export;
 - cache Redis funcional na aplicação;

@@ -43,7 +43,7 @@ export function AddWidgetModal({ dashboardId, onClose, onSuccess }: AddWidgetMod
         const list = await fetchDashboardKpis();
         const items = (list ?? []) as KpiItem[];
         setKpis(items);
-        if (items.length > 0) {
+        if (items.length > 0 && items[0]) {
           setKpiId(items[0].id);
         }
       } catch {

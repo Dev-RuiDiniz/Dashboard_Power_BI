@@ -32,6 +32,7 @@ export type CreateExportInput = {
 export class ExportsService {
   private queue: Queue | null = null;
   private connection: IORedis | null = null;
+  private memoryExports = new Map<string, ExportJobRecord[]>();
 
   constructor(
     private readonly configService: ConfigService,
@@ -41,9 +42,21 @@ export class ExportsService {
     this.initQueue();
   }
 
+  private useMemory(): boolean {
+    return !this.supabaseService.isEnabled();
+  }
+
+  private getUserExports(userId: string): ExportJobRecord[] {
+    return this.memoryExports.get(userId) ?? [];
+  }
+
+  private setUserExports(userId: string, exports: ExportJobRecord[]): void {
+    this.memoryExports.set(userId, exports);
+  }
+
   async listForUser(userId: string): Promise<ExportJobRecord[]> {
-    if (!this.supabaseService.isEnabled()) {
-      return [];
+    if (this.useMemory()) {
+      return this.getUserExports(userId);
     }
 
     const { data, error } = await this.supabaseService
@@ -110,6 +123,26 @@ export class ExportsService {
       }
     }
 
+    if (this.useMemory()) {
+      const current = this.getUserExports(user.sub);
+      this.setUserExports(user.sub, [record, ...current]);
+      // Simulate processing completion after 2 seconds
+      setTimeout(() => {
+        const updated = this.getUserExports(user.sub).map((r) =>
+          r.id === jobId
+            ? {
+                ...r,
+                status: 'completed' as const,
+                file_url: `/exports/files/${jobId}.${input.exportFormat}`,
+                file_size_bytes: 1024,
+                completed_at: new Date().toISOString(),
+              }
+            : r,
+        );
+        this.setUserExports(user.sub, updated);
+      }, 2000);
+    }
+
     if (this.queue) {
       await this.queue.add(
         'process-export',
@@ -135,8 +168,16 @@ export class ExportsService {
   }
 
   async getFilePathForUser(userId: string, fileName: string): Promise<string> {
-    if (!this.supabaseService.isEnabled()) {
-      throw new NotFoundException('Arquivo não encontrado.');
+    if (this.useMemory()) {
+      const jobs = this.getUserExports(userId);
+      const job = jobs.find((j) => j.file_url?.includes(fileName));
+      if (!job || job.status !== 'completed') {
+        throw new NotFoundException('Arquivo não encontrado.');
+      }
+      if (new Date(job.expires_at) < new Date()) {
+        throw new NotFoundException('Arquivo expirado.');
+      }
+      return job.file_url ?? '/mock-export';
     }
 
     const { data, error } = await this.supabaseService
