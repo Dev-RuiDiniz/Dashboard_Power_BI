@@ -336,6 +336,20 @@ Exemplos:
 5. Atualizar `docs/web.md` se novas telas foram criadas;
 6. Registrar em `HANDOFF.md` qualquer contexto importante para a próxima sessão.
 
+### Regra de RELATORIO_DIA.md
+
+**Ao final de cada sessão de implementação, atualize o `RELATORIO_DIA.md`** com o que foi feito naquele dia:
+
+- Commits realizados (hash, mensagem, tarefa associada);
+- Funcionalidades entregues (backend e frontend);
+- Arquivos criados e modificados;
+- Correções de bugs ou type errors;
+- Métricas de progresso (telas concluídas, módulos avançados);
+- Débitos técnicos remanescentes;
+- Próximos passos recomendados.
+
+Se o arquivo `RELATORIO_DIA.md` ainda não existir para o dia atual, crie-o. Se já existir, apende ou atualize a seção correspondente. Use-o como fonte de acompanhamento diário do projeto.
+
 ### Regra de ROADMAP
 
 O arquivo `ROADMAP.md` deve ser mantido como fonte única da direção do projeto. A cada tarefa:
