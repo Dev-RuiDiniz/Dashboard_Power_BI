@@ -73,8 +73,8 @@ Para rastreabilidade detalhada:
 - existe dashboard inicial com KPIs;
 - Recharts integrado no dashboard home com 4 tipos de gráfico (Bar, Line, Pie, Area);
 - drill-down com série histórica de 12 meses e gráfico de evolução;
-- não há dashboards personalizados;
-- não há editor visual.
+- dashboards personalizados com CRUD completo e widgets (KPI, gráfico, tabela);
+- não há editor visual drag-and-drop.
 
 ### Administração
 

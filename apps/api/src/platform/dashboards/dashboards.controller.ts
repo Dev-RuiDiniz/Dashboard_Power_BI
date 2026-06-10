@@ -6,8 +6,10 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AuthenticatedRequestUser } from '../../auth/types/auth.types';
 import {
   CreateDashboardInput,
+  CreateWidgetInput,
   DashboardsService,
   UpdateDashboardInput,
+  UpdateWidgetInput,
 } from './dashboards.service';
 
 @ApiTags('dashboards')
@@ -49,5 +51,36 @@ export class DashboardsController {
   @ApiOkResponse({ description: 'Remove um dashboard personalizado.' })
   remove(@CurrentUser() user: AuthenticatedRequestUser, @Param('id') id: string) {
     return this.dashboardsService.deleteForUser(user.sub, id);
+  }
+
+  @Post(':id/widgets')
+  @ApiOkResponse({ description: 'Adiciona um widget ao dashboard.' })
+  addWidget(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+    @Body() body: CreateWidgetInput,
+  ) {
+    return this.dashboardsService.addWidget(user.sub, id, body);
+  }
+
+  @Patch(':id/widgets/:widgetId')
+  @ApiOkResponse({ description: 'Atualiza um widget do dashboard.' })
+  updateWidget(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+    @Param('widgetId') widgetId: string,
+    @Body() body: UpdateWidgetInput,
+  ) {
+    return this.dashboardsService.updateWidget(user.sub, id, widgetId, body);
+  }
+
+  @Delete(':id/widgets/:widgetId')
+  @ApiOkResponse({ description: 'Remove um widget do dashboard.' })
+  removeWidget(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+    @Param('widgetId') widgetId: string,
+  ) {
+    return this.dashboardsService.removeWidget(user.sub, id, widgetId);
   }
 }

@@ -152,12 +152,73 @@ export async function fetchDashboards(): Promise<UserDashboard[]> {
   return apiGet<UserDashboard[]>('/dashboards');
 }
 
+export async function getDashboardById(id: string): Promise<UserDashboard> {
+  return apiGet<UserDashboard>(`/dashboards/${id}`);
+}
+
 export async function createDashboard(input: {
   name: string;
   description?: string;
   isDefault?: boolean;
 }): Promise<UserDashboard> {
   return apiPost<UserDashboard>('/dashboards', input);
+}
+
+export async function updateDashboard(
+  id: string,
+  input: Partial<{
+    name: string;
+    description: string;
+    isDefault: boolean;
+    layout: Record<string, unknown>;
+  }>,
+): Promise<UserDashboard> {
+  return apiPatch<UserDashboard>(`/dashboards/${id}`, input);
+}
+
+export async function deleteDashboard(id: string): Promise<{ deleted: true }> {
+  return apiDelete<{ deleted: true }>(`/dashboards/${id}`);
+}
+
+export async function addDashboardWidget(
+  dashboardId: string,
+  input: {
+    widgetType: 'chart' | 'kpi' | 'table';
+    title: string;
+    chartType?: string | null;
+    reportId?: string | null;
+    kpiId?: string | null;
+    config?: Record<string, unknown>;
+    position?: { x: number; y: number; width: number; height: number };
+  },
+): Promise<UserDashboard['widgets'][number]> {
+  return apiPost<UserDashboard['widgets'][number]>(`/dashboards/${dashboardId}/widgets`, input);
+}
+
+export async function updateDashboardWidget(
+  dashboardId: string,
+  widgetId: string,
+  input: Partial<{
+    widgetType: 'chart' | 'kpi' | 'table';
+    title: string;
+    chartType: string | null;
+    reportId: string | null;
+    kpiId: string | null;
+    config: Record<string, unknown>;
+    position: { x: number; y: number; width: number; height: number };
+  }>,
+): Promise<UserDashboard['widgets'][number]> {
+  return apiPatch<UserDashboard['widgets'][number]>(
+    `/dashboards/${dashboardId}/widgets/${widgetId}`,
+    input,
+  );
+}
+
+export async function removeDashboardWidget(
+  dashboardId: string,
+  widgetId: string,
+): Promise<{ removed: true }> {
+  return apiDelete<{ removed: true }>(`/dashboards/${dashboardId}/widgets/${widgetId}`);
 }
 
 export async function fetchFavoriteReports(): Promise<PaginatedReports['items']> {

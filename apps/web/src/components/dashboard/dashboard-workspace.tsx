@@ -1,6 +1,7 @@
 'use client';
 
-import { LayoutDashboard, Loader2, Star, TriangleAlert } from 'lucide-react';
+import { Eye, LayoutDashboard, Loader2, Pencil, Star, Trash2, TriangleAlert } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import {
@@ -14,8 +15,10 @@ import {
 } from '@/components/ui';
 import {
   createDashboard,
+  deleteDashboard,
   fetchDashboards,
   fetchFavoriteReports,
+  updateDashboard,
   type UserDashboard,
 } from '@/lib/platform-api';
 import type { PaginatedReports } from '@/lib/reports-api';
@@ -23,6 +26,7 @@ import type { PaginatedReports } from '@/lib/reports-api';
 type FavoriteReport = PaginatedReports['items'][number];
 
 export function DashboardWorkspace() {
+  const router = useRouter();
   const [dashboards, setDashboards] = useState<UserDashboard[]>([]);
   const [favorites, setFavorites] = useState<FavoriteReport[]>([]);
   const [name, setName] = useState('');
@@ -31,6 +35,12 @@ export function DashboardWorkspace() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingDashboard, setEditingDashboard] = useState<UserDashboard | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editIsDefault, setEditIsDefault] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const loadWorkspace = useCallback(async () => {
     setIsLoading(true);
@@ -74,6 +84,48 @@ export function DashboardWorkspace() {
       setErrorMessage('Nao foi possivel criar o dashboard personalizado.');
     } finally {
       setIsCreating(false);
+    }
+  }
+
+  async function handleDeleteDashboard(id: string) {
+    if (!confirm('Tem certeza que deseja excluir este dashboard?')) {
+      return;
+    }
+
+    setDeletingId(id);
+    try {
+      await deleteDashboard(id);
+      setDashboards((current) => current.filter((d) => d.id !== id));
+    } catch {
+      setErrorMessage('Nao foi possivel excluir o dashboard.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  function handleStartEdit(dashboard: UserDashboard) {
+    setEditingDashboard(dashboard);
+    setEditName(dashboard.name);
+    setEditDescription(dashboard.description);
+    setEditIsDefault(dashboard.isDefault);
+  }
+
+  async function handleSaveEdit() {
+    if (!editingDashboard || !editName.trim()) return;
+
+    setIsSavingEdit(true);
+    try {
+      const updated = await updateDashboard(editingDashboard.id, {
+        name: editName.trim(),
+        description: editDescription.trim() || undefined,
+        isDefault: editIsDefault,
+      });
+      setDashboards((current) => current.map((d) => (d.id === updated.id ? updated : d)));
+      setEditingDashboard(null);
+    } catch {
+      setErrorMessage('Nao foi possivel salvar as alteracoes.');
+    } finally {
+      setIsSavingEdit(false);
     }
   }
 
@@ -163,31 +215,84 @@ export function DashboardWorkspace() {
           </CardHeader>
           <CardContent className="grid gap-3">
             {dashboards.length === 0 ? (
-              <p className="text-sm text-slate-500">
-                Nenhum dashboard personalizado foi criado ainda.
-              </p>
+              <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
+                <LayoutDashboard className="mx-auto h-8 w-8 text-slate-400" aria-hidden="true" />
+                <p className="mt-3 text-sm text-slate-500">
+                  Nenhum dashboard personalizado foi criado ainda.
+                </p>
+                <p className="mt-1 text-xs text-slate-400">Crie um dashboard acima para comecar.</p>
+              </div>
             ) : (
               dashboards.map((dashboard) => (
                 <div
                   key={dashboard.id}
-                  className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                  className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-blue-50"
+                  onClick={() => router.push(`/app/dashboards/${dashboard.id}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      router.push(`/app/dashboards/${dashboard.id}`);
+                    }
+                  }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-base font-semibold text-slate-950">{dashboard.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-base font-semibold text-slate-950">{dashboard.name}</p>
+                        {dashboard.isDefault ? (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                            Padrao
+                          </span>
+                        ) : null}
+                      </div>
                       <p className="mt-1 text-sm text-slate-600">
                         {dashboard.description || 'Sem descricao.'}
                       </p>
                     </div>
-                    {dashboard.isDefault ? (
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                        Padrao
-                      </span>
-                    ) : null}
+                    <div
+                      className="flex gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      role="group"
+                    >
+                      <button
+                        type="button"
+                        className="rounded-lg p-2 text-slate-400 hover:bg-blue-100 hover:text-blue-700"
+                        onClick={() => router.push(`/app/dashboards/${dashboard.id}`)}
+                        aria-label="Visualizar dashboard"
+                        title="Visualizar"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-lg p-2 text-slate-400 hover:bg-amber-100 hover:text-amber-700"
+                        onClick={() => handleStartEdit(dashboard)}
+                        aria-label="Editar dashboard"
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-lg p-2 text-slate-400 hover:bg-red-100 hover:text-red-700"
+                        onClick={() => void handleDeleteDashboard(dashboard.id)}
+                        disabled={deletingId === dashboard.id}
+                        aria-label="Excluir dashboard"
+                        title="Excluir"
+                      >
+                        {deletingId === dashboard.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
                     <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-                    {dashboard.widgets.length} widget(s) conectado(s)
+                    {dashboard.widgets.length} widget(s)
                   </div>
                 </div>
               ))
@@ -223,6 +328,54 @@ export function DashboardWorkspace() {
           </CardContent>
         </Card>
       </div>
+
+      {editingDashboard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <CardTitle>Editar dashboard</CardTitle>
+              <CardDescription>Atualize as informacoes do dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                Nome
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Nome do dashboard"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                Descricao
+                <Input
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Descricao opcional"
+                />
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={editIsDefault}
+                  onChange={(e) => setEditIsDefault(e.target.checked)}
+                />
+                Definir como padrao
+              </label>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEditingDashboard(null)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => void handleSaveEdit()}
+                  disabled={isSavingEdit || !editName.trim()}
+                >
+                  {isSavingEdit ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </section>
   );
 }

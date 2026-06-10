@@ -19,6 +19,14 @@
 - `GET /dashboard/home`
 - `GET /dashboard/kpis/:kpiId/drilldown`
 - `GET /dashboard/kpis/:kpiId/history` — serie historica de 12 meses do KPI
+- `GET /dashboards` — lista dashboards personalizados do usuario
+- `POST /dashboards` — cria dashboard personalizado
+- `GET /dashboards/:id` — retorna dashboard especifico
+- `PATCH /dashboards/:id` — atualiza dashboard
+- `DELETE /dashboards/:id` — remove dashboard
+- `POST /dashboards/:id/widgets` — adiciona widget ao dashboard
+- `PATCH /dashboards/:id/widgets/:widgetId` — atualiza widget
+- `DELETE /dashboards/:id/widgets/:widgetId` — remove widget
 - fluxo de recuperação e redefinição de senha
 - CRUD básico administrativo de usuários
 - CRUD básico administrativo de grupos

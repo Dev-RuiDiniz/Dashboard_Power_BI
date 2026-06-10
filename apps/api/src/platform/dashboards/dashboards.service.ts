@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 
 import { SupabaseService } from '../../supabase/supabase.service';
 
@@ -67,15 +68,35 @@ export type CreateDashboardInput = {
   layout?: Record<string, unknown>;
 };
 
+export type CreateWidgetInput = {
+  widgetType: 'chart' | 'kpi' | 'table';
+  title: string;
+  chartType?: string | null;
+  reportId?: string | null;
+  kpiId?: string | null;
+  config?: Record<string, unknown>;
+  position?: { x: number; y: number; width: number; height: number };
+};
+
 export type UpdateDashboardInput = Partial<CreateDashboardInput>;
+
+export type UpdateWidgetInput = Partial<CreateWidgetInput>;
 
 @Injectable()
 export class DashboardsService {
+  private memoryDashboards = new Map<string, DashboardRow>();
+  private memoryWidgets = new Map<string, DashboardWidgetRow[]>();
+
   constructor(private readonly supabaseService: SupabaseService) {}
 
+  private useMemory(): boolean {
+    return !this.supabaseService.isEnabled();
+  }
+
   async listForUser(userId: string): Promise<UserDashboard[]> {
-    if (!this.supabaseService.isEnabled()) {
-      return [];
+    if (this.useMemory()) {
+      const rows = Array.from(this.memoryDashboards.values()).filter((d) => d.user_id === userId);
+      return this.attachWidgetsFromMemory(rows);
     }
 
     const { data, error } = await this.supabaseService
@@ -93,13 +114,30 @@ export class DashboardsService {
   }
 
   async createForUser(userId: string, input: CreateDashboardInput): Promise<UserDashboard> {
-    this.assertEnabled();
-
     if (input.isDefault) {
       await this.clearDefaultDashboard(userId);
     }
 
     const now = new Date().toISOString();
+    const id = randomUUID();
+
+    const row: DashboardRow = {
+      id,
+      user_id: userId,
+      name: input.name,
+      description: input.description ?? null,
+      is_default: input.isDefault ?? false,
+      layout: input.layout ?? { columns: 12 },
+      created_at: now,
+      updated_at: now,
+    };
+
+    if (this.useMemory()) {
+      this.memoryDashboards.set(id, row);
+      this.memoryWidgets.set(id, []);
+      return this.mapDashboard(row, []);
+    }
+
     const { data, error } = await this.supabaseService
       .getClient()
       .from('dashboards')
@@ -123,7 +161,17 @@ export class DashboardsService {
   }
 
   async getByIdForUser(userId: string, id: string): Promise<UserDashboard> {
-    this.assertEnabled();
+    if (this.useMemory()) {
+      const row = this.memoryDashboards.get(id);
+      if (!row || row.user_id !== userId) {
+        throw new NotFoundException('Dashboard nao encontrado.');
+      }
+      const [dashboard] = await this.attachWidgetsFromMemory([row]);
+      if (!dashboard) {
+        throw new NotFoundException('Dashboard nao encontrado.');
+      }
+      return dashboard;
+    }
 
     const { data, error } = await this.supabaseService
       .getClient()
@@ -155,10 +203,29 @@ export class DashboardsService {
     id: string,
     input: UpdateDashboardInput,
   ): Promise<UserDashboard> {
-    this.assertEnabled();
-
     if (input.isDefault) {
       await this.clearDefaultDashboard(userId);
+    }
+
+    if (this.useMemory()) {
+      const row = this.memoryDashboards.get(id);
+      if (!row || row.user_id !== userId) {
+        throw new NotFoundException('Dashboard nao encontrado.');
+      }
+      const updated: DashboardRow = {
+        ...row,
+        name: input.name ?? row.name,
+        description: input.description !== undefined ? input.description : row.description,
+        is_default: input.isDefault !== undefined ? input.isDefault : row.is_default,
+        layout: input.layout !== undefined ? input.layout : row.layout,
+        updated_at: new Date().toISOString(),
+      };
+      this.memoryDashboards.set(id, updated);
+      const [dashboard] = await this.attachWidgetsFromMemory([updated]);
+      if (!dashboard) {
+        throw new NotFoundException('Dashboard nao encontrado.');
+      }
+      return dashboard;
     }
 
     const { data, error } = await this.supabaseService
@@ -194,7 +261,15 @@ export class DashboardsService {
   }
 
   async deleteForUser(userId: string, id: string): Promise<{ deleted: true }> {
-    this.assertEnabled();
+    if (this.useMemory()) {
+      const row = this.memoryDashboards.get(id);
+      if (!row || row.user_id !== userId) {
+        throw new NotFoundException('Dashboard nao encontrado.');
+      }
+      this.memoryDashboards.delete(id);
+      this.memoryWidgets.delete(id);
+      return { deleted: true };
+    }
 
     const { error } = await this.supabaseService
       .getClient()
@@ -210,7 +285,168 @@ export class DashboardsService {
     return { deleted: true };
   }
 
+  async addWidget(
+    userId: string,
+    dashboardId: string,
+    input: CreateWidgetInput,
+  ): Promise<DashboardWidget> {
+    const dashboard = await this.getByIdForUser(userId, dashboardId);
+
+    const now = new Date().toISOString();
+    const widgetId = randomUUID();
+    const widgetRow: DashboardWidgetRow = {
+      id: widgetId,
+      dashboard_id: dashboardId,
+      widget_type: input.widgetType,
+      title: input.title,
+      chart_type: input.chartType ?? null,
+      report_id: input.reportId ?? null,
+      kpi_id: input.kpiId ?? null,
+      display_order: (dashboard.widgets.length + 1) * 10,
+      config: input.config ?? {},
+      position_x: input.position?.x ?? 0,
+      position_y: input.position?.y ?? 0,
+      width: input.position?.width ?? 1,
+      height: input.position?.height ?? 1,
+      created_at: now,
+    };
+
+    if (this.useMemory()) {
+      const widgets = this.memoryWidgets.get(dashboardId) ?? [];
+      widgets.push(widgetRow);
+      this.memoryWidgets.set(dashboardId, widgets);
+      return this.mapWidget(widgetRow);
+    }
+
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('dashboard_widgets')
+      .insert({
+        dashboard_id: dashboardId,
+        widget_type: input.widgetType,
+        title: input.title,
+        chart_type: input.chartType ?? null,
+        report_id: input.reportId ?? null,
+        kpi_id: input.kpiId ?? null,
+        display_order: (dashboard.widgets.length + 1) * 10,
+        config: input.config ?? {},
+        position_x: input.position?.x ?? 0,
+        position_y: input.position?.y ?? 0,
+        width: input.position?.width ?? 1,
+        height: input.position?.height ?? 1,
+        created_at: now,
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return this.mapWidget(data as DashboardWidgetRow);
+  }
+
+  async updateWidget(
+    userId: string,
+    dashboardId: string,
+    widgetId: string,
+    input: UpdateWidgetInput,
+  ): Promise<DashboardWidget> {
+    await this.getByIdForUser(userId, dashboardId);
+
+    if (this.useMemory()) {
+      const widgets = this.memoryWidgets.get(dashboardId) ?? [];
+      const index = widgets.findIndex((w) => w.id === widgetId);
+      if (index === -1) {
+        throw new NotFoundException('Widget nao encontrado.');
+      }
+      const updated: DashboardWidgetRow = {
+        ...widgets[index]!,
+        widget_type: input.widgetType ?? widgets[index]!.widget_type,
+        title: input.title ?? widgets[index]!.title,
+        chart_type: input.chartType !== undefined ? input.chartType : widgets[index]!.chart_type,
+        report_id: input.reportId !== undefined ? input.reportId : widgets[index]!.report_id,
+        kpi_id: input.kpiId !== undefined ? input.kpiId : widgets[index]!.kpi_id,
+        config: input.config !== undefined ? input.config : widgets[index]!.config,
+        position_x: input.position?.x ?? widgets[index]!.position_x,
+        position_y: input.position?.y ?? widgets[index]!.position_y,
+        width: input.position?.width ?? widgets[index]!.width,
+        height: input.position?.height ?? widgets[index]!.height,
+      };
+      widgets[index] = updated;
+      this.memoryWidgets.set(dashboardId, widgets);
+      return this.mapWidget(updated);
+    }
+
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('dashboard_widgets')
+      .update({
+        ...(input.widgetType !== undefined ? { widget_type: input.widgetType } : {}),
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.chartType !== undefined ? { chart_type: input.chartType } : {}),
+        ...(input.reportId !== undefined ? { report_id: input.reportId } : {}),
+        ...(input.kpiId !== undefined ? { kpi_id: input.kpiId } : {}),
+        ...(input.config !== undefined ? { config: input.config } : {}),
+        ...(input.position !== undefined
+          ? {
+              position_x: input.position.x,
+              position_y: input.position.y,
+              width: input.position.width,
+              height: input.position.height,
+            }
+          : {}),
+      })
+      .eq('id', widgetId)
+      .eq('dashboard_id', dashboardId)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return this.mapWidget(data as DashboardWidgetRow);
+  }
+
+  async removeWidget(
+    userId: string,
+    dashboardId: string,
+    widgetId: string,
+  ): Promise<{ removed: true }> {
+    await this.getByIdForUser(userId, dashboardId);
+
+    if (this.useMemory()) {
+      const widgets = this.memoryWidgets.get(dashboardId) ?? [];
+      const filtered = widgets.filter((w) => w.id !== widgetId);
+      this.memoryWidgets.set(dashboardId, filtered);
+      return { removed: true };
+    }
+
+    const { error } = await this.supabaseService
+      .getClient()
+      .from('dashboard_widgets')
+      .delete()
+      .eq('id', widgetId)
+      .eq('dashboard_id', dashboardId);
+
+    if (error) {
+      throw error;
+    }
+
+    return { removed: true };
+  }
+
   private async clearDefaultDashboard(userId: string): Promise<void> {
+    if (this.useMemory()) {
+      for (const [id, row] of this.memoryDashboards) {
+        if (row.user_id === userId && row.is_default) {
+          this.memoryDashboards.set(id, { ...row, is_default: false });
+        }
+      }
+      return;
+    }
+
     const { error } = await this.supabaseService
       .getClient()
       .from('dashboards')
@@ -252,6 +488,13 @@ export class DashboardsService {
     return rows.map((row) => this.mapDashboard(row, widgetsByDashboard.get(row.id) ?? []));
   }
 
+  private async attachWidgetsFromMemory(rows: DashboardRow[]): Promise<UserDashboard[]> {
+    return rows.map((row) => {
+      const widgets = (this.memoryWidgets.get(row.id) ?? []).map((w) => this.mapWidget(w));
+      return this.mapDashboard(row, widgets);
+    });
+  }
+
   private mapDashboard(row: DashboardRow, widgets: DashboardWidget[]): UserDashboard {
     return {
       id: row.id,
@@ -284,11 +527,5 @@ export class DashboardsService {
       },
       createdAt: row.created_at,
     };
-  }
-
-  private assertEnabled(): void {
-    if (!this.supabaseService.isEnabled()) {
-      throw new NotFoundException('Persistencia de dashboards indisponivel.');
-    }
   }
 }

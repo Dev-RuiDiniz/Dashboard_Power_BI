@@ -36,10 +36,14 @@ A sessão do frontend agora fica em `sessionStorage`, remove a dependência oper
 - cada KPI da home já abre um drill-down completo consumindo `GET /dashboard/kpis/:kpiId/drilldown` + `GET /dashboard/kpis/:kpiId/history`, com resumo, gráfico de evolução de 12 meses e tabela comparativa;
 - a tela de detalhe do relatório já consegue solicitar exportações em PDF e Excel;
 - a tela de exportações baixa arquivos pela API autenticada, sem depender de link público cru.
-- a tela de settings já permite editar valores não sensíveis via API centralizada.
+- a tela de settings já permite editar valores não sensíveis via API centralizada;
+- dashboards personalizados com CRUD completo: criar, visualizar (`/app/dashboards/:id`), editar e excluir;
+- widgets de dashboard: KPI, Gráfico (bar, line, pie, area) e Tabela (placeholder);
+- modal de adicionar widget com seleção de tipo, KPI e tipo de gráfico;
+- fallback em memória para dashboards quando Supabase não configurado.
 
 ## Limitações atuais
 
 - persistências de platform ainda dependem do Supabase no backend atual;
-- dashboards personalizados e editor visual ainda não estão entregues;
+- editor visual drag-and-drop ainda não está entregue;
 - o drill-down existe em nivel inicial, mas ainda nao cobre exploracao rica por dimensao, navegacao multinivel nem widgets personalizados.
