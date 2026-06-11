@@ -76,7 +76,7 @@ Documentos detalhados por categoria:
 
 | Módulo      | Status     |                                     Concluído                                     |         Parcial          |         Pendente          |
 | ----------- | ---------- | :-------------------------------------------------------------------------------: | :----------------------: | :-----------------------: |
-| AUTH        | 🔄 Parcial |        Login, JWT, refresh, logout, reset, rate limit, profile, CSRF, CSP         |         2FA/TOTP         |      Hardening final      |
+| AUTH        | 🔄 Parcial |   Login, JWT, refresh, logout, reset, rate limit, profile, CSRF, CSP, 2FA/TOTP    |     Hardening final      |    Forçar 2FA por role    |
 | PERMISSIONS | 🔄 Parcial |             Roles, setores, grupos, permissões granulares, auditoria              |    Herança via grupos    |       Regras finas        |
 | SQL         | 🔄 Parcial |               Queries parametrizadas, validação de identificadores                |   Cache, monitoramento   |   Cron, observabilidade   |
 | REPORTS     | 🔄 Parcial | Catálogo, visualização, filtros, admin básico, persistência real, export pipeline |    Ampliar favoritos     |             —             |

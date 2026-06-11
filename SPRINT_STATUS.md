@@ -58,7 +58,7 @@ Para rastreabilidade detalhada:
 - o fluxo JWT existe, mas a sessão do frontend ainda é local e client-side;
 - há controle de tentativas de login, mas a cobertura de hardening do PDF não está completa;
 - CSRF e headers de segurança (CSP, HSTS, X-Frame-Options etc.) implementados;
-- não existe 2FA/TOTP (`otplib` instalado, endpoints/UI pendentes).
+- 2FA/TOTP mínimo viável implementado: setup com secret base32 + otpauthUrl, verificação no login com tempToken, endpoints `/auth/totp/*`, gestão no perfil do usuário.
 
 ### Relatórios
 
@@ -101,7 +101,7 @@ Para rastreabilidade detalhada:
 - cache Redis funcional na aplicação;
 - cron/refresh agendado;
 - WebSocket/realtime da aplicação;
-- 2FA/TOTP completo (backend parcial: `otplib` instalado).
+- forçar 2FA/TOTP obrigatório para roles específicos.
 
 ## Riscos e documentação desatualizada
 

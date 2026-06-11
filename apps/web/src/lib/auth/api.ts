@@ -7,6 +7,8 @@ export type LoginResponse = {
   expiresIn: number;
 };
 
+export type LoginResult = LoginResponse | { requiresTwoFactor: true; tempToken: string };
+
 export type ForgotPasswordResponse = {
   success: true;
   message: string;
@@ -85,8 +87,24 @@ async function post<T>(path: string, payload: Record<string, unknown>): Promise<
   }
 }
 
-export function login(email: string, password: string): Promise<LoginResponse> {
-  return post<LoginResponse>('/auth/login', { email, password });
+export function login(email: string, password: string): Promise<LoginResult> {
+  return post<LoginResult>('/auth/login', { email, password });
+}
+
+export function loginWithTotp(tempToken: string, code: string): Promise<LoginResponse> {
+  return post<LoginResponse>('/auth/totp/login', { tempToken, code });
+}
+
+export function setupTotp(): Promise<{ secret: string; otpauthUrl: string }> {
+  return post<{ secret: string; otpauthUrl: string }>('/auth/totp/setup', {});
+}
+
+export function verifyTotpSetup(code: string): Promise<{ enabled: true }> {
+  return post<{ enabled: true }>('/auth/totp/verify', { code });
+}
+
+export function disableTotp(code: string): Promise<{ disabled: true }> {
+  return post<{ disabled: true }>('/auth/totp/disable', { code });
 }
 
 export function refreshSession(refreshToken: string): Promise<LoginResponse> {

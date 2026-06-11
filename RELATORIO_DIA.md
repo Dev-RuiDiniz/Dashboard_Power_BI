@@ -128,6 +128,71 @@ Hoje foi entregue a **T15 — Gestão de relatórios (admin)**, completando a te
 
 ---
 
+# Relatório Detalhado do Dia — 11/06/2026 (2FA/TOTP)
+
+**Data:** 11 de junho de 2026  
+**Sessão:** Implementação 2FA/TOTP — Mínimo Viável  
+**Branch:** `main`  
+**Commits:** 1 (acumulado com T15)  
+**Arquivos alterados:** ~20
+
+---
+
+## Resumo Executivo
+
+Hoje foi entregue a **autenticação de dois fatores (2FA/TOTP)** como débito técnico crítico da Fase 4:
+
+- **Backend:** `TotpService` implementado com `node:crypto` (sem dependência externa), geração de secret base32, verificação TOTP com janela ±1, e endpoints `/auth/totp/setup`, `/verify`, `/disable`, `/login`.
+- **Login:** modificado para retornar `requiresTwoFactor: true` + `tempToken` (JWT 5 min) quando 2FA está ativo.
+- **Frontend:** login-form adaptado para exigir código TOTP quando necessário; perfil (`/app/profile`) com gestão completa de 2FA (ativar, verificar, desativar).
+- **TDD:** 10 novos testes no backend (TotpService: 4, AuthService: 6).
+
+---
+
+## Commits do Dia
+
+### `feat: implementar 2FA/TOTP mínimo viável — setup QR code, verificação no login e gestão no perfil`
+
+- `apps/api/src/auth/types/auth.types.ts` — adicionou `totpSecret`, `isTwoFactorEnabled`, `TotpPendingPayload`
+- `apps/api/src/auth/repositories/users.repository.ts` — métodos `updateTotpSecret`, `enableTotp`, `disableTotp`
+- `apps/api/src/auth/services/totp.service.ts` — implementação pura de TOTP (RFC 6238) com `node:crypto`
+- `apps/api/src/auth/services/totp.service.spec.ts` — testes TDD (generateSecret, verifyToken, janela ±1)
+- `apps/api/src/auth/services/token.service.ts` — `createTotpPendingToken`, `verifyTotpPendingToken`
+- `apps/api/src/auth/auth.service.ts` — login com 2FA, `totpLogin`, `setupTotp`, `verifyTotpSetup`, `disableTotp`
+- `apps/api/src/auth/auth.controller.ts` — endpoints `/auth/totp/setup`, `/verify`, `/disable`, `/login`
+- `apps/api/src/auth/auth.module.ts` — registro de `TotpService`
+- `apps/api/src/auth/dto/totp-setup.dto.ts` — DTOs `TotpLoginDto`, `TotpVerifyDto`
+- `apps/web/src/lib/auth/api.ts` — `loginWithTotp`, `setupTotp`, `verifyTotpSetup`, `disableTotp`
+- `apps/web/src/components/auth/login-form.tsx` — modo verificação TOTP com input de 6 dígitos
+- `apps/web/src/components/user-profile.tsx` — seção 2FA com setup, QR code (otpauthUrl), verificação e desativação
+- Testes atualizados: `auth.service.spec.ts` (14 passando), `auth.controller.spec.ts` (2 passando)
+
+---
+
+## Testes e Validação
+
+| Comando                                                                 | Status    | Notas             |
+| ----------------------------------------------------------------------- | --------- | ----------------- |
+| `pnpm --filter @dashboard-power-bi/api typecheck`                       | ✅ Passou | Sem erros         |
+| `pnpm --filter @dashboard-power-bi/web typecheck`                       | ✅ Passou | Sem erros         |
+| `pnpm --filter @dashboard-power-bi/api test -- totp.service.spec.ts`    | ✅ Passou | 4 tests           |
+| `pnpm --filter @dashboard-power-bi/api test -- auth.service.spec.ts`    | ✅ Passou | 14 tests          |
+| `pnpm --filter @dashboard-power-bi/api test -- auth.controller.spec.ts` | ✅ Passou | 2 tests           |
+| `pnpm --filter @dashboard-power-bi/web build`                           | ✅ Passou | Build produção OK |
+
+---
+
+## Próximos Passos Recomendados
+
+1. **Hardening final de segurança** (Fase 4)
+   - Forçar 2FA para roles admin
+   - Headers adicionais, rate limiting refinado
+
+2. **Testes E2E**
+   - Cypress/Playwright para fluxo crítico de login + 2FA
+
+---
+
 # Relatório Detalhado do Dia — 10/06/2026 (T16)
 
 **Data:** 10 de junho de 2026

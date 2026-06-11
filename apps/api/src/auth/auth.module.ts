@@ -13,6 +13,7 @@ import { EmailService } from './services/email.service';
 import { LoginAttemptsService } from './services/login-attempts.service';
 import { PasswordResetService } from './services/password-reset.service';
 import { TokenService } from './services/token.service';
+import { TotpService } from './services/totp.service';
 
 @Module({
   controllers: [AuthController, AuthzTestController],
@@ -25,6 +26,7 @@ import { TokenService } from './services/token.service';
     PasswordResetService,
     EmailService,
     TokenService,
+    TotpService,
     JwtAuthGuard,
     RolesGuard,
     SectorsGuard,
@@ -36,6 +38,7 @@ import { TokenService } from './services/token.service';
     LoginAttemptsService,
     EmailService,
     TokenService,
+    TotpService,
     JwtAuthGuard,
     RolesGuard,
     SectorsGuard,

@@ -10,6 +10,8 @@ export type AuthUser = {
   sectors: SectorCode[];
   groupIds: string[];
   isActive: boolean;
+  totpSecret: string | null;
+  isTwoFactorEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
   deactivatedAt: Date | null;
@@ -20,6 +22,13 @@ export type AuthTokenPayload = {
   email: string;
   roles: UserRole[];
   sectors: SectorCode[];
+};
+
+export type TotpPendingPayload = {
+  sub: string;
+  type: 'totp_pending';
+  iat: number;
+  exp: number;
 };
 
 export type AuthenticatedRequestUser = AuthTokenPayload;

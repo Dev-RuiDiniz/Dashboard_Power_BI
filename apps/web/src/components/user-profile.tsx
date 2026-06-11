@@ -22,6 +22,7 @@ import {
   Input,
 } from '@/components/ui';
 import { apiGet, apiPatch } from '@/lib/admin-api';
+import { setupTotp, verifyTotpSetup, disableTotp } from '@/lib/auth/api';
 
 type UserProfile = {
   id: string;
@@ -30,6 +31,7 @@ type UserProfile = {
   sectors: string[];
   groupIds: string[];
   isActive: boolean;
+  isTwoFactorEnabled: boolean;
   createdAt: string;
   updatedAt: string;
   deactivatedAt: string | null;
@@ -45,6 +47,15 @@ export function UserProfile() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isSettingUpTotp, setIsSettingUpTotp] = useState(false);
+  const [totpSetupData, setTotpSetupData] = useState<{ secret: string; otpauthUrl: string } | null>(
+    null,
+  );
+  const [totpVerificationCode, setTotpVerificationCode] = useState('');
+  const [isVerifyingTotp, setIsVerifyingTotp] = useState(false);
+  const [totpError, setTotpError] = useState<string | null>(null);
+  const [isDisablingTotp, setIsDisablingTotp] = useState(false);
+  const [disableTotpCode, setDisableTotpCode] = useState('');
 
   const loadUserProfile = useCallback(async () => {
     setIsLoading(true);
@@ -92,6 +103,64 @@ export function UserProfile() {
       setPasswordError('Erro ao atualizar senha. Verifique a senha atual.');
     } finally {
       setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleSetupTotp = async () => {
+    setIsSettingUpTotp(true);
+    setTotpError(null);
+    try {
+      const data = await setupTotp();
+      setTotpSetupData(data);
+    } catch {
+      setTotpError('Não foi possível iniciar a configuração de 2FA.');
+    } finally {
+      setIsSettingUpTotp(false);
+    }
+  };
+
+  const handleVerifyTotp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTotpError(null);
+
+    if (!/^\d{6}$/.test(totpVerificationCode)) {
+      setTotpError('Informe o código de 6 dígitos.');
+      return;
+    }
+
+    setIsVerifyingTotp(true);
+    try {
+      await verifyTotpSetup(totpVerificationCode);
+      setTotpSetupData(null);
+      setTotpVerificationCode('');
+      await loadUserProfile();
+      alert('2FA ativado com sucesso.');
+    } catch {
+      setTotpError('Código inválido. Tente novamente.');
+    } finally {
+      setIsVerifyingTotp(false);
+    }
+  };
+
+  const handleDisableTotp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTotpError(null);
+
+    if (!/^\d{6}$/.test(disableTotpCode)) {
+      setTotpError('Informe o código de 6 dígitos.');
+      return;
+    }
+
+    setIsDisablingTotp(true);
+    try {
+      await disableTotp(disableTotpCode);
+      setDisableTotpCode('');
+      await loadUserProfile();
+      alert('2FA desativado com sucesso.');
+    } catch {
+      setTotpError('Código inválido. Tente novamente.');
+    } finally {
+      setIsDisablingTotp(false);
     }
   };
 
@@ -221,63 +290,172 @@ export function UserProfile() {
             <Building2 className="h-5 w-5 text-blue-700" aria-hidden="true" />
             Segurança
           </CardTitle>
-          <CardDescription>Gerencie sua senha de acesso.</CardDescription>
+          <CardDescription>Gerencie sua senha e autenticação de dois fatores.</CardDescription>
         </CardHeader>
-        <CardContent>
-          {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)}>Alterar senha</Button>
-          ) : (
-            <form onSubmit={handlePasswordUpdate} className="space-y-4 max-w-md">
-              <Input
-                id="current-password"
-                label="Senha atual"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-              />
-              <Input
-                id="new-password"
-                label="Nova senha"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                helperText="Mínimo 8 caracteres"
-              />
-              <Input
-                id="confirm-password"
-                label="Confirmar nova senha"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-              {passwordError && (
-                <p className="text-xs font-medium text-danger" role="alert">
-                  {passwordError}
-                </p>
-              )}
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setCurrentPassword('');
-                    setNewPassword('');
-                    setConfirmPassword('');
-                    setPasswordError(null);
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isUpdatingPassword}>
-                  {isUpdatingPassword ? 'Atualizando...' : 'Atualizar senha'}
-                </Button>
+        <CardContent className="space-y-8">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800 mb-3">Senha</h3>
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)}>Alterar senha</Button>
+            ) : (
+              <form onSubmit={handlePasswordUpdate} className="space-y-4 max-w-md">
+                <Input
+                  id="current-password"
+                  label="Senha atual"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
+                <Input
+                  id="new-password"
+                  label="Nova senha"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  helperText="Mínimo 8 caracteres"
+                />
+                <Input
+                  id="confirm-password"
+                  label="Confirmar nova senha"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+                {passwordError && (
+                  <p className="text-xs font-medium text-danger" role="alert">
+                    {passwordError}
+                  </p>
+                )}
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setCurrentPassword('');
+                      setNewPassword('');
+                      setConfirmPassword('');
+                      setPasswordError(null);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isUpdatingPassword}>
+                    {isUpdatingPassword ? 'Atualizando...' : 'Atualizar senha'}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+
+          <div className="border-t border-slate-100 pt-6">
+            <h3 className="text-sm font-semibold text-slate-800 mb-3">
+              Autenticação de dois fatores (2FA)
+            </h3>
+            {user.isTwoFactorEnabled ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Badge variant="success">2FA ativado</Badge>
+                </div>
+                <form onSubmit={handleDisableTotp} className="space-y-3 max-w-md">
+                  <p className="text-sm text-slate-600">
+                    Para desativar o 2FA, informe um código válido do seu aplicativo autenticador.
+                  </p>
+                  <Input
+                    id="disable-totp"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={disableTotpCode}
+                    onChange={(e) => setDisableTotpCode(e.target.value.replace(/\D/g, ''))}
+                    required
+                  />
+                  {totpError && (
+                    <p className="text-xs font-medium text-danger" role="alert">
+                      {totpError}
+                    </p>
+                  )}
+                  <Button type="submit" variant="outline" disabled={isDisablingTotp}>
+                    {isDisablingTotp ? 'Desativando...' : 'Desativar 2FA'}
+                  </Button>
+                </form>
               </div>
-            </form>
-          )}
+            ) : (
+              <div className="space-y-4">
+                {!totpSetupData ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-600">
+                      Ative a autenticação de dois fatores para aumentar a segurança da sua conta.
+                    </p>
+                    <Button onClick={() => void handleSetupTotp()} disabled={isSettingUpTotp}>
+                      {isSettingUpTotp ? 'Carregando...' : 'Ativar 2FA'}
+                    </Button>
+                    {totpError && (
+                      <p className="text-xs font-medium text-danger" role="alert">
+                        {totpError}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <form onSubmit={handleVerifyTotp} className="space-y-4 max-w-md">
+                    <p className="text-sm text-slate-600">
+                      Escaneie o QR code com seu aplicativo autenticador ou clique no link abaixo.
+                      Em seguida, insira o código de verificação de 6 dígitos para confirmar.
+                    </p>
+                    <a
+                      href={totpSetupData.otpauthUrl}
+                      className="block text-sm font-mono bg-slate-50 border border-slate-200 rounded-md p-3 break-all text-blue-700 hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {totpSetupData.otpauthUrl}
+                    </a>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Secret (para entrada manual)</p>
+                      <code className="block text-sm font-mono bg-slate-50 border border-slate-200 rounded-md p-2 break-all">
+                        {totpSetupData.secret}
+                      </code>
+                    </div>
+                    <Input
+                      id="verify-totp"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="Código de 6 dígitos"
+                      value={totpVerificationCode}
+                      onChange={(e) => setTotpVerificationCode(e.target.value.replace(/\D/g, ''))}
+                      required
+                    />
+                    {totpError && (
+                      <p className="text-xs font-medium text-danger" role="alert">
+                        {totpError}
+                      </p>
+                    )}
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setTotpSetupData(null);
+                          setTotpVerificationCode('');
+                          setTotpError(null);
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={isVerifyingTotp}>
+                        {isVerifyingTotp ? 'Verificando...' : 'Verificar e ativar'}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </section>

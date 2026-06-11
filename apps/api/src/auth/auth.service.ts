@@ -14,9 +14,12 @@ import { UsersRepository } from './repositories/users.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { LoginAttemptsService } from './services/login-attempts.service';
 import { TokenService } from './services/token.service';
+import { TotpService } from './services/totp.service';
 import { AuthTokens, AuthUser, RefreshSession } from './types/auth.types';
 
 export type AuthUserProfile = Omit<AuthUser, 'passwordHash'>;
+
+export type LoginResult = AuthTokens | { requiresTwoFactor: true; tempToken: string };
 
 @Injectable()
 export class AuthService {
@@ -27,10 +30,11 @@ export class AuthService {
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly loginAttemptsService: LoginAttemptsService,
     private readonly tokenService: TokenService,
+    private readonly totpService: TotpService,
     private readonly configService: ConfigService,
   ) {}
 
-  async login(email: string, password: string, ipAddress = 'unknown'): Promise<AuthTokens> {
+  async login(email: string, password: string, ipAddress = 'unknown'): Promise<LoginResult> {
     try {
       this.loginAttemptsService.assertCanAttempt(email, ipAddress);
     } catch (error) {
@@ -56,6 +60,11 @@ export class AuthService {
 
     this.loginAttemptsService.clearFailures(email, ipAddress);
     this.logger.log(`login_success userId=${user.id} ip=${this.maskIp(ipAddress)}`);
+
+    if (user.isTwoFactorEnabled) {
+      const tempToken = this.tokenService.createTotpPendingToken(user.id);
+      return { requiresTwoFactor: true, tempToken: tempToken.token };
+    }
 
     return this.issueTokens(user);
   }
@@ -115,6 +124,73 @@ export class AuthService {
     await this.usersRepository.updatePasswordHash(user.id, await this.hashPassword(newPassword));
 
     return { success: true };
+  }
+
+  async totpLogin(tempToken: string, code: string): Promise<AuthTokens> {
+    let payload;
+
+    try {
+      payload = this.tokenService.verifyTotpPendingToken(tempToken);
+    } catch {
+      throw new UnauthorizedException('Token temporário inválido ou expirado.');
+    }
+
+    const user = await this.usersRepository.findById(payload.sub);
+
+    if (!user || !user.isActive || !user.isTwoFactorEnabled || !user.totpSecret) {
+      throw new UnauthorizedException('Autenticação de dois fatores não configurada.');
+    }
+
+    if (!this.totpService.verifyToken(user.totpSecret, code)) {
+      throw new UnauthorizedException('Código de verificação inválido.');
+    }
+
+    return this.issueTokens(user);
+  }
+
+  async setupTotp(userId: string): Promise<{ secret: string; otpauthUrl: string }> {
+    const user = await this.usersRepository.findById(userId);
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Usuário autenticado inválido.');
+    }
+
+    const result = this.totpService.generateSecret(user.id, user.email);
+    await this.usersRepository.updateTotpSecret(user.id, result.secret);
+
+    return result;
+  }
+
+  async verifyTotpSetup(userId: string, code: string): Promise<{ enabled: true }> {
+    const user = await this.usersRepository.findById(userId);
+
+    if (!user || !user.isActive || !user.totpSecret) {
+      throw new UnauthorizedException('Configuração de 2FA não iniciada.');
+    }
+
+    if (!this.totpService.verifyToken(user.totpSecret, code)) {
+      throw new UnauthorizedException('Código de verificação inválido.');
+    }
+
+    await this.usersRepository.enableTotp(user.id);
+
+    return { enabled: true };
+  }
+
+  async disableTotp(userId: string, code: string): Promise<{ disabled: true }> {
+    const user = await this.usersRepository.findById(userId);
+
+    if (!user || !user.isActive || !user.totpSecret) {
+      throw new UnauthorizedException('2FA não está ativo.');
+    }
+
+    if (!this.totpService.verifyToken(user.totpSecret, code)) {
+      throw new UnauthorizedException('Código de verificação inválido.');
+    }
+
+    await this.usersRepository.disableTotp(user.id);
+
+    return { disabled: true };
   }
 
   private registerFailedLogin(email: string, ipAddress: string): void {

@@ -13,7 +13,19 @@ export type CreateUserInput = {
   groupIds?: string[];
 };
 
-export type UpdateUserInput = Partial<Pick<AuthUser, 'email' | 'roles' | 'sectors' | 'groupIds' | 'isActive' | 'passwordHash'>>;
+export type UpdateUserInput = Partial<
+  Pick<
+    AuthUser,
+    | 'email'
+    | 'roles'
+    | 'sectors'
+    | 'groupIds'
+    | 'isActive'
+    | 'passwordHash'
+    | 'totpSecret'
+    | 'isTwoFactorEnabled'
+  >
+>;
 
 @Injectable()
 export class UsersRepository {
@@ -45,6 +57,8 @@ export class UsersRepository {
       sectors: input.sectors,
       groupIds: input.groupIds ?? [],
       isActive: true,
+      totpSecret: null,
+      isTwoFactorEnabled: false,
       createdAt: now,
       updatedAt: now,
       deactivatedAt: null,
@@ -71,7 +85,12 @@ export class UsersRepository {
       ...input,
       email: (input.email ?? current.email).toLowerCase(),
       updatedAt: new Date(),
-      deactivatedAt: input.isActive === false ? current.deactivatedAt ?? new Date() : input.isActive === true ? null : current.deactivatedAt,
+      deactivatedAt:
+        input.isActive === false
+          ? (current.deactivatedAt ?? new Date())
+          : input.isActive === true
+            ? null
+            : current.deactivatedAt,
     };
 
     this.users.set(next.email, next);
@@ -87,6 +106,18 @@ export class UsersRepository {
     return this.update(id, { isActive: false });
   }
 
+  async updateTotpSecret(id: string, totpSecret: string | null): Promise<void> {
+    await this.update(id, { totpSecret });
+  }
+
+  async enableTotp(id: string): Promise<void> {
+    await this.update(id, { isTwoFactorEnabled: true });
+  }
+
+  async disableTotp(id: string): Promise<void> {
+    await this.update(id, { isTwoFactorEnabled: false, totpSecret: null });
+  }
+
   private seedDevelopmentUsers(): void {
     const email = this.configService.get<string>('AUTH_DEMO_USER_EMAIL');
     const password = this.configService.get<string>('AUTH_DEMO_USER_PASSWORD');
@@ -95,13 +126,43 @@ export class UsersRepository {
       return;
     }
 
-    this.addUser('demo-admin', email, password, ['admin'], ['diretoria', 'financeiro', 'comercial', 'operacoes']);
-    this.addUser('demo-viewer-financeiro', 'viewer.financeiro@example.com', password, ['viewer'], ['financeiro']);
-    this.addUser('demo-downloader-financeiro', 'downloader.financeiro@example.com', password, ['downloader'], ['financeiro']);
-    this.addUser('demo-viewer-comercial', 'viewer.comercial@example.com', password, ['viewer'], ['comercial']);
+    this.addUser(
+      'demo-admin',
+      email,
+      password,
+      ['admin'],
+      ['diretoria', 'financeiro', 'comercial', 'operacoes'],
+    );
+    this.addUser(
+      'demo-viewer-financeiro',
+      'viewer.financeiro@example.com',
+      password,
+      ['viewer'],
+      ['financeiro'],
+    );
+    this.addUser(
+      'demo-downloader-financeiro',
+      'downloader.financeiro@example.com',
+      password,
+      ['downloader'],
+      ['financeiro'],
+    );
+    this.addUser(
+      'demo-viewer-comercial',
+      'viewer.comercial@example.com',
+      password,
+      ['viewer'],
+      ['comercial'],
+    );
   }
 
-  private addUser(id: string, email: string, password: string, roles: UserRole[], sectors: SectorCode[]): void {
+  private addUser(
+    id: string,
+    email: string,
+    password: string,
+    roles: UserRole[],
+    sectors: SectorCode[],
+  ): void {
     const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 10));
     const passwordHash = bcrypt.hashSync(password, saltRounds);
     const now = new Date();
@@ -114,6 +175,8 @@ export class UsersRepository {
       sectors,
       groupIds: [],
       isActive: true,
+      totpSecret: null,
+      isTwoFactorEnabled: false,
       createdAt: now,
       updatedAt: now,
       deactivatedAt: null,

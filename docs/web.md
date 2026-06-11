@@ -47,7 +47,9 @@ A sessão do frontend agora fica em `sessionStorage`, remove a dependência oper
 - fallback em memória para dashboards quando Supabase não configurado;
 - modo de edição de layout no detalhe do dashboard: botão "Editar layout" ativa drag-and-drop via `@dnd-kit/sortable` para reordenar widgets, botão "Concluir" persiste a nova ordem via `PATCH /dashboards/:id/widgets/reorder`;
 - hub administrativo (`/app/admin`) com KPIs operacionais reais: total de usuários, ativos, grupos, exportações e tabela de atividade recente dos logs de auditoria;
-- gestão de relatórios admin (`/app/admin/reports`) com CRUD completo, edição de definições, gerenciamento de parâmetros (nome, tipo, obrigatório), seleção de fonte SQL (view ou stored_procedure) e teste de conexão antes de salvar.
+- gestão de relatórios admin (`/app/admin/reports`) com CRUD completo, edição de definições, gerenciamento de parâmetros (nome, tipo, obrigatório), seleção de fonte SQL (view ou stored_procedure) e teste de conexão antes de salvar;
+- login com suporte a 2FA/TOTP: quando ativado, o fluxo exibe input de código de 6 dígitos após credenciais válidas (`/login`);
+- perfil do usuário (`/app/profile`) com gestão de 2FA/TOTP: ativar (setup com QR code/otpauthUrl e secret), verificar código e ativar, desativar com verificação de código.
 
 ## Limitações atuais
 
