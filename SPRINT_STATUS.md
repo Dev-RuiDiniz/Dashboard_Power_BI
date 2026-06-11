@@ -1,7 +1,7 @@
 # Status Atual do Projeto
 
 **Projeto:** Dashboard Power BI  
-**Data de verificação:** 2026-06-09  
+**Data de verificação:** 2026-06-10  
 **Base da análise:** estado real do código no repositório
 
 ## Como ler este documento
@@ -81,7 +81,8 @@ Para rastreabilidade detalhada:
 - usuários e grupos estão disponíveis;
 - permissões finas têm tela dedicada (`/app/admin/permissions`) e API CRUD;
 - logs de auditoria expostos via API e tela (`/app/admin/audit`);
-- configurações do sistema existem como leitura direta no Supabase, não como gestão completa via backend.
+- configurações do sistema existem como leitura direta no Supabase, não como gestão completa via backend;
+- hub administrativo (`/app/admin`) agora exibe KPIs operacionais reais: total de usuários, ativos, grupos, exportações e tabela de atividade recente de auditoria.
 
 ### Exportações e notificações
 

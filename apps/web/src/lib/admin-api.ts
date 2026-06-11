@@ -126,3 +126,21 @@ export async function apiDelete<T>(path: string): Promise<T> {
     handleJsonResponse,
   ) as Promise<T>;
 }
+
+export type AdminDashboardMetrics = {
+  totalUsers: number;
+  activeUsers: number;
+  totalGroups: number;
+  totalExports: number;
+  recentActivity: Array<{
+    id: string;
+    userEmail: string;
+    action: string;
+    resource: string;
+    createdAt: string;
+  }>;
+};
+
+export async function getAdminDashboard(): Promise<AdminDashboardMetrics> {
+  return apiGet<AdminDashboardMetrics>('/admin/dashboard');
+}

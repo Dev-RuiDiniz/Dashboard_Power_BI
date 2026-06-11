@@ -311,28 +311,39 @@ Entregáveis:
 ### T12 — Dashboard Administrativo
 
 ```
-Status: 📋 Pendente (Fase 4)
+Status: ✅ Concluído (Fase 4 — 2026-06-10)
 
-SDD — Especificação:
-- Indicadores de operação: usuários ativos, relatórios executados, exportações do dia, erros
-- Gráficos de tendência: usuários novos, execuções por período
-- Alertas de segurança: tentativas falhas, usuários bloqueados
+SDD — Especificação (entregue):
+- Endpoint GET /admin/dashboard agregando métricas operacionais do runtime atual
+- KPIs: total de usuários, usuários ativos, total de grupos, total de exportações
+- Tabela de atividade recente com últimos 5 logs de auditoria
+- Fallback para 0 em todos os contadores quando services retornam vazio ou erro
+- Hub admin mantém cards de navegação (usuários, grupos, configurações)
+
+SDD — Especificação (fora do escopo desta entrega):
+- Gráficos de tendência (usuários novos, execuções por período)
+- Alertas de segurança (tentativas falhas, usuários bloqueados)
 - Top relatórios mais executados
 - Top setores com mais atividade
+- Atualização em tempo real
 
 TDD — Testes:
-- Unit: admin-dashboard.tsx — renderização de KPIs administrativos
-- Integration: admin-dashboard.controller.spec.ts — agregação de métricas
-- Manual: verificar atualização em tempo real
-- Comandos: pnpm test, pnpm typecheck
+- Unit: admin-dashboard.service.spec.ts — getMetrics() com dados, vazio e erro
+- Unit: admin-dashboard.tsx — renderização de KPIs, loading, erro, vazio
+- Manual: verificar métricas reais no hub admin
+- Comandos: pnpm test, pnpm typecheck, pnpm build
 
 Entregáveis:
-- apps/web/src/app/app/admin/page.tsx (existe mas incompleto)
-- apps/api/src/admin/dashboard/* (não existe)
+- apps/web/src/app/app/admin/page.tsx (KPIs + atividade recente)
+- apps/api/src/admin/dashboard/admin-dashboard.service.ts
+- apps/api/src/admin/dashboard/admin-dashboard.controller.ts
+- apps/api/src/admin/dashboard/admin-dashboard.service.spec.ts
+- apps/web/src/lib/admin-api.ts — getAdminDashboard()
 
 Débitos:
-- Hub admin existe mas sem dashboard de indicadores reais
-- Métricas operacionais ainda não coletadas
+- Gráficos de tendência (requer tracking histórico)
+- Alertas de segurança em tempo real
+- Top relatórios/setores (requer métricas de uso)
 ```
 
 ### T13 — Gestão de Usuários

@@ -28,6 +28,7 @@
 - `PATCH /dashboards/:id/widgets/:widgetId` — atualiza widget
 - `DELETE /dashboards/:id/widgets/:widgetId` — remove widget
 - `PATCH /dashboards/:id/widgets/reorder` — reordena widgets do dashboard (batch)
+- `GET /admin/dashboard` — métricas operacionais do painel administrativo
 - fluxo de recuperação e redefinição de senha
 - CRUD básico administrativo de usuários
 - CRUD básico administrativo de grupos
