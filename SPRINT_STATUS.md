@@ -74,7 +74,7 @@ Para rastreabilidade detalhada:
 - Recharts integrado no dashboard home com 4 tipos de gráfico (Bar, Line, Pie, Area);
 - drill-down com série histórica de 12 meses e gráfico de evolução;
 - dashboards personalizados com CRUD completo e widgets (KPI, gráfico, tabela);
-- não há editor visual drag-and-drop.
+- editor visual drag-and-drop mínimo entregue: reordenação de widgets com @dnd-kit/sortable e persistência via batch reorder.
 
 ### Administração
 
@@ -94,7 +94,7 @@ Para rastreabilidade detalhada:
 
 ## Ausente
 
-- editor de dashboards drag-and-drop;
+- editor de dashboards drag-and-drop completo (redimensionamento, canvas livre, versões);
 - Prisma;
 - S3 ou storage equivalente para export;
 - cache Redis funcional na aplicação;

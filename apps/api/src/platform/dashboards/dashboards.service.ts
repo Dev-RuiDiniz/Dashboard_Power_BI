@@ -76,6 +76,7 @@ export type CreateWidgetInput = {
   kpiId?: string | null;
   config?: Record<string, unknown>;
   position?: { x: number; y: number; width: number; height: number };
+  displayOrder?: number;
 };
 
 export type UpdateDashboardInput = Partial<CreateDashboardInput>;
@@ -372,6 +373,8 @@ export class DashboardsService {
         position_y: input.position?.y ?? widgets[index]!.position_y,
         width: input.position?.width ?? widgets[index]!.width,
         height: input.position?.height ?? widgets[index]!.height,
+        display_order:
+          input.displayOrder !== undefined ? input.displayOrder : widgets[index]!.display_order,
       };
       widgets[index] = updated;
       this.memoryWidgets.set(dashboardId, widgets);
@@ -396,6 +399,7 @@ export class DashboardsService {
               height: input.position.height,
             }
           : {}),
+        ...(input.displayOrder !== undefined ? { display_order: input.displayOrder } : {}),
       })
       .eq('id', widgetId)
       .eq('dashboard_id', dashboardId)
@@ -407,6 +411,20 @@ export class DashboardsService {
     }
 
     return this.mapWidget(data as DashboardWidgetRow);
+  }
+
+  async reorderWidgets(
+    userId: string,
+    dashboardId: string,
+    items: { widgetId: string; displayOrder: number }[],
+  ): Promise<UserDashboard> {
+    await this.getByIdForUser(userId, dashboardId);
+    for (const item of items) {
+      await this.updateWidget(userId, dashboardId, item.widgetId, {
+        displayOrder: item.displayOrder,
+      });
+    }
+    return this.getByIdForUser(userId, dashboardId);
   }
 
   async removeWidget(
@@ -490,7 +508,10 @@ export class DashboardsService {
 
   private async attachWidgetsFromMemory(rows: DashboardRow[]): Promise<UserDashboard[]> {
     return rows.map((row) => {
-      const widgets = (this.memoryWidgets.get(row.id) ?? []).map((w) => this.mapWidget(w));
+      const widgets = (this.memoryWidgets.get(row.id) ?? [])
+        .slice()
+        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+        .map((w) => this.mapWidget(w));
       return this.mapDashboard(row, widgets);
     });
   }

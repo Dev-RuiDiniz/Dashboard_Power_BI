@@ -423,33 +423,38 @@ Débitos:
 ### T16 — Editor Visual Drag-and-Drop
 
 ```
-Status: 📋 Pendente (Fase 3)
+Status: ✅ Concluído (mínimo) (Fase 3 — 2026-06-10)
 
-SDD — Especificação:
-- Canvas de edição com grid responsivo
-- Paleta de widgets: KPI, gráfico, tabela, texto, iframe
-- Drag-and-drop de widgets
-- Redimensionamento no grid
-- Configuração: datasource, título, cores, filtros
-- Preview em tempo real
-- Salvamento automático e manual
-- Versões de dashboard
+SDD — Especificação (mínimo entregue):
+- Modo de edição no detalhe do dashboard com toggle "Editar layout" / "Concluir"
+- Reordenação de widgets via drag-and-drop com @dnd-kit/sortable
+- Grid responsivo mantido (md:grid-cols-2)
+- Persistência da ordem via PATCH /dashboards/:id/widgets/reorder (batch)
+- Fallback em memória funcional
+
+SDD — Especificação (fora do escopo desta entrega):
+- Paleta de widgets, redimensionamento, preview em tempo real, versões de dashboard
 
 TDD — Testes:
-- Unit: dashboard-editor.tsx — canvas, palette
-- Unit: widget-drag-drop.tsx — eventos DnD
-- Unit: widget-configurator.tsx — configuração
-- Integration: dashboards.controller.spec.ts — salvamento de layouts
-- E2E: criar → arrastar widgets → configurar → salvar
-- Manual: verificar responsividade do grid
-- Comandos: pnpm test, pnpm typecheck
+- Unit: dashboard-detail.tsx — modo edição, drag-and-drop
+- Unit: sortable-widget-card.tsx — eventos DnD
+- Integration: dashboards.controller.spec.ts — endpoint reorderWidgets
+- Manual: reordenar widgets → concluir → recarregar → ordem mantida
+- Comandos: pnpm test, pnpm typecheck, pnpm build
 
 Entregáveis:
-- Não existem ainda
-- Requer: recharts ✅, @dnd-kit/sortable 📋
+- apps/web/src/components/dashboard/dashboard-detail.tsx (modo edição + DnD)
+- apps/web/src/components/dashboard/widget-card.tsx (card extraído)
+- apps/web/src/components/dashboard/sortable-widget-card.tsx (wrapper DnD)
+- apps/api/src/platform/dashboards/dto/reorder-widgets.dto.ts
+- apps/api/src/platform/dashboards/dashboards.service.ts — reorderWidgets
+- apps/api/src/platform/dashboards/dashboards.controller.ts — PATCH /reorder
+- Requer: recharts ✅, @dnd-kit/core/sortable/utilities ✅
 
 Débitos:
-- Canvas, widgets, grid não implementados
+- Redimensionamento de widgets
+- Canvas livre / grid de 12 colunas interativo
+- Versões de dashboard
 ```
 
 ### T17 — Auditoria com Filtros

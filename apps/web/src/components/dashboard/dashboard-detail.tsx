@@ -2,10 +2,11 @@
 
 import {
   ArrowLeft,
+  Check,
   Loader2,
   Plus,
+  Pencil,
   Settings,
-  Trash2,
   TriangleAlert,
   LayoutDashboard,
 } from 'lucide-react';
@@ -13,19 +14,25 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import {
-  BarChartWidget,
-  LineChartWidget,
-  PieChartWidget,
-  AreaChartWidget,
-} from '@/components/charts';
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
-import { formatKpiValue } from '@/lib/kpis';
 import {
   fetchDashboardKpis,
   getDashboardById,
   removeDashboardWidget,
+  reorderDashboardWidgets,
   type UserDashboard,
 } from '@/lib/platform-api';
+
+import { SortableWidgetCard } from './sortable-widget-card';
+import { WidgetCard } from './widget-card';
 
 type KpiItem = {
   id: string;
@@ -54,6 +61,9 @@ export function DashboardDetail({
   const [kpis, setKpis] = useState<KpiItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [editWidgets, setEditWidgets] = useState<UserDashboard['widgets']>([]);
 
   const loadDashboard = useCallback(async () => {
     setIsLoading(true);
@@ -82,6 +92,38 @@ export function DashboardDetail({
       await loadDashboard();
     } catch {
       setErrorMessage('Nao foi possivel remover o widget.');
+    }
+  }
+
+  async function handleSaveOrder() {
+    if (!dashboard) return;
+    setIsSavingOrder(true);
+    setErrorMessage(null);
+    try {
+      const items = editWidgets.map((w, index) => ({
+        widgetId: w.id,
+        displayOrder: (index + 1) * 10,
+      }));
+      await reorderDashboardWidgets(dashboardId, items);
+      setIsEditing(false);
+      await loadDashboard();
+    } catch {
+      setErrorMessage('Nao foi possivel salvar a ordem dos widgets.');
+    } finally {
+      setIsSavingOrder(false);
+    }
+  }
+
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor));
+
+  function handleDragEnd(event: import('@dnd-kit/core').DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setEditWidgets((items) => {
+        const oldIndex = items.findIndex((w) => w.id === active.id);
+        const newIndex = items.findIndex((w) => w.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
     }
   }
 
@@ -147,6 +189,30 @@ export function DashboardDetail({
                 Adicionar widget
               </Button>
             )}
+            <Button
+              variant={isEditing ? 'default' : 'outline'}
+              onClick={() => {
+                if (isEditing) {
+                  void handleSaveOrder();
+                } else {
+                  setEditWidgets(dashboard.widgets);
+                  setIsEditing(true);
+                }
+              }}
+              disabled={isSavingOrder}
+            >
+              {isEditing ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  {isSavingOrder ? 'Salvando...' : 'Concluir'}
+                </>
+              ) : (
+                <>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Editar layout
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
@@ -161,6 +227,21 @@ export function DashboardDetail({
             </CardDescription>
           </CardHeader>
         </Card>
+      ) : isEditing ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={editWidgets.map((w) => w.id)} strategy={rectSortingStrategy}>
+            <div className="grid gap-4 md:grid-cols-2">
+              {editWidgets.map((widget) => (
+                <SortableWidgetCard
+                  key={widget.id}
+                  widget={widget}
+                  kpiMap={kpiMap}
+                  onRemove={() => void handleRemoveWidget(widget.id)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {dashboard.widgets.map((widget) => (
@@ -175,152 +256,4 @@ export function DashboardDetail({
       )}
     </section>
   );
-}
-
-function WidgetCard({
-  widget,
-  kpiMap,
-  onRemove,
-}: {
-  widget: UserDashboard['widgets'][number];
-  kpiMap: Map<string, KpiItem>;
-  onRemove: () => void;
-}) {
-  if (widget.widgetType === 'kpi') {
-    const kpi = widget.kpiId ? kpiMap.get(widget.kpiId) : null;
-    return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-base">{widget.title}</CardTitle>
-            {kpi && (
-              <CardDescription>
-                {kpi.sector} — {formatKpiValue({ value: kpi.value, unit: kpi.unit })}
-              </CardDescription>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-            aria-label="Remover widget"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </CardHeader>
-        <CardContent>
-          {kpi ? (
-            <div className="space-y-2">
-              <p className="text-3xl font-bold text-slate-950">
-                {formatKpiValue({ value: kpi.value, unit: kpi.unit })}
-              </p>
-              {kpi.previousValue !== undefined && (
-                <p className="text-sm text-slate-500">
-                  Anterior: {formatKpiValue({ value: kpi.previousValue, unit: kpi.unit })}
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">KPI nao encontrado.</p>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (widget.widgetType === 'chart') {
-    const kpi = widget.kpiId ? kpiMap.get(widget.kpiId) : null;
-    const mockData = kpi
-      ? [
-          { label: 'Atual', value: kpi.value },
-          { label: 'Anterior', value: kpi.previousValue ?? kpi.value * 0.9 },
-        ]
-      : [{ label: 'A', value: 10 }];
-
-    return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">{widget.title}</CardTitle>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-            aria-label="Remover widget"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </CardHeader>
-        <CardContent>
-          {widget.chartType === 'bar' && (
-            <BarChartWidget
-              title=""
-              description=""
-              data={mockData}
-              xKey="label"
-              yKey="value"
-              unit={kpi?.unit ?? 'number'}
-            />
-          )}
-          {widget.chartType === 'line' && (
-            <LineChartWidget
-              title=""
-              description=""
-              data={mockData}
-              xKey="label"
-              series={[{ dataKey: 'value', name: 'Valor', color: '#1d4ed8' }]}
-              unit={kpi?.unit ?? 'number'}
-            />
-          )}
-          {widget.chartType === 'pie' && (
-            <PieChartWidget
-              title=""
-              description=""
-              data={mockData}
-              nameKey="label"
-              valueKey="value"
-              unit={kpi?.unit ?? 'number'}
-            />
-          )}
-          {widget.chartType === 'area' && (
-            <AreaChartWidget
-              title=""
-              description=""
-              data={mockData}
-              xKey="label"
-              series={[{ dataKey: 'value', name: 'Valor', color: '#1d4ed8', fillOpacity: 0.3 }]}
-              unit={kpi?.unit ?? 'number'}
-            />
-          )}
-          {!widget.chartType && (
-            <p className="text-sm text-slate-500">Tipo de grafico nao especificado.</p>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (widget.widgetType === 'table') {
-    return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">{widget.title}</CardTitle>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-            aria-label="Remover widget"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-slate-500">
-            Widget de tabela. Conecte a um relatorio para exibir dados.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return null;
 }

@@ -83,4 +83,46 @@ describe('DashboardsService', () => {
       isDefault: true,
     });
   });
+
+  it('reordena widgets de um dashboard em memoria', async () => {
+    const supabaseService = {
+      isEnabled: () => false,
+      getClient: () => ({ from: jest.fn() }),
+    };
+
+    const service = new DashboardsService(supabaseService as never);
+
+    const dashboard = await service.createForUser('user-1', {
+      name: 'Teste',
+      description: 'Desc',
+    });
+
+    const w1 = await service.addWidget('user-1', dashboard.id, {
+      widgetType: 'kpi',
+      title: 'W1',
+      displayOrder: 10,
+    });
+    const w2 = await service.addWidget('user-1', dashboard.id, {
+      widgetType: 'kpi',
+      title: 'W2',
+      displayOrder: 20,
+    });
+    const w3 = await service.addWidget('user-1', dashboard.id, {
+      widgetType: 'kpi',
+      title: 'W3',
+      displayOrder: 30,
+    });
+
+    const reordered = await service.reorderWidgets('user-1', dashboard.id, [
+      { widgetId: w3.id, displayOrder: 10 },
+      { widgetId: w1.id, displayOrder: 20 },
+      { widgetId: w2.id, displayOrder: 30 },
+    ]);
+
+    const ids = reordered.widgets.map((w) => w.id);
+    expect(ids).toEqual([w3.id, w1.id, w2.id]);
+    expect(reordered.widgets[0]!.displayOrder).toBe(10);
+    expect(reordered.widgets[1]!.displayOrder).toBe(20);
+    expect(reordered.widgets[2]!.displayOrder).toBe(30);
+  });
 });

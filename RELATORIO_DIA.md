@@ -1,3 +1,68 @@
+# Relatório Detalhado do Dia — 10/06/2026
+
+**Data:** 10 de junho de 2026
+**Sessão:** Implementação T16 — Editor visual drag-and-drop (mínimo funcional)
+**Branch:** `main`
+**Commits:** 1
+**Arquivos alterados:** 12
+
+---
+
+## Resumo Executivo
+
+Hoje foi entregue a **T16 — Editor visual drag-and-drop (mínimo funcional)**, fechando a Fase 3 (BI avançado e dashboards):
+
+- **Backend:** endpoint `PATCH /dashboards/:id/widgets/reorder` para reordenação batch de widgets, com fallback em memória e teste unitário.
+- **Frontend:** modo de edição de layout no `DashboardDetail` usando `@dnd-kit/sortable` para drag-and-drop de widgets, com botão "Editar layout" / "Concluir" e persistência da ordem.
+- **Componentes extraídos:** `widget-card.tsx` (card reutilizável) e `sortable-widget-card.tsx` (wrapper DnD).
+
+**Status do ROADMAP antes:** 12 telas ✅, 4 parciais/pendentes.
+**Status do ROADMAP depois:** 13 telas ✅ (mínimo), 3 parciais/pendentes.
+**Progresso geral:** 13/18 = **72% das telas do escopo V1 concluídas**.
+
+---
+
+## Commits do Dia
+
+### 1. `feat: implementar editor visual drag-and-drop mínimo (T16)`
+
+- Criação de `reorder-widgets.dto.ts` com DTO batch.
+- Adição de `reorderWidgets` no `DashboardsService` (memória + Supabase).
+- Adição de `PATCH /dashboards/:id/widgets/reorder` no `DashboardsController`.
+- Extração de `WidgetCard` para componente compartilhado.
+- Criação de `SortableWidgetCard` com `@dnd-kit/sortable`.
+- Integração do modo edição no `DashboardDetail` com DndContext + SortableContext.
+- Adição de `reorderDashboardWidgets` em `platform-api.ts`.
+- Instalação de `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
+- Teste unitário para `reorderWidgets` em memória.
+- Atualização de `docs/api.md`, `docs/web.md`, `SPRINT_STATUS.md`, `ROADMAP.md`, `docs/roadmap/01-telas.md`.
+
+---
+
+## Testes e Validação
+
+| Comando                                                                    | Status    | Notas                                |
+| -------------------------------------------------------------------------- | --------- | ------------------------------------ |
+| `pnpm --filter @dashboard-power-bi/api typecheck`                          | ✅ Passou | Sem erros                            |
+| `pnpm --filter @dashboard-power-bi/web typecheck`                          | ✅ Passou | Sem erros                            |
+| `pnpm --filter @dashboard-power-bi/api test -- dashboards.service.spec.ts` | ✅ Passou | 2 tests passando (incluindo reorder) |
+| `pnpm --filter @dashboard-power-bi/web build`                              | ✅ Passou | Build de produção OK                 |
+| `pnpm verify:docs`                                                         | ✅ Passou | Sem erros de lint em docs            |
+
+---
+
+## Próximos Passos Recomendados
+
+1. **T12 — Dashboard administrativo** (Fase 4)
+   - Tela de overview para administradores.
+   - Métricas de uso, usuários ativos, relatórios mais acessados.
+
+2. **2FA/TOTP** (Fase 4)
+   - Hardening de segurança.
+   - `otplib` já instalado no backend.
+
+---
+
 # Relatório Detalhado do Dia — 09/06/2026
 
 **Data:** 09 de junho de 2026

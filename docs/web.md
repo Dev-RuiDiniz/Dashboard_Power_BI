@@ -44,10 +44,10 @@ A sessão do frontend agora fica em `sessionStorage`, remove a dependência oper
 - dashboards personalizados com CRUD completo: criar, visualizar (`/app/dashboards/:id`), editar e excluir;
 - widgets de dashboard: KPI, Gráfico (bar, line, pie, area) e Tabela (placeholder);
 - modal de adicionar widget com seleção de tipo, KPI e tipo de gráfico;
-- fallback em memória para dashboards quando Supabase não configurado.
+- fallback em memória para dashboards quando Supabase não configurado;
+- modo de edição de layout no detalhe do dashboard: botão "Editar layout" ativa drag-and-drop via `@dnd-kit/sortable` para reordenar widgets, botão "Concluir" persiste a nova ordem via `PATCH /dashboards/:id/widgets/reorder`.
 
 ## Limitações atuais
 
 - persistências de platform ainda dependem do Supabase no backend atual;
-- editor visual drag-and-drop ainda não está entregue;
 - o drill-down existe em nivel inicial, mas ainda nao cobre exploracao rica por dimensao, navegacao multinivel nem widgets personalizados.

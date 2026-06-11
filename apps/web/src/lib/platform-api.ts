@@ -221,6 +221,13 @@ export async function removeDashboardWidget(
   return apiDelete<{ removed: true }>(`/dashboards/${dashboardId}/widgets/${widgetId}`);
 }
 
+export async function reorderDashboardWidgets(
+  dashboardId: string,
+  items: { widgetId: string; displayOrder: number }[],
+): Promise<UserDashboard> {
+  return apiPatch<UserDashboard>(`/dashboards/${dashboardId}/widgets/reorder`, { items });
+}
+
 export async function fetchFavoriteReports(): Promise<PaginatedReports['items']> {
   return apiGet<PaginatedReports['items']>('/reports/favorites');
 }

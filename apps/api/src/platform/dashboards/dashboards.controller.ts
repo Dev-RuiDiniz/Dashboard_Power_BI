@@ -11,6 +11,7 @@ import {
   UpdateDashboardInput,
   UpdateWidgetInput,
 } from './dashboards.service';
+import { ReorderWidgetsDto } from './dto/reorder-widgets.dto';
 
 @ApiTags('dashboards')
 @ApiBearerAuth()
@@ -72,6 +73,16 @@ export class DashboardsController {
     @Body() body: UpdateWidgetInput,
   ) {
     return this.dashboardsService.updateWidget(user.sub, id, widgetId, body);
+  }
+
+  @Patch(':id/widgets/reorder')
+  @ApiOkResponse({ description: 'Reordena os widgets do dashboard.' })
+  reorderWidgets(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+    @Body() body: ReorderWidgetsDto,
+  ) {
+    return this.dashboardsService.reorderWidgets(user.sub, id, body.items);
   }
 
   @Delete(':id/widgets/:widgetId')
