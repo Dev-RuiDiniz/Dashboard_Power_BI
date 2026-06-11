@@ -2,6 +2,12 @@ import { render, screen } from '@testing-library/react';
 
 import { KpiCard } from './kpi-card';
 
+jest.mock('@/components/charts', () => ({
+  SparklineChart: ({ value, previousValue }: { value: number; previousValue: number }) => (
+    <div data-testid="sparkline" data-value={value} data-previous={previousValue} />
+  ),
+}));
+
 describe('KpiCard', () => {
   it('renderiza titulo, setor, valor formatado e delta positivo', () => {
     render(
@@ -58,5 +64,25 @@ describe('KpiCard', () => {
 
     expect(screen.getByText('0%')).toBeInTheDocument();
     expect(screen.getByText('Tendencia neutra')).toBeInTheDocument();
+  });
+
+  it('renderiza sparkline com valor e previousValue corretos', () => {
+    render(
+      <KpiCard
+        kpi={{
+          id: 'receita',
+          title: 'Receita mensal',
+          sector: 'Financeiro',
+          value: 120000,
+          previousValue: 100000,
+          unit: 'currency',
+        }}
+      />,
+    );
+
+    const sparkline = screen.getByTestId('sparkline');
+    expect(sparkline).toBeInTheDocument();
+    expect(sparkline).toHaveAttribute('data-value', '120000');
+    expect(sparkline).toHaveAttribute('data-previous', '100000');
   });
 });

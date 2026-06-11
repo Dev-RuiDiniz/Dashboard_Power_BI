@@ -5,7 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 
 import { WidgetCard } from './widget-card';
-import type { UserDashboard } from '@/lib/platform-api';
+import type { KpiHistoryResponse, UserDashboard } from '@/lib/platform-api';
 
 type KpiItem = {
   id: string;
@@ -19,10 +19,16 @@ type KpiItem = {
 type SortableWidgetCardProps = {
   widget: UserDashboard['widgets'][number];
   kpiMap: Map<string, KpiItem>;
+  kpiHistoryMap?: Map<string, KpiHistoryResponse>;
   onRemove?: () => void;
 };
 
-export function SortableWidgetCard({ widget, kpiMap, onRemove }: SortableWidgetCardProps) {
+export function SortableWidgetCard({
+  widget,
+  kpiMap,
+  kpiHistoryMap,
+  onRemove,
+}: SortableWidgetCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
   });
@@ -48,7 +54,13 @@ export function SortableWidgetCard({ widget, kpiMap, onRemove }: SortableWidgetC
 
   return (
     <div ref={setNodeRef} style={style}>
-      <WidgetCard widget={widget} kpiMap={kpiMap} onRemove={onRemove} dragHandle={dragHandle} />
+      <WidgetCard
+        widget={widget}
+        kpiMap={kpiMap}
+        kpiHistoryMap={kpiHistoryMap}
+        onRemove={onRemove}
+        dragHandle={dragHandle}
+      />
     </div>
   );
 }

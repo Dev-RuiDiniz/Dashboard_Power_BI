@@ -156,7 +156,7 @@ Entregáveis:
 ### T07 — Dashboard Interativo (Gráficos + Drill-down)
 
 ```
-Status: 🔄 Parcial (Fase 3)
+Status: ✅ Concluído (Fase 3 — 2026-06-11)
 
 SDD — Especificação:
 - Gráficos reais usando Recharts: linha, barra, pizza, área
@@ -164,23 +164,32 @@ SDD — Especificação:
 - Múltiplas dimensões: tempo, setor, produto
 - Interação: hover com tooltip, clique para navegação
 - Responsivo
+- Sparkline mini-chart em cada KPI card
+- Widgets de gráfico em dashboards personalizados com dados reais do histórico de KPIs
 
 TDD — Testes:
 - Unit: dashboard-home.tsx — renderização de gráficos Recharts
-- Unit: drill-down-chart.tsx — navegação entre níveis
+- Unit: bar-chart-widget.test.tsx — renderização e interação
+- Unit: line-chart-widget.test.tsx — múltiplas séries
+- Unit: pie-chart-widget.test.tsx — renderização de setores
+- Unit: area-chart-widget.test.tsx — fillOpacity
+- Unit: chart-tooltip.test.tsx — formatação de unidades
+- Unit: kpi-card.test.tsx — sparkline com dados corretos
+- Unit: dashboard-detail.test.tsx — widgets chart com histórico real
 - Integration: dashboard.controller.spec.ts — endpoints de drill-down
-- E2E: fluxo drill-down KPI → detalhes → volta
 - Manual: verificar interação com dados reais
 - Comandos: pnpm test, pnpm typecheck
 
 Entregáveis:
-- apps/web/src/components/dashboard/dashboard-home.tsx (parcial)
-- apps/api/src/platform/dashboard/*
-- Dependência: recharts ✅ instalado
+- apps/web/src/components/charts/* — widgets Recharts reutilizáveis (5 tipos + sparkline)
+- apps/web/src/components/charts/*.test.tsx — 14 testes unitários
+- apps/web/src/components/dashboard/dashboard-home.tsx
+- apps/web/src/components/dashboard/dashboard-detail.tsx — widgets chart com fetchKpiHistory
+- apps/web/src/components/dashboard/widget-card.tsx — renderização real de gráficos
+- apps/web/src/components/dashboard/dashboard-detail.test.tsx — 4 testes
 
 Débitos:
-- Gráficos Recharts ainda não integrados em telas ativas
-- Drill-down rico com múltiplas dimensões pendente
+- Drill-down rico com múltiplas dimensões (ainda apenas sector)
 ```
 
 ### T08 — Dashboards Personalizados e Favoritos

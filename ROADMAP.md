@@ -74,22 +74,22 @@ Documentos detalhados por categoria:
 
 ## Resumo por Módulo
 
-| Módulo      | Status     |                                     Concluído                                     |         Parcial          |         Pendente          |
-| ----------- | ---------- | :-------------------------------------------------------------------------------: | :----------------------: | :-----------------------: |
-| AUTH        | 🔄 Parcial |   Login, JWT, refresh, logout, reset, rate limit, profile, CSRF, CSP, 2FA/TOTP    |     Hardening final      |    Forçar 2FA por role    |
-| PERMISSIONS | 🔄 Parcial |             Roles, setores, grupos, permissões granulares, auditoria              |    Herança via grupos    |       Regras finas        |
-| SQL         | 🔄 Parcial |               Queries parametrizadas, validação de identificadores                |   Cache, monitoramento   |   Cron, observabilidade   |
-| REPORTS     | 🔄 Parcial | Catálogo, visualização, filtros, admin básico, persistência real, export pipeline |    Ampliar favoritos     |             —             |
-| BI          | 🔄 Parcial | KPIs, payload consolidado, charts reais, drill-down inicial, editor visual mínimo |  Editor visual completo  | Drill-down multi-dimensão |
-| ADMIN       | 🔄 Parcial |      Usuários, grupos, permissões, auditoria, settings, dashboard admin KPIs      | Dashboard admin completo |    Governança completa    |
+| Módulo      | Status     |                                       Concluído                                       |         Parcial          |         Pendente          |
+| ----------- | ---------- | :-----------------------------------------------------------------------------------: | :----------------------: | :-----------------------: |
+| AUTH        | 🔄 Parcial |     Login, JWT, refresh, logout, reset, rate limit, profile, CSRF, CSP, 2FA/TOTP      |     Hardening final      |    Forçar 2FA por role    |
+| PERMISSIONS | 🔄 Parcial |               Roles, setores, grupos, permissões granulares, auditoria                |    Herança via grupos    |       Regras finas        |
+| SQL         | 🔄 Parcial |                 Queries parametrizadas, validação de identificadores                  |   Cache, monitoramento   |   Cron, observabilidade   |
+| REPORTS     | 🔄 Parcial |   Catálogo, visualização, filtros, admin básico, persistência real, export pipeline   |    Ampliar favoritos     |             —             |
+| BI          | 🔄 Parcial | KPIs, payload consolidado, charts reais, sparklines, drill-down, editor visual mínimo |  Editor visual completo  | Drill-down multi-dimensão |
+| ADMIN       | 🔄 Parcial |        Usuários, grupos, permissões, auditoria, settings, dashboard admin KPIs        | Dashboard admin completo |    Governança completa    |
 
 ---
 
 ## Notas e Próximos Passos
 
 1. **Próxima onda:** Fase 3 — BI avançado e dashboards personalizados
-2. **Prioridade imediata:** Integrar Recharts em telas ativas (T07)
-3. **Débito técnico crítico:** 2FA/TOTP (Fase 4)
+2. **Prioridade imediata:** Editor visual drag-and-drop completo (T16b)
+3. **Débito técnico crítico:** Hardening final de sessão e 2FA por role (Fase 4)
 4. **Verificação antes de cada commit:** `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`
 
 ---

@@ -58,7 +58,8 @@ Para rastreabilidade detalhada:
 - o fluxo JWT existe, mas a sessão do frontend ainda é local e client-side;
 - há controle de tentativas de login, mas a cobertura de hardening do PDF não está completa;
 - CSRF e headers de segurança (CSP, HSTS, X-Frame-Options etc.) implementados;
-- 2FA/TOTP mínimo viável implementado: setup com secret base32 + otpauthUrl, verificação no login com tempToken, endpoints `/auth/totp/*`, gestão no perfil do usuário.
+- 2FA/TOTP mínimo viável implementado: setup com secret base32 + otpauthUrl, verificação no login com tempToken, endpoints `/auth/totp/*`, gestão no perfil do usuário;
+- Recharts completamente integrado no dashboard home com sparklines nos KPI cards, testes unitários para todos os widgets de gráfico, e widgets chart em dashboards personalizados alimentados por histórico real de KPIs.
 
 ### Relatórios
 

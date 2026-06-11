@@ -128,6 +128,44 @@ Hoje foi entregue a **T15 — Gestão de relatórios (admin)**, completando a te
 
 ---
 
+# Relatório Detalhado do Dia — 11/06/2026 (2FA/TOTP + T07 Recharts)
+
+**Data:** 11 de junho de 2026  
+**Sessão:** Implementação 2FA/TOTP — Mínimo Viável  
+**Branch:** `main`  
+**Commits:** 2  
+**Arquivos alterados:** ~30
+
+---
+
+## Sessão 2 — T07: Recharts integrado, sparklines e testes
+
+**Horário:** ~07:00 UTC-3  
+**Foco:** Completar integração de Recharts no Dashboard Home
+
+### Entregues
+
+- **Testes unitários para widgets de gráfico:** 14 testes passando
+  - `bar-chart-widget.test.tsx` — 3 testes (título/desc, dados vazios, onBarClick)
+  - `line-chart-widget.test.tsx` — 2 testes (título/desc, dados vazios)
+  - `pie-chart-widget.test.tsx` — 2 testes (título/desc, dados vazios)
+  - `area-chart-widget.test.tsx` — 2 testes (título/desc, dados vazios)
+  - `chart-tooltip.test.tsx` — 5 testes (null, label/payload, currency, percent, number)
+- **SparklineChart:** componente novo com `LineChart` compacto, cor dinâmica (verde/vermelho)
+- **KpiCard:** sparkline integrado abaixo do valor, com teste verificando props
+- **Dashboards personalizados:** `dashboard-detail.tsx` busca `fetchKpiHistory` para widgets chart e repassa ao `widget-card.tsx`; widgets `chart` agora renderizam série temporal real (12 períodos) quando disponível, com fallback para comparação simples atual vs anterior
+- **DashboardDetail testes:** 4 testes novos (renderização, histórico, remoção, estado vazio)
+
+### Validação
+
+| Comando                                                                          | Status    | Notas             |
+| -------------------------------------------------------------------------------- | --------- | ----------------- |
+| `pnpm --filter @dashboard-power-bi/web typecheck`                                | ✅ Passou | Sem erros         |
+| `pnpm --filter @dashboard-power-bi/web test -- charts kpi-card dashboard-detail` | ✅ Passou | 22 tests passando |
+| `pnpm --filter @dashboard-power-bi/web build`                                    | ✅ Passou | Build produção OK |
+
+---
+
 # Relatório Detalhado do Dia — 11/06/2026 (2FA/TOTP)
 
 **Data:** 11 de junho de 2026  

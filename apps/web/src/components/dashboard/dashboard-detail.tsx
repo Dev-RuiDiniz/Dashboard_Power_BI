@@ -25,9 +25,11 @@ import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortab
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import {
   fetchDashboardKpis,
+  fetchKpiHistory,
   getDashboardById,
   removeDashboardWidget,
   reorderDashboardWidgets,
+  type KpiHistoryResponse,
   type UserDashboard,
 } from '@/lib/platform-api';
 
@@ -59,6 +61,7 @@ export function DashboardDetail({
   const router = useRouter();
   const [dashboard, setDashboard] = useState<UserDashboard | null>(null);
   const [kpis, setKpis] = useState<KpiItem[]>([]);
+  const [kpiHistoryMap, setKpiHistoryMap] = useState<Map<string, KpiHistoryResponse>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -75,6 +78,29 @@ export function DashboardDetail({
       ]);
       setDashboard(dashboardData);
       setKpis(kpiList as KpiItem[]);
+
+      const chartWidgetKpiIds = dashboardData.widgets
+        .filter((w) => w.widgetType === 'chart' && w.kpiId)
+        .map((w) => w.kpiId!);
+
+      if (chartWidgetKpiIds.length > 0) {
+        const historyResults = await Promise.allSettled(
+          chartWidgetKpiIds.map(async (kpiId) => ({
+            kpiId,
+            data: await fetchKpiHistory(kpiId),
+          })),
+        );
+
+        const historyMap = new Map<string, KpiHistoryResponse>();
+        for (const result of historyResults) {
+          if (result.status === 'fulfilled') {
+            historyMap.set(result.value.kpiId, result.value.data);
+          }
+        }
+        setKpiHistoryMap(historyMap);
+      } else {
+        setKpiHistoryMap(new Map());
+      }
     } catch {
       setErrorMessage('Nao foi possivel carregar o dashboard.');
     } finally {
@@ -236,6 +262,7 @@ export function DashboardDetail({
                   key={widget.id}
                   widget={widget}
                   kpiMap={kpiMap}
+                  kpiHistoryMap={kpiHistoryMap}
                   onRemove={() => void handleRemoveWidget(widget.id)}
                 />
               ))}
@@ -249,6 +276,7 @@ export function DashboardDetail({
               key={widget.id}
               widget={widget}
               kpiMap={kpiMap}
+              kpiHistoryMap={kpiHistoryMap}
               onRemove={() => void handleRemoveWidget(widget.id)}
             />
           ))}

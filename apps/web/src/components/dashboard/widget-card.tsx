@@ -10,7 +10,7 @@ import {
 } from '@/components/charts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { formatKpiValue } from '@/lib/kpis';
-import type { UserDashboard } from '@/lib/platform-api';
+import type { KpiHistoryResponse, UserDashboard } from '@/lib/platform-api';
 
 type KpiItem = {
   id: string;
@@ -24,11 +24,18 @@ type KpiItem = {
 type WidgetCardProps = {
   widget: UserDashboard['widgets'][number];
   kpiMap: Map<string, KpiItem>;
+  kpiHistoryMap?: Map<string, KpiHistoryResponse>;
   onRemove?: () => void;
   dragHandle?: React.ReactNode;
 };
 
-export function WidgetCard({ widget, kpiMap, onRemove, dragHandle }: WidgetCardProps) {
+export function WidgetCard({
+  widget,
+  kpiMap,
+  kpiHistoryMap,
+  onRemove,
+  dragHandle,
+}: WidgetCardProps) {
   if (widget.widgetType === 'kpi') {
     const kpi = widget.kpiId ? kpiMap.get(widget.kpiId) : null;
     return (
@@ -78,12 +85,21 @@ export function WidgetCard({ widget, kpiMap, onRemove, dragHandle }: WidgetCardP
 
   if (widget.widgetType === 'chart') {
     const kpi = widget.kpiId ? kpiMap.get(widget.kpiId) : null;
-    const mockData = kpi
-      ? [
-          { label: 'Atual', value: kpi.value },
-          { label: 'Anterior', value: kpi.previousValue ?? kpi.value * 0.9 },
-        ]
-      : [{ label: 'A', value: 10 }];
+    const history = widget.kpiId ? kpiHistoryMap?.get(widget.kpiId) : undefined;
+
+    const chartData =
+      history && history.periods.length > 0
+        ? history.periods.map((p) => ({
+            label: p.period,
+            value: p.value,
+            previousValue: p.previousValue,
+          }))
+        : kpi
+          ? [
+              { label: 'Atual', value: kpi.value },
+              { label: 'Anterior', value: kpi.previousValue ?? kpi.value * 0.9 },
+            ]
+          : [{ label: 'A', value: 10 }];
 
     return (
       <Card>
@@ -108,7 +124,7 @@ export function WidgetCard({ widget, kpiMap, onRemove, dragHandle }: WidgetCardP
             <BarChartWidget
               title=""
               description=""
-              data={mockData}
+              data={chartData}
               xKey="label"
               yKey="value"
               unit={kpi?.unit ?? 'number'}
@@ -118,9 +134,21 @@ export function WidgetCard({ widget, kpiMap, onRemove, dragHandle }: WidgetCardP
             <LineChartWidget
               title=""
               description=""
-              data={mockData}
+              data={chartData}
               xKey="label"
-              series={[{ dataKey: 'value', name: 'Valor', color: '#1d4ed8' }]}
+              series={[
+                { dataKey: 'value', name: 'Valor', color: '#1d4ed8' },
+                ...(history && history.periods.length > 0
+                  ? [
+                      {
+                        dataKey: 'previousValue',
+                        name: 'Anterior',
+                        color: '#94a3b8',
+                        strokeDasharray: '4 4' as const,
+                      },
+                    ]
+                  : []),
+              ]}
               unit={kpi?.unit ?? 'number'}
             />
           )}
@@ -128,7 +156,7 @@ export function WidgetCard({ widget, kpiMap, onRemove, dragHandle }: WidgetCardP
             <PieChartWidget
               title=""
               description=""
-              data={mockData}
+              data={chartData}
               nameKey="label"
               valueKey="value"
               unit={kpi?.unit ?? 'number'}
@@ -138,7 +166,7 @@ export function WidgetCard({ widget, kpiMap, onRemove, dragHandle }: WidgetCardP
             <AreaChartWidget
               title=""
               description=""
-              data={mockData}
+              data={chartData}
               xKey="label"
               series={[{ dataKey: 'value', name: 'Valor', color: '#1d4ed8', fillOpacity: 0.3 }]}
               unit={kpi?.unit ?? 'number'}
