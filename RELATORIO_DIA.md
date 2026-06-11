@@ -66,6 +66,68 @@ Hoje foram entregues **duas tarefas** do escopo V1:
 
 ---
 
+# Relatório Detalhado do Dia — 11/06/2026
+
+**Data:** 11 de junho de 2026
+**Sessão:** Implementação T15 — Gestão de relatórios (admin)
+**Branch:** `main`
+**Commits:** 1
+**Arquivos alterados:** ~15
+
+---
+
+## Resumo Executivo
+
+Hoje foi entregue a **T15 — Gestão de relatórios (admin)**, completando a tela administrativa de relatórios:
+
+- **Backend:** endpoint `POST /admin/reports/validate` que testa se uma fonte SQL (view ou stored_procedure) existe e é acessível.
+- **Frontend:** refatoração completa do `admin-reports.tsx` com edição de relatórios, gerenciamento dinâmico de parâmetros (nome, tipo, obrigatório), seleção de tipo de fonte e botão "Testar conexão" com feedback visual.
+- **TDD:** 2 novos testes no controller para validação de fonte SQL.
+
+**Progresso geral:** 15/18 = **83% das telas do escopo V1 concluídas**.
+
+---
+
+## Commits do Dia
+
+### `feat: completar gestão de relatórios admin com edição, parâmetros e teste de conexão SQL (T15)`
+
+- Criação de `validate-report-source.dto.ts`.
+- Adição de `validateSource` no `ReportDefinitionsService` (usa `SqlQueryService`).
+- Adição de `POST /admin/reports/validate` no `ReportDefinitionsAdminController`.
+- Testes TDD: validação de fonte existente e inexistente.
+- Correção de testes existentes com injeção de `SqlQueryService`.
+- Adição de `validateAdminReportSource` em `platform-api.ts`.
+- Refatoração de `admin-reports.tsx`:
+  - Modo edição com pré-preenchimento de dados.
+  - Dropdown `sourceType`: view | stored_procedure.
+  - Botão "Testar conexão" com spinner e feedback visual (CheckCircle2/XCircle).
+  - Gerenciador de parâmetros: adicionar, editar, remover.
+  - Preview de parâmetros na tabela de listagem.
+- Atualização de `docs/api.md`, `docs/web.md`, `SPRINT_STATUS.md`, `ROADMAP.md`, `docs/roadmap/01-telas.md`.
+
+---
+
+## Testes e Validação
+
+| Comando                                                                                     | Status    | Notas                                 |
+| ------------------------------------------------------------------------------------------- | --------- | ------------------------------------- |
+| `pnpm --filter @dashboard-power-bi/api typecheck`                                           | ✅ Passou | Sem erros                             |
+| `pnpm --filter @dashboard-power-bi/web typecheck`                                           | ✅ Passou | Sem erros                             |
+| `pnpm --filter @dashboard-power-bi/api test -- report-definitions.admin.controller.spec.ts` | ✅ Passou | 6 tests passando (incluindo validate) |
+| `pnpm --filter @dashboard-power-bi/web build`                                               | ✅ Passou | Build de produção OK                  |
+| `pnpm verify:docs`                                                                          | ✅ Passou | Sem erros de lint em docs             |
+
+---
+
+## Próximos Passos Recomendados
+
+1. **2FA/TOTP** (Fase 4)
+   - Hardening de segurança.
+   - `otplib` já instalado no backend.
+
+---
+
 # Relatório Detalhado do Dia — 10/06/2026 (T16)
 
 **Data:** 10 de junho de 2026

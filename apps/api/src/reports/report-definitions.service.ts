@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { SqlQueryService } from '../sql-server/sql-query.service';
 import {
   CreateReportDefinitionInput,
   ReportDefinition,
@@ -12,9 +13,17 @@ import {
   validateUpdateReportDefinition,
 } from './report-definition.validator';
 
+export type ValidateSourceResult = {
+  valid: boolean;
+  message?: string;
+};
+
 @Injectable()
 export class ReportDefinitionsService {
-  constructor(private readonly repository: ReportDefinitionsRepository) {}
+  constructor(
+    private readonly repository: ReportDefinitionsRepository,
+    private readonly sqlQueryService: SqlQueryService,
+  ) {}
 
   async create(input: CreateReportDefinitionInput): Promise<ReportDefinition> {
     const validatedInput = validateCreateReportDefinition(input);
@@ -76,6 +85,29 @@ export class ReportDefinitionsService {
     }
 
     return deactivated;
+  }
+
+  async validateSource(
+    sourceType: 'view' | 'stored_procedure',
+    sourceName: string,
+  ): Promise<ValidateSourceResult> {
+    try {
+      if (sourceType === 'view') {
+        await this.sqlQueryService.executeView({
+          viewName: sourceName,
+          columns: ['*'],
+          filters: [],
+        });
+      } else {
+        await this.sqlQueryService.executeStoredProcedure({
+          procedureName: sourceName,
+          parameters: [],
+        });
+      }
+      return { valid: true };
+    } catch {
+      return { valid: false, message: 'Fonte SQL não encontrada ou indisponível.' };
+    }
   }
 
   private async ensureUniqueSourceBySector(

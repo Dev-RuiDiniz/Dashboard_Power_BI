@@ -297,3 +297,15 @@ export async function updateAdminReport(
 export async function deactivateAdminReport(id: string): Promise<AdminReportDefinition> {
   return apiPatch<AdminReportDefinition>(`/admin/reports/${id}/deactivate`, {});
 }
+
+export type ValidateSourceResult = {
+  valid: boolean;
+  message?: string;
+};
+
+export async function validateAdminReportSource(
+  sourceType: 'view' | 'stored_procedure',
+  sourceName: string,
+): Promise<ValidateSourceResult> {
+  return apiPost<ValidateSourceResult>('/admin/reports/validate', { sourceType, sourceName });
+}

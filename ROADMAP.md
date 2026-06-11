@@ -65,7 +65,7 @@ Documentos detalhados por categoria:
 | T12 | Dashboard administrativo                     | ✅ Concluído          | Fase 4 |
 | T13 | Gestão de usuários                           | ✅ Concluído          | Fase 1 |
 | T14 | Gestão de permissões                         | ✅ Concluído          | Fase 2 |
-| T15 | Gestão de relatórios (admin)                 | 🔄 Parcial            | Fase 2 |
+| T15 | Gestão de relatórios (admin)                 | ✅ Concluído          | Fase 2 |
 | T16 | Editor visual drag-and-drop                  | ✅ Concluído (mínimo) | Fase 3 |
 | T17 | Auditoria com filtros                        | ✅ Concluído          | Fase 2 |
 | T18 | Configurações do sistema                     | ✅ Concluído          | Fase 1 |

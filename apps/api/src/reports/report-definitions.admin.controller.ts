@@ -3,8 +3,9 @@ import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { CreateReportDefinitionDto } from './dto/create-report-definition.dto';
 import { UpdateReportDefinitionDto } from './dto/update-report-definition.dto';
+import { ValidateReportSourceDto } from './dto/validate-report-source.dto';
 import { ReportDefinition } from './entities/report-definition.entity';
-import { ReportDefinitionsService } from './report-definitions.service';
+import { ReportDefinitionsService, ValidateSourceResult } from './report-definitions.service';
 
 @ApiTags('admin-reports')
 @Controller('admin/reports')
@@ -31,7 +32,10 @@ export class ReportDefinitionsAdminController {
 
   @Patch(':id')
   @ApiOkResponse({ description: 'Atualiza parcialmente uma definição de relatório.' })
-  update(@Param('id') id: string, @Body() dto: UpdateReportDefinitionDto): Promise<ReportDefinition> {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateReportDefinitionDto,
+  ): Promise<ReportDefinition> {
     return this.reportDefinitionsService.update(id, dto);
   }
 
@@ -39,5 +43,11 @@ export class ReportDefinitionsAdminController {
   @ApiOkResponse({ description: 'Desativa uma definição de relatório.' })
   deactivate(@Param('id') id: string): Promise<ReportDefinition> {
     return this.reportDefinitionsService.deactivate(id);
+  }
+
+  @Post('validate')
+  @ApiOkResponse({ description: 'Valida se a fonte SQL existe e é acessível.' })
+  validateSource(@Body() dto: ValidateReportSourceDto): Promise<ValidateSourceResult> {
+    return this.reportDefinitionsService.validateSource(dto.sourceType, dto.sourceName);
   }
 }

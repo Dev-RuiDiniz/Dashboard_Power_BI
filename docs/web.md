@@ -46,7 +46,8 @@ A sessão do frontend agora fica em `sessionStorage`, remove a dependência oper
 - modal de adicionar widget com seleção de tipo, KPI e tipo de gráfico;
 - fallback em memória para dashboards quando Supabase não configurado;
 - modo de edição de layout no detalhe do dashboard: botão "Editar layout" ativa drag-and-drop via `@dnd-kit/sortable` para reordenar widgets, botão "Concluir" persiste a nova ordem via `PATCH /dashboards/:id/widgets/reorder`;
-- hub administrativo (`/app/admin`) com KPIs operacionais reais: total de usuários, ativos, grupos, exportações e tabela de atividade recente dos logs de auditoria.
+- hub administrativo (`/app/admin`) com KPIs operacionais reais: total de usuários, ativos, grupos, exportações e tabela de atividade recente dos logs de auditoria;
+- gestão de relatórios admin (`/app/admin/reports`) com CRUD completo, edição de definições, gerenciamento de parâmetros (nome, tipo, obrigatório), seleção de fonte SQL (view ou stored_procedure) e teste de conexão antes de salvar.
 
 ## Limitações atuais
 

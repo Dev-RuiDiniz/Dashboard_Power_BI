@@ -29,6 +29,7 @@
 - `DELETE /dashboards/:id/widgets/:widgetId` — remove widget
 - `PATCH /dashboards/:id/widgets/reorder` — reordena widgets do dashboard (batch)
 - `GET /admin/dashboard` — métricas operacionais do painel administrativo
+- `POST /admin/reports/validate` — valida se fonte SQL (view ou stored_procedure) existe e é acessível
 - fluxo de recuperação e redefinição de senha
 - CRUD básico administrativo de usuários
 - CRUD básico administrativo de grupos

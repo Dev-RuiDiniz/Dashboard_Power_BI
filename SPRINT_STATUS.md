@@ -66,7 +66,7 @@ Para rastreabilidade detalhada:
 - o visualizador é acoplado à tela `/app/reports`, não uma experiência dedicada completa;
 - há endpoints administrativos para relatórios, mas falta a interface web correspondente;
 - o domínio de relatórios na API ainda depende de persistência em memória para definições;
-- a tela de administração de relatórios (`/app/admin/reports`) está funcional.
+- a tela de administração de relatórios (`/app/admin/reports`) está completa: CRUD, edição, gerenciamento de parâmetros, seleção de fonte SQL e teste de conexão.
 
 ### Dashboard e BI
 

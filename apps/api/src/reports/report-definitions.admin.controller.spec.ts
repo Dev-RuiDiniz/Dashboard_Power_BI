@@ -24,6 +24,7 @@ describe('ReportDefinitionsAdminController', () => {
     getById: jest.fn(),
     update: jest.fn(),
     deactivate: jest.fn(),
+    validateSource: jest.fn(),
   } as unknown as jest.Mocked<ReportDefinitionsService>;
 
   beforeEach(() => {
@@ -51,7 +52,9 @@ describe('ReportDefinitionsAdminController', () => {
     controller = new ReportDefinitionsAdminController(service);
 
     await expect(controller.getById('report-1')).resolves.toEqual(report);
-    await expect(controller.update('report-1', { description: 'Nova descrição.' })).resolves.toMatchObject({
+    await expect(
+      controller.update('report-1', { description: 'Nova descrição.' }),
+    ).resolves.toMatchObject({
       description: 'Nova descrição.',
     });
   });
@@ -61,5 +64,24 @@ describe('ReportDefinitionsAdminController', () => {
     controller = new ReportDefinitionsAdminController(service);
 
     await expect(controller.deactivate('report-1')).resolves.toMatchObject({ isActive: false });
+  });
+
+  it('deve validar fonte SQL existente', async () => {
+    service.validateSource.mockResolvedValue({ valid: true });
+    controller = new ReportDefinitionsAdminController(service);
+
+    await expect(
+      controller.validateSource({ sourceType: 'view', sourceName: 'reports.vw_financeiro' }),
+    ).resolves.toEqual({ valid: true });
+    expect(service.validateSource).toHaveBeenCalledWith('view', 'reports.vw_financeiro');
+  });
+
+  it('deve retornar invalido para fonte SQL inexistente', async () => {
+    service.validateSource.mockResolvedValue({ valid: false, message: 'Fonte não encontrada.' });
+    controller = new ReportDefinitionsAdminController(service);
+
+    await expect(
+      controller.validateSource({ sourceType: 'view', sourceName: 'dbo.inexistente' }),
+    ).resolves.toMatchObject({ valid: false });
   });
 });

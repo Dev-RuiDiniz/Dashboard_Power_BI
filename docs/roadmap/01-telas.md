@@ -403,32 +403,36 @@ Entregáveis:
 ### T15 — Gestão de Relatórios (Admin)
 
 ```
-Status: 🔄 Parcial (Fase 2)
+Status: ✅ Concluído (Fase 2 — 2026-06-11)
 
 SDD — Especificação:
 - Listagem de definições de relatórios com busca
 - CRUD: name, description, sector, source_type, source_name, parameters
 - Validação de source_name contra SQL injection
-- Teste de conexão com SQL Server antes de salvar
+- Teste de conexão com SQL Server antes de salvar (POST /admin/reports/validate)
 - Ativação/desativação
-- Preview de parâmetros com tipos
+- Preview de parâmetros com tipos na listagem
+- Edição de relatórios existentes
+- Gerenciamento de parâmetros: adicionar, editar, remover (nome, tipo, obrigatório)
 
 TDD — Testes:
-- Unit: admin-reports.tsx — listagem, formulário
-- Integration: report-definitions.admin.controller.spec.ts — CRUD
-- Integration: report-definitions.repository.spec.ts — persistência híbrida
-- Integration: sql-server.service.spec.ts — validação de identificadores
-- Manual: criar, testar conexão, executar preview
+- Unit: admin-reports.tsx — listagem, formulário, edição, parâmetros
+- Integration: report-definitions.admin.controller.spec.ts — CRUD + validateSource
+- Integration: report-definitions.service.spec.ts — validação de fonte SQL
+- Manual: criar, testar conexão, editar, gerenciar parâmetros
 - Comandos: pnpm test, pnpm typecheck
 
 Entregáveis:
 - apps/web/src/app/app/admin/reports/page.tsx
-- apps/web/src/components/admin/admin-reports.tsx
-- apps/api/src/reports/report-definitions.admin.controller.ts
+- apps/web/src/components/admin/admin-reports.tsx (CRUD, edição, parâmetros, teste de conexão)
+- apps/api/src/reports/report-definitions.admin.controller.ts (+ validateSource)
+- apps/api/src/reports/report-definitions.service.ts (+ validateSource)
+- apps/api/src/reports/dto/validate-report-source.dto.ts
+- apps/web/src/lib/platform-api.ts — validateAdminReportSource
 
 Débitos:
-- Preview de parâmetros com tipos não implementado
-- Teste de conexão com SQL Server antes de salvar pendente
+- Execução preview do relatório com dados reais (já existe em /app/reports)
+- Importação/exportação em massa de definições
 ```
 
 ### T16 — Editor Visual Drag-and-Drop

@@ -16,10 +16,14 @@ describe('ReportDefinitionsService', () => {
 
   function createService() {
     const repository = new ReportDefinitionsRepository();
+    const sqlQueryService = {
+      executeView: jest.fn().mockResolvedValue([]),
+      executeStoredProcedure: jest.fn().mockResolvedValue([]),
+    };
 
     return {
       repository,
-      service: new ReportDefinitionsService(repository),
+      service: new ReportDefinitionsService(repository, sqlQueryService as never),
     };
   }
 
@@ -49,7 +53,8 @@ describe('ReportDefinitionsService', () => {
         message: 'duplicate key value violates unique constraint',
       }),
     };
-    const service = new ReportDefinitionsService(repository as never);
+    const sqlQueryService = { executeView: jest.fn(), executeStoredProcedure: jest.fn() };
+    const service = new ReportDefinitionsService(repository as never, sqlQueryService as never);
 
     await expect(service.create(createInput)).rejects.toThrow(ConflictException);
   });
