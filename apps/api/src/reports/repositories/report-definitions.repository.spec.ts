@@ -27,8 +27,18 @@ describe('ReportDefinitionsRepository', () => {
     const repository = new ReportDefinitionsRepository();
 
     await repository.create(createInput);
-    await repository.create({ ...createInput, name: 'Inativo', sourceName: 'reports.vw_inativo', isActive: false });
-    await repository.create({ ...createInput, name: 'Comercial', sector: 'comercial', sourceName: 'reports.vw_comercial' });
+    await repository.create({
+      ...createInput,
+      name: 'Inativo',
+      sourceName: 'reports.vw_inativo',
+      isActive: false,
+    });
+    await repository.create({
+      ...createInput,
+      name: 'Comercial',
+      sector: 'comercial',
+      sourceName: 'reports.vw_comercial',
+    });
 
     await expect(repository.findBySector('financeiro')).resolves.toHaveLength(1);
     await expect(repository.findBySector('financeiro', false)).resolves.toHaveLength(2);
@@ -62,9 +72,35 @@ describe('ReportDefinitionsRepository', () => {
     const repository = new ReportDefinitionsRepository();
     const created = await repository.create(createInput);
 
-    await expect(repository.existsBySourceAndSector(createInput.sourceName, createInput.sector)).resolves.toBe(true);
-    await expect(repository.existsBySourceAndSector(createInput.sourceName, createInput.sector, created.id)).resolves.toBe(
-      false,
+    await expect(
+      repository.existsBySourceAndSector(createInput.sourceName, createInput.sector),
+    ).resolves.toBe(true);
+    await expect(
+      repository.existsBySourceAndSector(createInput.sourceName, createInput.sector, created.id),
+    ).resolves.toBe(false);
+  });
+
+  it('deve persistir definicoes no Supabase quando o servico estiver habilitado', async () => {
+    const insert = jest.fn().mockResolvedValue({ error: null });
+    const from = jest.fn().mockReturnValue({ insert });
+    const supabaseService = {
+      isEnabled: () => true,
+      getClient: () => ({ from }),
+    };
+
+    const repository = new ReportDefinitionsRepository(supabaseService as never);
+
+    await repository.create(createInput);
+
+    expect(from).toHaveBeenCalledWith('api_report_definitions');
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: createInput.name,
+        sector: createInput.sector,
+        source_type: createInput.sourceType,
+        source_name: createInput.sourceName,
+        is_active: true,
+      }),
     );
   });
 

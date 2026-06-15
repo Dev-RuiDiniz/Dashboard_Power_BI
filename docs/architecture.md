@@ -1,65 +1,44 @@
-# Arquitetura Atual
+# Arquitetura
 
-## Objetivo
-
-Esta é a visão resumida da arquitetura realmente existente no repositório.
-Para detalhes completos, consulte `docs/ARCHITECTURE_DETAILED.md`.
-
-## Visão geral
+## Topologia real
 
 ```text
-apps/web  -->  apps/api  --> SQL Server externo
-    |
-    +-------> Supabase direto
+apps/web -> apps/api -> SQL Server
+                    \-> Supabase
+                    \-> fallbacks em memória em partes do domínio
 ```
 
-Leitura correta do desenho atual:
+## Resumo
 
-- a Web usa a API NestJS para autenticação, administração e relatórios;
-- a Web também acessa o Supabase diretamente para dashboard, exportações, notificações e settings;
-- a API usa SQL Server para executar relatórios;
-- parte do domínio administrativo da API ainda está em memória.
+O repositório é um monorepo pnpm com duas aplicações principais:
 
-## Componentes
+- `apps/api`: API NestJS para autenticação, administração básica e relatórios
+- `apps/web`: frontend Next.js 14 com App Router
 
-### Web (`apps/web`)
+## Fontes de dados
 
-- Next.js 14 com App Router;
-- telas públicas de auth;
-- área autenticada sob `/app`;
-- dashboard inicial, relatórios, exportações, notificações e admin.
+- SQL Server: consultas de relatórios via API
+- Supabase: usado pela API nos fluxos de dashboard, notificações, exportações, settings, permissões e auditoria
+- memória de processo: ainda existe como fallback em partes do domínio, mas definições administrativas de relatórios já persistem via Supabase no runtime principal
 
-### API (`apps/api`)
+## Estado após a Fase 1
 
-- NestJS 10 com Swagger;
-- módulos reais: auth, admin, reports, health, validation-test e sql-server;
-- endpoints REST para auth, usuários, grupos e relatórios.
+- a API é a fonte oficial dos fluxos autenticados de platform;
+- `PlatformModule`, `PermissionsModule`, `AuditModule` e `CommonModule` estão integrados ao runtime principal;
+- a Web deixou de depender de `/auth/me` e `/auth/me/password` inexistentes.
+- settings administrativos agora são mutáveis pela API centralizada e auditados no backend;
+- mutações de permissões também entram na trilha de auditoria do runtime principal.
+- a sessão web saiu de `localStorage`, passou a usar `sessionStorage` e ganhou refresh automático único via `/auth/refresh` em respostas `401`.
+- a home de BI agora é abastecida por `GET /dashboard/home`, com resumo, KPIs e séries prontas para charts no frontend.
+- o drill-down inicial de KPI também sai da API em `GET /dashboard/kpis/:kpiId/drilldown`, mantendo o frontend centralizado em clients HTTP e sem retorno ao Supabase direto nesse fluxo.
 
-### Dados
+## Limitações atuais
 
-- SQL Server: consultas de relatórios executadas pela API;
-- Supabase: KPIs, setores, notifications, export_jobs e system_settings lidos direto pela Web;
-- memória do processo: usuários, grupos e definições de relatórios em partes da API;
-- `localStorage`: sessão do frontend.
+- a centralização na API não elimina a dependência operacional do Supabase no backend atual;
+- Redis aparece na infraestrutura local, mas não é uma dependência funcional da aplicação hoje.
 
-## Divergências relevantes em relação ao escopo V1
+## Referências
 
-Não fazem parte da arquitetura implementada hoje:
-
-- Prisma;
-- React Query;
-- Recharts/Chart.js;
-- BullMQ;
-- S3;
-- cache Redis funcional;
-- editor de dashboards;
-- exportação backend PDF/Excel;
-- 2FA/TOTP;
-- módulo dedicado de auditoria.
-
-## Implicações
-
-- o sistema não deve ser documentado como plataforma BI completa;
-- a arquitetura atual é híbrida e fragmentada;
-- parte do produto já é navegável e funcional;
-- a comparação formal com o escopo está em `docs/scope-v1-gap-analysis.md`.
+- `README.md`
+- `SPRINT_STATUS.md`
+- `HANDOFF.md`

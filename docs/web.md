@@ -1,176 +1,57 @@
-# Aplicação Web
+# Web
 
-## Objetivo
+## Stack
 
-Este documento descreve a aplicação `apps/web` como ela funciona hoje.
+- Next.js 14
+- App Router
+- Tailwind CSS
+- componentes locais em `apps/web/src/components`
 
-## Visão geral
+## Telas e fluxos já visíveis
 
-A Web é uma aplicação Next.js 14 com App Router.
-Hoje ela entrega:
+- login
+- recuperação e reset de senha
+- perfil do usuário
+- área autenticada com `AuthGuard`
+- dashboard inicial
+- relatórios
+- hub administrativo
+- usuários
+- grupos
+- notificações
+- exportações
+- configurações do sistema
+- página de design system
 
-- telas públicas de autenticação;
-- área autenticada baseada em sessão local;
-- dashboard inicial com KPIs;
-- catálogo e execução de relatórios;
-- admin básico;
-- páginas de exportações, notificações e configurações.
+## Sessão
 
-## Rotas reais
+A sessão do frontend agora fica em `sessionStorage`, remove a dependência operacional do `localStorage`, migra sessões legadas e tenta um refresh automático único quando a API devolve `401`. Ainda não é o hardening final previsto no escopo V1.
 
-### Públicas
+## Integração atual
 
-```text
-/
-/login
-/forgot-password
-/reset-password
-/design-system
-```
+- auth, perfil, dashboard, relatórios, exportações, notificações e settings usam a API NestJS como fonte oficial;
+- a Web não depende mais de leituras diretas do Supabase nesses fluxos principais da plataforma.
+- a home autenticada agora usa `GET /dashboard/home` e renderiza charts reais com Recharts (BarChart, LineChart, PieChart, AreaChart);
+- componentes de gráfico reutilizáveis em `components/charts/` (BarChartWidget, LineChartWidget, PieChartWidget, AreaChartWidget, ChartTooltip);
+- cada KPI da home já abre um drill-down completo consumindo `GET /dashboard/kpis/:kpiId/drilldown` + `GET /dashboard/kpis/:kpiId/history`, com resumo, gráfico de evolução de 12 meses e tabela comparativa;
+- a tela de detalhe do relatório já consegue solicitar exportações via modal com seleção de formato (PDF, Excel, CSV, JSON);
+- a tela de exportações baixa arquivos pela API autenticada, sem depender de link público cru;
+- polling automático de status de exportações (atualiza a cada 5s enquanto houver jobs pendentes);
+- filtros por formato e status na lista de exportações;
+- skeleton loading e empty state ilustrativo na lista de exportações;
+- fallback em memória para exportações quando Supabase não configurado;
+- a tela de settings já permite editar valores não sensíveis via API centralizada;
+- dashboards personalizados com CRUD completo: criar, visualizar (`/app/dashboards/:id`), editar e excluir;
+- widgets de dashboard: KPI, Gráfico (bar, line, pie, area) e Tabela (placeholder);
+- modal de adicionar widget com seleção de tipo, KPI e tipo de gráfico;
+- fallback em memória para dashboards quando Supabase não configurado;
+- modo de edição de layout no detalhe do dashboard: botão "Editar layout" ativa drag-and-drop via `@dnd-kit/sortable` para reordenar widgets, botão "Concluir" persiste a nova ordem via `PATCH /dashboards/:id/widgets/reorder`;
+- hub administrativo (`/app/admin`) com KPIs operacionais reais: total de usuários, ativos, grupos, exportações e tabela de atividade recente dos logs de auditoria;
+- gestão de relatórios admin (`/app/admin/reports`) com CRUD completo, edição de definições, gerenciamento de parâmetros (nome, tipo, obrigatório), seleção de fonte SQL (view ou stored_procedure) e teste de conexão antes de salvar;
+- login com suporte a 2FA/TOTP: quando ativado, o fluxo exibe input de código de 6 dígitos após credenciais válidas (`/login`);
+- perfil do usuário (`/app/profile`) com gestão de 2FA/TOTP: ativar (setup com QR code/otpauthUrl e secret), verificar código e ativar, desativar com verificação de código.
 
-### Autenticadas
+## Limitações atuais
 
-```text
-/app
-/app/reports
-/app/exports
-/app/notifications
-/app/admin
-/app/admin/users
-/app/admin/groups
-/app/admin/settings
-```
-
-## Como a Web busca dados
-
-Hoje existem dois fluxos:
-
-### Via API NestJS
-
-- login e recuperação de senha;
-- usuários;
-- grupos;
-- catálogo de relatórios;
-- detalhe e execução de relatórios.
-
-### Via Supabase direto
-
-- `kpis`;
-- `sectors`;
-- `export_jobs`;
-- `notifications`;
-- `system_settings`.
-
-Isso significa que a Web não opera sobre um backend único.
-
-## Áreas funcionais
-
-### Autenticação
-
-Evidências:
-
-- `apps/web/src/components/auth/*`
-- `apps/web/src/lib/auth/api.ts`
-- `apps/web/src/lib/auth/session.ts`
-
-O sistema hoje faz:
-
-- login por e-mail e senha;
-- recuperação de senha;
-- redefinição por token;
-- armazenamento da sessão no navegador;
-- proteção client-side das rotas sob `/app`.
-
-### Dashboard
-
-Evidências:
-
-- `apps/web/src/app/app/page.tsx`
-- `apps/web/src/components/dashboard/dashboard-home.tsx`
-
-O sistema hoje faz:
-
-- busca KPIs e setores no Supabase;
-- calcula resumo agregado;
-- exibe cards de KPI e tabela por setor;
-- usa fallback local quando não encontra dados válidos.
-
-### Relatórios
-
-Evidências:
-
-- `apps/web/src/app/app/reports/page.tsx`
-- `apps/web/src/components/reports/*`
-
-O sistema hoje faz:
-
-- lista relatórios autorizados;
-- permite filtrar;
-- mostra metadados do item selecionado;
-- executa consulta via API;
-- renderiza resultado em tabela.
-
-### Administração
-
-Evidências:
-
-- `apps/web/src/app/app/admin/*`
-- `apps/web/src/components/admin/*`
-
-O sistema hoje faz:
-
-- hub administrativo;
-- tela de usuários;
-- tela de grupos;
-- leitura de configurações do sistema.
-
-### Exportações e notificações
-
-Evidências:
-
-- `apps/web/src/components/exports/exports-list.tsx`
-- `apps/web/src/components/notifications/notifications-list.tsx`
-
-O sistema hoje faz:
-
-- consulta exportações no Supabase;
-- consulta notificações no Supabase;
-- marca notificações como lidas.
-
-## Limitações reais da Web
-
-- não existe `/app/profile`;
-- não existe rota dedicada `/app/reports/[id]`;
-- não existe tela web para `/admin/reports`;
-- não existe editor de dashboards;
-- não existe tela de logs;
-- não existe gestão de permissões dedicada;
-- não há realtime de notificações;
-- não há exportação backend disparada a partir da Web.
-
-## Stack realmente usada
-
-- Next.js 14;
-- React 18;
-- TypeScript;
-- Tailwind CSS;
-- `@supabase/supabase-js`;
-- `zod`;
-- `lucide-react`.
-
-Não encontrados em uso real no frontend atual:
-
-- React Query;
-- Recharts;
-- Chart.js;
-- React Hook Form;
-- ExcelJS.
-
-## Comandos úteis
-
-```bash
-pnpm dev:web
-pnpm --filter @dashboard-power-bi/web test
-pnpm --filter @dashboard-power-bi/web build
-pnpm --filter @dashboard-power-bi/web typecheck
-```
+- persistências de platform ainda dependem do Supabase no backend atual;
+- o drill-down existe em nivel inicial, mas ainda nao cobre exploracao rica por dimensao, navegacao multinivel nem widgets personalizados.

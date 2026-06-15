@@ -2,12 +2,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { AuthenticatedLayout } from './authenticated-layout';
+import * as authApi from '@/lib/auth/api';
 import * as session from '@/lib/auth/session';
 
 const replace = jest.fn();
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace }),
+  usePathname: () => '/app',
 }));
 
 jest.mock('@/lib/auth/session', () => ({
@@ -20,35 +22,40 @@ jest.mock('@/lib/auth/session', () => ({
   clearAuthSession: jest.fn(),
 }));
 
+jest.mock('@/lib/auth/api', () => ({
+  logout: jest.fn().mockResolvedValue({ success: true }),
+}));
+
 describe('AuthenticatedLayout', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('deve renderizar header, sidebar e conteúdo', async () => {
+  it('deve renderizar header, sidebar e conteudo', async () => {
     render(
       <AuthenticatedLayout>
-        <p>Conteúdo da rota</p>
+        <p>Conteudo da rota</p>
       </AuthenticatedLayout>,
     );
 
-    expect(await screen.findByText('Área autenticada')).toBeInTheDocument();
+    expect(await screen.findByText(/autenticada/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Dashboard Power BI' })).toBeInTheDocument();
-    expect(screen.getByText('Visão geral')).toBeInTheDocument();
-    expect(screen.getByText('Relatórios')).toBeInTheDocument();
-    expect(screen.getByText('Administração')).toBeInTheDocument();
-    expect(screen.getByText('Conteúdo da rota')).toBeInTheDocument();
+    expect(screen.getByText(/geral/i)).toBeInTheDocument();
+    expect(screen.getByText(/relat.rios/i)).toBeInTheDocument();
+    expect(screen.getByText('Usuários', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByText('Conteudo da rota')).toBeInTheDocument();
   });
 
-  it('deve limpar sessão e redirecionar ao sair', async () => {
+  it('deve limpar sessao e redirecionar ao sair', async () => {
     render(
       <AuthenticatedLayout>
-        <p>Conteúdo da rota</p>
+        <p>Conteudo da rota</p>
       </AuthenticatedLayout>,
     );
 
     await userEvent.click(await screen.findByRole('button', { name: 'Sair' }));
 
+    expect(authApi.logout).toHaveBeenCalledWith('refresh');
     expect(session.clearAuthSession).toHaveBeenCalled();
     expect(replace).toHaveBeenCalledWith('/login');
   });

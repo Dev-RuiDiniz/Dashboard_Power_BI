@@ -7,6 +7,8 @@ export type LoginResponse = {
   expiresIn: number;
 };
 
+export type LoginResult = LoginResponse | { requiresTwoFactor: true; tempToken: string };
+
 export type ForgotPasswordResponse = {
   success: true;
   message: string;
@@ -40,7 +42,11 @@ function mapAuthError(status: number, body: Record<string, unknown>): AuthClient
   }
 
   if (status === 429) {
-    return new AuthClientError('rate_limited', 'Muitas tentativas de login. Tente novamente mais tarde.', status);
+    return new AuthClientError(
+      'rate_limited',
+      'Muitas tentativas de login. Tente novamente mais tarde.',
+      status,
+    );
   }
 
   if (status === 400) {
@@ -51,7 +57,11 @@ function mapAuthError(status: number, body: Record<string, unknown>): AuthClient
     );
   }
 
-  return new AuthClientError('unexpected_error', fallbackMessage ?? 'Erro inesperado ao comunicar com a API.', status);
+  return new AuthClientError(
+    'unexpected_error',
+    fallbackMessage ?? 'Erro inesperado ao comunicar com a API.',
+    status,
+  );
 }
 
 async function post<T>(path: string, payload: Record<string, unknown>): Promise<T> {
@@ -70,12 +80,39 @@ async function post<T>(path: string, payload: Record<string, unknown>): Promise<
       throw error;
     }
 
-    throw new AuthClientError('network_error', 'Não foi possível conectar à API. Verifique sua conexão.');
+    throw new AuthClientError(
+      'network_error',
+      'Não foi possível conectar à API. Verifique sua conexão.',
+    );
   }
 }
 
-export function login(email: string, password: string): Promise<LoginResponse> {
-  return post<LoginResponse>('/auth/login', { email, password });
+export function login(email: string, password: string): Promise<LoginResult> {
+  return post<LoginResult>('/auth/login', { email, password });
+}
+
+export function loginWithTotp(tempToken: string, code: string): Promise<LoginResponse> {
+  return post<LoginResponse>('/auth/totp/login', { tempToken, code });
+}
+
+export function setupTotp(): Promise<{ secret: string; otpauthUrl: string }> {
+  return post<{ secret: string; otpauthUrl: string }>('/auth/totp/setup', {});
+}
+
+export function verifyTotpSetup(code: string): Promise<{ enabled: true }> {
+  return post<{ enabled: true }>('/auth/totp/verify', { code });
+}
+
+export function disableTotp(code: string): Promise<{ disabled: true }> {
+  return post<{ disabled: true }>('/auth/totp/disable', { code });
+}
+
+export function refreshSession(refreshToken: string): Promise<LoginResponse> {
+  return post<LoginResponse>('/auth/refresh', { refreshToken });
+}
+
+export function logout(refreshToken: string): Promise<{ success: true }> {
+  return post<{ success: true }>('/auth/logout', { refreshToken });
 }
 
 export function forgotPassword(email: string): Promise<ForgotPasswordResponse> {

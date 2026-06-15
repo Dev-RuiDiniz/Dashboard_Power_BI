@@ -8,11 +8,24 @@ Este repositório já entrega uma base real de:
 
 - autenticação com API NestJS;
 - dashboard inicial;
+- dashboard home com payload consolidado de BI e charts reais;
 - catálogo e execução de relatórios;
 - administração básica de usuários e grupos;
-- leitura de notificações, exportações e settings no Supabase;
+- rotas centralizadas de dashboard, notificações, exportações, settings e perfil via API;
+- atualização de settings via API com trilha de auditoria;
+- mutações de permissões com trilha de auditoria no backend;
 - infraestrutura de desenvolvimento em Docker Compose;
 - infraestrutura de produção com Docker Compose e deploy para VPS via GitHub Actions.
+
+Funcionalidades recentemente entregues:
+
+- tela de perfil do usuário (`/app/profile`) com dados pessoais, roles, setores e alteração de senha;
+- gestão de permissões granulares (`/app/admin/permissions`) com CRUD completo via API;
+- logs de auditoria administrativos (`/app/admin/audit`) com filtragem por usuário, ação e recurso;
+- React Query (`@tanstack/react-query`) para gerenciamento de estado no frontend;
+- headers de segurança (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy);
+- proteção CSRF com middleware customizado;
+- Recharts instalado para gráficos no dashboard.
 
 Ele ainda não representa a plataforma V1 completa descrita no PDF de escopo.
 
@@ -32,7 +45,7 @@ Documentos canônicos do estado atual:
 - Next.js 14 para Web
 - Tailwind CSS
 - SQL Server externo
-- Supabase consumido diretamente em partes da Web
+- Supabase consumido pela API em fluxos de platform
 - Docker Compose para desenvolvimento e produção
 - GitHub Actions para deploy na VPS
 
@@ -139,7 +152,8 @@ Fluxo real atual:
 
 ```text
 Web Next.js -> API NestJS -> SQL Server externo
-          \-> Supabase direto
+                        \-> Supabase
+                        \-> fallbacks em memória em partes do domínio
 ```
 
 ## Decisões arquiteturais
@@ -177,21 +191,17 @@ A referência de variáveis está em `docs/environment.md`.
 
 ## Documentação complementar
 
-- `docs/system-map.md`: inventário canônico do sistema
-- `docs/scope-v1-gap-analysis.md`: comparação formal entre escopo V1 e estado real
 - `SPRINT_STATUS.md`: status verificado do projeto
-- `docs/ARCHITECTURE_DETAILED.md`: arquitetura real consolidada
-- `docs/architecture.md`: resumo arquitetural
+- `HANDOFF.md`: leitura rápida para continuidade
+- `docs/setup.md`: onboarding local
+- `docs/architecture.md`: resumo arquitetural do runtime
 - `docs/api.md`: API realmente implementada
 - `docs/web.md`: visão da aplicação web
-- `docs/frontend.md`: comportamento do frontend
-- `docs/reports.md`: módulo de relatórios no estado atual
-- `docs/setup.md`: onboarding local
 - `docs/design-system.md`: base visual
 - `docs/devops.md`: Docker e operações
 - `docs/environment.md`: variáveis de ambiente
-- `docs/deploy-vps.md`: deploy via GitHub Actions + SSH
 - `docs/quality.md`: qualidade e validações
+- `docs/decisions/`: decisões arquiteturais curtas
 
 ## Troubleshooting
 
@@ -223,20 +233,14 @@ Valide:
 
 ### Supabase indisponível
 
-Partes da Web dependem de:
-
-- `kpis`
-- `sectors`
-- `export_jobs`
-- `notifications`
-- `system_settings`
-
-Sem essas integrações, dashboard, notificações, exportações e settings podem degradar ou ficar vazios.
+Os fluxos de dashboard, notificações, exportações e settings agora passam pela API, mas continuam dependendo do Supabase no backend atual. Sem essa integração, essas rotas podem responder vazias ou degradadas. A home de BI depende dessa base para montar `GET /dashboard/home`, e o drill-down inicial de KPI já usa `GET /dashboard/kpis/:kpiId/drilldown`.
 
 ## Segurança
 
 - Nunca versionar `.env` real.
 - Nunca commitar tokens, senhas ou strings de conexão.
 - A API usa JWT, `bcrypt` e consultas parametrizadas ao SQL Server.
-- A Web ainda usa sessão em `localStorage`, o que deve ser tratado como limitação do estado atual.
-- O PDF V1 prevê camadas adicionais como 2FA/TOTP, CSRF e CSP, mas elas não estão implementadas hoje.
+- A Web agora persiste a sessão em `sessionStorage`, migra sessões legadas do `localStorage` e tenta um refresh automático único em respostas `401`.
+- Headers de segurança ativos: CSP, HSTS (produção), X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy.
+- Proteção CSRF implementada via middleware customizado com token em cookie + header `x-csrf-token`.
+- 2FA/TOTP ainda não implementado (dependência `otplib` instalada, pendente endpoints e UI).

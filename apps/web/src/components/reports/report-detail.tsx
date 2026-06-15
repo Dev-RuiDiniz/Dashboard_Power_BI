@@ -4,6 +4,8 @@ import {
   TriangleAlert as AlertTriangle,
   ArrowLeft,
   ChartBar as BarChart3,
+  Download,
+  Star,
   Loader as Loader2,
   Play,
 } from 'lucide-react';
@@ -24,9 +26,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableEmpty,
 } from '@/components/ui';
 import { apiGet, apiPost } from '@/lib/admin-api';
+import { createExport, favoriteReport } from '@/lib/platform-api';
 
 type ReportParameter = {
   name: string;
@@ -67,6 +69,16 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
   const [isQuerying, setIsQuerying] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'excel' | 'csv' | 'json' | null>(
+    null,
+  );
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedExportFormat, setSelectedExportFormat] = useState<
+    'pdf' | 'excel' | 'csv' | 'json'
+  >('pdf');
+  const [isFavoriting, setIsFavoriting] = useState(false);
 
   const loadReport = useCallback(async () => {
     setIsLoading(true);
@@ -90,20 +102,7 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
 
     setIsQuerying(true);
     setQueryError(null);
-
-    const filters: Record<string, unknown> = {};
-    for (const param of report.parameters) {
-      const value = paramValues[param.name];
-      if (value !== undefined && value.trim() !== '') {
-        if (param.type === 'int' || param.type === 'number') {
-          filters[param.name] = Number(value);
-        } else if (param.type === 'boolean') {
-          filters[param.name] = value === 'true';
-        } else {
-          filters[param.name] = value;
-        }
-      }
-    }
+    const filters = buildFilters(report.parameters, paramValues);
 
     try {
       const result = await apiPost<QueryResult>(`/reports/${reportId}/query`, {
@@ -116,6 +115,49 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
       setQueryError(err instanceof Error ? err.message : 'Erro ao executar consulta.');
     } finally {
       setIsQuerying(false);
+    }
+  }
+
+  async function handleCreateExport(format: 'pdf' | 'excel' | 'csv' | 'json') {
+    if (!report) {
+      return;
+    }
+
+    setExportingFormat(format);
+    setExportError(null);
+    setExportSuccess(null);
+
+    try {
+      await createExport({
+        reportId: report.id,
+        exportFormat: format,
+        parameters: buildFilters(report.parameters, paramValues),
+      });
+      setExportSuccess(`Exportação em ${format.toUpperCase()} solicitada com sucesso.`);
+      setShowExportModal(false);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Erro ao solicitar exportação.');
+    } finally {
+      setExportingFormat(null);
+    }
+  }
+
+  async function handleFavoriteReport() {
+    if (!report) {
+      return;
+    }
+
+    setIsFavoriting(true);
+    setExportError(null);
+    setExportSuccess(null);
+
+    try {
+      await favoriteReport(report.id);
+      setExportSuccess('Relatorio favoritado com sucesso.');
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Erro ao favoritar relatorio.');
+    } finally {
+      setIsFavoriting(false);
     }
   }
 
@@ -163,6 +205,14 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
             {report.name}
           </h1>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => void handleFavoriteReport()}
+          disabled={isFavoriting}
+        >
+          <Star className="mr-2 h-4 w-4" aria-hidden="true" />
+          {isFavoriting ? 'Favoritando...' : 'Favoritar relatorio'}
+        </Button>
       </div>
 
       <Card>
@@ -236,6 +286,23 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
         </Card>
       )}
 
+      {exportError && (
+        <Card className="border-amber-200 bg-amber-50 text-center">
+          <CardHeader>
+            <AlertTriangle className="mx-auto h-6 w-6 text-amber-700" aria-hidden="true" />
+            <CardTitle>{exportError}</CardTitle>
+          </CardHeader>
+        </Card>
+      )}
+
+      {exportSuccess && (
+        <Card className="border-emerald-200 bg-emerald-50 text-center">
+          <CardHeader>
+            <CardTitle>{exportSuccess}</CardTitle>
+          </CardHeader>
+        </Card>
+      )}
+
       {queryResult && (
         <Card>
           <CardHeader>
@@ -246,6 +313,18 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedExportFormat('pdf');
+                  setShowExportModal(true);
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                Exportar
+              </Button>
+            </div>
             {queryResult.items.length === 0 ? (
               <p className="py-8 text-center text-sm text-slate-500">
                 Nenhum resultado para a consulta.
@@ -275,6 +354,80 @@ export function ReportDetail({ reportId, onBack }: ReportDetailProps) {
           </CardContent>
         </Card>
       )}
+
+      {showExportModal && report && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Exportar relatório</CardTitle>
+              <CardDescription>
+                Escolha o formato de exportação para <strong>{report.name}</strong>.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                {(['pdf', 'excel', 'csv', 'json'] as const).map((fmt) => (
+                  <button
+                    key={fmt}
+                    type="button"
+                    onClick={() => setSelectedExportFormat(fmt)}
+                    className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
+                      selectedExportFormat === fmt
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {fmt.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              {report.parameters.length > 0 && (
+                <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-xs font-medium text-slate-500">Parâmetros aplicados:</p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {Object.entries(buildFilters(report.parameters, paramValues))
+                      .map(([k, v]) => `${k}=${String(v)}`)
+                      .join(', ') || 'Nenhum parâmetro preenchido'}
+                  </p>
+                </div>
+              )}
+              {exportError && <p className="text-sm text-red-600">{exportError}</p>}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowExportModal(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => void handleCreateExport(selectedExportFormat)}
+                  disabled={exportingFormat !== null}
+                >
+                  {exportingFormat === selectedExportFormat
+                    ? 'Solicitando...'
+                    : `Exportar ${selectedExportFormat.toUpperCase()}`}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </section>
   );
+}
+
+function buildFilters(parameters: ReportParameter[], paramValues: Record<string, string>) {
+  const filters: Record<string, unknown> = {};
+
+  for (const param of parameters) {
+    const value = paramValues[param.name];
+    if (value !== undefined && value.trim() !== '') {
+      if (param.type === 'int' || param.type === 'number') {
+        filters[param.name] = Number(value);
+      } else if (param.type === 'boolean') {
+        filters[param.name] = value === 'true';
+      } else {
+        filters[param.name] = value;
+      }
+    }
+  }
+
+  return filters;
 }

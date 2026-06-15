@@ -2,12 +2,14 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'node:crypto';
 
-import { AuthTokenPayload } from '../types/auth.types';
+import { AuthTokenPayload, TotpPendingPayload } from '../types/auth.types';
 
 type JwtPayload = AuthTokenPayload & {
   iat: number;
   exp: number;
 };
+
+type TotpPendingJwtPayload = TotpPendingPayload;
 
 @Injectable()
 export class TokenService {
@@ -45,6 +47,48 @@ export class TokenService {
 
     if (payload.exp < Math.floor(Date.now() / 1000)) {
       throw new UnauthorizedException('Token expirado.');
+    }
+
+    return payload;
+  }
+
+  createTotpPendingToken(userId: string): { token: string; expiresIn: number } {
+    const expiresIn = 300; // 5 minutos
+    const now = Math.floor(Date.now() / 1000);
+    const jwtPayload: TotpPendingJwtPayload = {
+      sub: userId,
+      type: 'totp_pending',
+      iat: now,
+      exp: now + expiresIn,
+    };
+
+    return {
+      token: this.sign(jwtPayload as unknown as JwtPayload),
+      expiresIn,
+    };
+  }
+
+  verifyTotpPendingToken(token: string): TotpPendingJwtPayload {
+    const [encodedHeader, encodedPayload, signature] = token.split('.');
+
+    if (!encodedHeader || !encodedPayload || !signature) {
+      throw new UnauthorizedException('Token inválido.');
+    }
+
+    const expectedSignature = this.createSignature(`${encodedHeader}.${encodedPayload}`);
+
+    if (signature !== expectedSignature) {
+      throw new UnauthorizedException('Token inválido.');
+    }
+
+    const payload = JSON.parse(this.base64UrlDecode(encodedPayload)) as TotpPendingJwtPayload;
+
+    if (payload.exp < Math.floor(Date.now() / 1000)) {
+      throw new UnauthorizedException('Token expirado.');
+    }
+
+    if (payload.type !== 'totp_pending') {
+      throw new UnauthorizedException('Token inválido.');
     }
 
     return payload;

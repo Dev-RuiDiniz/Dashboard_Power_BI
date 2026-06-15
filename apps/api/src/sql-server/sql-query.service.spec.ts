@@ -32,7 +32,7 @@ describe('SqlQueryService', () => {
   });
 
   it('deve executar view com query parametrizada e sem interpolar valores', async () => {
-    const service = new SqlQueryService(createSqlServerService() as SqlServerService);
+    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
     const injectionPayload = "'; DROP TABLE users; --";
 
     const result = await service.executeView({
@@ -48,7 +48,7 @@ describe('SqlQueryService', () => {
   });
 
   it('deve rejeitar view, coluna e parâmetro inseguros', async () => {
-    const service = new SqlQueryService(createSqlServerService() as SqlServerService);
+    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
 
     await expect(
       service.executeView({
@@ -72,7 +72,7 @@ describe('SqlQueryService', () => {
   });
 
   it('deve executar stored procedure usando execute e parâmetros tipados', async () => {
-    const service = new SqlQueryService(createSqlServerService() as SqlServerService);
+    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
     const injectionPayload = '1; DROP TABLE users';
 
     const result = await service.executeStoredProcedure({
@@ -87,7 +87,7 @@ describe('SqlQueryService', () => {
   });
 
   it('deve rejeitar stored procedure insegura', async () => {
-    const service = new SqlQueryService(createSqlServerService() as SqlServerService);
+    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
 
     await expect(
       service.executeStoredProcedure({
@@ -99,7 +99,7 @@ describe('SqlQueryService', () => {
   it('deve retornar erro sanitizado quando driver falhar', async () => {
     mockQuery.mockRejectedValueOnce(new Error('Login failed for user powerbi_readonly with password secret'));
 
-    const service = new SqlQueryService(createSqlServerService() as SqlServerService);
+    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
 
     await expect(
       service.executeView({

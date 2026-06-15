@@ -1,7 +1,7 @@
 # Status Atual do Projeto
 
 **Projeto:** Dashboard Power BI  
-**Data de verificação:** 2026-06-05  
+**Data de verificação:** 2026-06-10  
 **Base da análise:** estado real do código no repositório
 
 ## Como ler este documento
@@ -57,54 +57,52 @@ Para rastreabilidade detalhada:
 
 - o fluxo JWT existe, mas a sessão do frontend ainda é local e client-side;
 - há controle de tentativas de login, mas a cobertura de hardening do PDF não está completa;
-- não existe 2FA/TOTP;
-- não há confirmação de CSRF/CSP/HSTS na aplicação atual.
+- CSRF e headers de segurança (CSP, HSTS, X-Frame-Options etc.) implementados;
+- 2FA/TOTP mínimo viável implementado: setup com secret base32 + otpauthUrl, verificação no login com tempToken, endpoints `/auth/totp/*`, gestão no perfil do usuário;
+- Recharts completamente integrado no dashboard home com sparklines nos KPI cards, testes unitários para todos os widgets de gráfico, e widgets chart em dashboards personalizados alimentados por histórico real de KPIs.
 
 ### Relatórios
 
 - o catálogo e a execução estão implementados;
 - o visualizador é acoplado à tela `/app/reports`, não uma experiência dedicada completa;
 - há endpoints administrativos para relatórios, mas falta a interface web correspondente;
-- o domínio de relatórios na API ainda depende de persistência em memória para definições.
+- o domínio de relatórios na API ainda depende de persistência em memória para definições;
+- a tela de administração de relatórios (`/app/admin/reports`) está completa: CRUD, edição, gerenciamento de parâmetros, seleção de fonte SQL e teste de conexão.
 
 ### Dashboard e BI
 
 - existe dashboard inicial com KPIs;
-- não há gráficos com biblioteca dedicada;
-- não há drill-down;
-- não há dashboards personalizados;
-- não há editor visual.
+- Recharts integrado no dashboard home com 4 tipos de gráfico (Bar, Line, Pie, Area);
+- drill-down com série histórica de 12 meses e gráfico de evolução;
+- dashboards personalizados com CRUD completo e widgets (KPI, gráfico, tabela);
+- editor visual drag-and-drop mínimo entregue: reordenação de widgets com @dnd-kit/sortable e persistência via batch reorder.
 
 ### Administração
 
 - usuários e grupos estão disponíveis;
-- permissões finas não têm tela dedicada;
+- permissões finas têm tela dedicada (`/app/admin/permissions`) e API CRUD;
+- logs de auditoria expostos via API e tela (`/app/admin/audit`);
 - configurações do sistema existem como leitura direta no Supabase, não como gestão completa via backend;
-- não há logs administrativos/auditoria expostos.
+- hub administrativo (`/app/admin`) agora exibe KPIs operacionais reais: total de usuários, ativos, grupos, exportações e tabela de atividade recente de auditoria.
 
 ### Exportações e notificações
 
-- a Web lê dados existentes no Supabase;
-- não há pipeline backend de geração de exportações;
-- não há worker, fila, polling de job ou storage de arquivo gerado pela aplicação;
+- pipeline de exportações com fallback em memória, worker BullMQ e fila;
+- polling automático de status no frontend;
+- filtros por formato e status na lista;
+- modal de exportação com seleção de formato (PDF, Excel, CSV, JSON);
+- skeleton loading e empty state ilustrativo;
 - notificações não têm backend próprio nem realtime.
 
 ## Ausente
 
-- tela de perfil do usuário;
-- gestão dedicada de permissões;
-- editor de dashboards;
-- dashboards personalizados do usuário;
-- logs de auditoria end-to-end;
-- exportação PDF/Excel no backend;
-- BullMQ;
-- React Query;
+- editor de dashboards drag-and-drop completo (redimensionamento, canvas livre, versões);
 - Prisma;
-- Recharts/Chart.js;
 - S3 ou storage equivalente para export;
 - cache Redis funcional na aplicação;
 - cron/refresh agendado;
-- WebSocket/realtime da aplicação.
+- WebSocket/realtime da aplicação;
+- forçar 2FA/TOTP obrigatório para roles específicos.
 
 ## Riscos e documentação desatualizada
 

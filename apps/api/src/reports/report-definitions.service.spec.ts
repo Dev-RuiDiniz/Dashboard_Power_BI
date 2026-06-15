@@ -16,10 +16,14 @@ describe('ReportDefinitionsService', () => {
 
   function createService() {
     const repository = new ReportDefinitionsRepository();
+    const sqlQueryService = {
+      executeView: jest.fn().mockResolvedValue([]),
+      executeStoredProcedure: jest.fn().mockResolvedValue([]),
+    };
 
     return {
       repository,
-      service: new ReportDefinitionsService(repository),
+      service: new ReportDefinitionsService(repository, sqlQueryService as never),
     };
   }
 
@@ -37,6 +41,20 @@ describe('ReportDefinitionsService', () => {
     const { service } = createService();
 
     await service.create(createInput);
+
+    await expect(service.create(createInput)).rejects.toThrow(ConflictException);
+  });
+
+  it('deve converter conflito de unicidade do Supabase em erro controlado', async () => {
+    const repository = {
+      existsBySourceAndSector: jest.fn().mockResolvedValue(false),
+      create: jest.fn().mockRejectedValue({
+        code: '23505',
+        message: 'duplicate key value violates unique constraint',
+      }),
+    };
+    const sqlQueryService = { executeView: jest.fn(), executeStoredProcedure: jest.fn() };
+    const service = new ReportDefinitionsService(repository as never, sqlQueryService as never);
 
     await expect(service.create(createInput)).rejects.toThrow(ConflictException);
   });
@@ -79,6 +97,8 @@ describe('ReportDefinitionsService', () => {
     const { service } = createService();
 
     await expect(service.getById('report-inexistente')).rejects.toThrow(NotFoundException);
-    await expect(service.update('report-inexistente', { name: 'x' })).rejects.toThrow(NotFoundException);
+    await expect(service.update('report-inexistente', { name: 'x' })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });

@@ -1,37 +1,28 @@
-# Setup local
+# Setup
 
 ## Objetivo
 
-Este documento descreve o setup local com base no estado atual do repositório.
+Este guia descreve o onboarding real do monorepo no estado atual do repositório.
 
-## Requisitos
+## Pré-requisitos
 
-- Node.js 20 ou superior
+- Node.js 20.11 ou superior
 - pnpm 9 ou superior
-- Docker e Docker Compose, se for usar o ambiente containerizado
-- acesso a um SQL Server externo, se quiser validar execução real de relatórios
-- credenciais válidas de Supabase, se quiser validar dashboard, exportações, notificações e settings
+- Docker Desktop opcional
+- acesso a um SQL Server válido para os fluxos de relatórios
+- credenciais do Supabase para as telas que ainda leem dados direto no frontend
 
 ## Instalação
 
 ```bash
 pnpm install
+pnpm verify:workspace
+pnpm verify:docker
+pnpm verify:docs
+pnpm quality
 ```
 
-## Variáveis de ambiente
-
-Consulte `docs/environment.md` para a referência completa.
-
-Desvio conhecido:
-
-```text
-infra/env/.env.example
-```
-
-Esse arquivo é citado por scripts e documentação histórica, mas não está presente no clone atual.
-Se você for usar Docker ou quiser padronizar um `.env`, precisará recriar esse arquivo localmente ou adaptar os comandos.
-
-## Subida sem Docker
+## Desenvolvimento sem Docker
 
 Terminal 1:
 
@@ -45,73 +36,23 @@ Terminal 2:
 pnpm dev:web
 ```
 
-## URLs úteis
-
-```text
-Web: http://localhost:3000
-Design system: http://localhost:3000/design-system
-API: http://localhost:3001
-API health: http://localhost:3001/health
-SQL health: http://localhost:3001/health/sql
-Swagger: http://localhost:3001/docs
-```
-
-## SQL Server externo
-
-Para validar o fluxo de relatórios, configure no ambiente local:
+## Desenvolvimento com Docker
 
 ```bash
-SQLSERVER_HOST=
-SQLSERVER_PORT=1433
-SQLSERVER_DATABASE=
-SQLSERVER_USER=
-SQLSERVER_PASSWORD=
-SQLSERVER_ENCRYPT=true
-SQLSERVER_TRUST_SERVER_CERTIFICATE=false
-SQLSERVER_CONNECTION_TIMEOUT_MS=5000
-SQLSERVER_REQUEST_TIMEOUT_MS=5000
+pnpm docker:dev
+pnpm docker:dev:logs
+pnpm docker:dev:down
 ```
 
-Boas práticas:
+## URLs locais
 
-- usar usuário dedicado e preferencialmente `read-only`;
-- não usar `sa` ou conta administrativa;
-- manter `SQLSERVER_ENCRYPT=true`;
-- usar `SQLSERVER_TRUST_SERVER_CERTIFICATE=false` em produção.
+- Web: `http://localhost:3000`
+- Design system: `http://localhost:3000/design-system`
+- API: `http://localhost:3001`
+- Health: `http://localhost:3001/health`
+- Swagger: `http://localhost:3001/docs`
 
-## Supabase
+## Observações
 
-Partes da Web dependem de:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-
-Sem essas variáveis, as áreas abaixo não funcionam corretamente:
-
-- dashboard inicial;
-- exportações;
-- notificações;
-- configurações do sistema.
-
-## Healthchecks
-
-```text
-http://localhost:3001/health
-http://localhost:3001/health/sql
-```
-
-O healthcheck SQL é sanitizado e não retorna credenciais ou erro bruto.
-
-## Qualidade
-
-```bash
-pnpm verify:workspace
-pnpm verify:docker
-pnpm verify:docs
-pnpm lint
-pnpm format:check
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm quality
-```
+- O arquivo `infra/env/.env.example` existe neste clone e é a base para `docker:dev`.
+- O projeto ainda depende de uma arquitetura híbrida: API NestJS para auth, admin e relatórios; Supabase direto em partes da Web.

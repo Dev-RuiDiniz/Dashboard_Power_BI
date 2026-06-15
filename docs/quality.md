@@ -1,54 +1,23 @@
-# Qualidade de código
+# Qualidade
 
-## Objetivo
+## Guardrails do workspace
 
-Este documento descreve a base de qualidade realmente mantida no repositório.
+- `pnpm verify:workspace`
+- `pnpm verify:docker`
+- `pnpm verify:docs`
+- `pnpm lint`
+- `pnpm format:check`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
 
-## Ferramentas
+## Estratégia atual
 
-- ESLint para análise estática;
-- Prettier para formatação;
-- TypeScript em modo strict;
-- Husky para hooks locais;
-- lint-staged para validar arquivos alterados antes do commit;
-- commitlint para validar mensagens no padrão Conventional Commits.
+- Jest para API e Web
+- TypeScript estrito
+- ESLint e Prettier
+- validações estruturais em `scripts/`
 
-## Comandos
+## Leitura correta
 
-```bash
-pnpm install
-pnpm verify:workspace
-pnpm verify:docker
-pnpm verify:docs
-pnpm lint
-pnpm lint:fix
-pnpm format
-pnpm format:check
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm quality
-```
-
-## Padrão de commits
-
-As mensagens devem seguir Conventional Commits:
-
-```bash
-tipo(escopo): descrição curta
-```
-
-Exemplos:
-
-```bash
-chore(qualidade): ajusta validações do monorepo
-docs(readme): atualiza documentação principal
-test(api): cobre fluxo de autenticação
-```
-
-## Observações
-
-- os hooks do Husky são instalados após `pnpm install`, via script `prepare`;
-- o typecheck usa `tsconfig.base.json` como base compartilhada;
-- arquivos `.env` reais, tokens e credenciais não devem ser versionados;
-- `pnpm quality` consolida as validações estruturais e de código do repositório.
+Passar nos comandos de qualidade significa que o workspace está consistente tecnicamente naquele ponto. Isso não deve ser confundido com aderência completa ao escopo V1 do produto.

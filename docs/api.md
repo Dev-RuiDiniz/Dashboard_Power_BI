@@ -1,205 +1,58 @@
 # API
 
-## Objetivo
+## Stack
 
-Este documento descreve a API realmente implementada em `apps/api`.
-Para visão geral do sistema, consulte `docs/system-map.md`.
+- NestJS 10
+- TypeScript estrito
+- JWT + refresh token
+- `bcrypt`
+- Swagger em `/docs`
 
-## Visão geral
+## Capacidades confirmadas
 
-A API é uma aplicação NestJS que hoje concentra:
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `GET /auth/me`
+- `PATCH /auth/me/password`
+- `PATCH /admin/settings/:key`
+- `GET /dashboard/home`
+- `GET /dashboard/kpis/:kpiId/drilldown`
+- `GET /dashboard/kpis/:kpiId/history` — serie historica de 12 meses do KPI
+- `GET /dashboards` — lista dashboards personalizados do usuario
+- `POST /dashboards` — cria dashboard personalizado
+- `GET /dashboards/:id` — retorna dashboard especifico
+- `PATCH /dashboards/:id` — atualiza dashboard
+- `DELETE /dashboards/:id` — remove dashboard
+- `POST /dashboards/:id/widgets` — adiciona widget ao dashboard
+- `PATCH /dashboards/:id/widgets/:widgetId` — atualiza widget
+- `DELETE /dashboards/:id/widgets/:widgetId` — remove widget
+- `PATCH /dashboards/:id/widgets/reorder` — reordena widgets do dashboard (batch)
+- `GET /admin/dashboard` — métricas operacionais do painel administrativo
+- `POST /admin/reports/validate` — valida se fonte SQL (view ou stored_procedure) existe e é acessível
+- fluxo de recuperação e redefinição de senha
+- 2FA/TOTP: setup (`POST /auth/totp/setup`), verificação (`POST /auth/totp/verify`), desativação (`POST /auth/totp/disable`), login TOTP (`POST /auth/totp/login`) — quando ativo, login retorna `requiresTwoFactor: true` + `tempToken`
+- CRUD básico administrativo de usuários
+- CRUD básico administrativo de grupos
+- catálogo, detalhe e execução de relatórios
+- dashboard, notificações, exportações e settings no runtime principal
+- permissões e auditoria no runtime principal
+- healthchecks da API e do SQL Server
 
-- autenticação;
-- recuperação e redefinição de senha;
-- CRUD administrativo de usuários e grupos;
-- administração de definições de relatórios;
-- listagem, detalhe e execução de relatórios;
-- healthchecks da aplicação e do SQL Server.
+## Padrões importantes
 
-Swagger local:
+- validação por DTOs
+- guards para JWT, roles e setores
+- acesso ao SQL Server com queries parametrizadas
+- erros HTTP via `HttpException` e `HttpStatus`
 
-```text
-http://localhost:3001/docs
-```
+## Limitações atuais
 
-## Módulos reais
-
-| Módulo                 | Evidência                      | Papel atual                                   |
-| ---------------------- | ------------------------------ | --------------------------------------------- |
-| `AuthModule`           | `apps/api/src/auth`            | login, refresh, logout, forgot/reset password |
-| `AdminModule`          | `apps/api/src/admin`           | usuários e grupos                             |
-| `ReportsModule`        | `apps/api/src/reports`         | catálogo, definição administrativa e execução |
-| `HealthModule`         | `apps/api/src/health`          | status da API e do SQL Server                 |
-| `ValidationTestModule` | `apps/api/src/validation-test` | endpoint técnico                              |
-| `SqlServerModule`      | `apps/api/src/sql-server`      | conexão e execução segura no SQL Server       |
-
-## Endpoints reais
-
-### Health
-
-```http
-GET /health
-GET /health/sql
-```
-
-`/health/sql` retorna diagnóstico sanitizado, sem expor host, senha, database ou string de conexão.
-
-### Auth
-
-```http
-POST /auth/login
-POST /auth/forgot-password
-POST /auth/reset-password
-POST /auth/refresh
-POST /auth/logout
-```
-
-Comportamentos reais:
-
-- login gera sessão JWT para a Web;
-- forgot/reset password existem e dependem do fluxo implementado na API;
-- logout integra com o backend, mas a Web continua limpando sessão localmente;
-- há controle de tentativas de login.
-
-### Autorização de teste
-
-```http
-GET /authz-test/view/{sector}
-GET /authz-test/download/{sector}
-GET /authz-test/admin
-```
-
-Esses endpoints existem para validar guards e regras de autorização.
-
-### Administração de usuários
-
-```http
-GET /admin/users
-GET /admin/users/{id}
-POST /admin/users
-PATCH /admin/users/{id}
-PATCH /admin/users/{id}/deactivate
-POST /admin/users/{id}/reset-password
-PUT /admin/users/{id}/groups
-```
-
-### Administração de grupos
-
-```http
-GET /admin/groups
-GET /admin/groups/{id}
-POST /admin/groups
-PATCH /admin/groups/{id}
-DELETE /admin/groups/{id}
-```
-
-### Administração de relatórios
-
-```http
-POST /admin/reports
-GET /admin/reports
-GET /admin/reports/{id}
-PATCH /admin/reports/{id}
-PATCH /admin/reports/{id}/deactivate
-```
-
-Observação importante:
-
-- a API já tem esse conjunto administrativo;
-- a Web ainda não tem tela dedicada equivalente para gestão de relatórios.
-
-### Reports API
-
-```http
-GET /reports
-GET /reports/{id}
-POST /reports/{id}/query
-```
-
-O sistema hoje faz:
-
-- lista relatórios autorizados;
-- retorna o detalhe público do relatório;
-- executa consultas parametrizadas com paginação da resposta.
-
-## Exemplo de payloads
-
-### Criar definição administrativa de relatório
-
-```json
-{
-  "name": "Relatório Financeiro",
-  "description": "Visão consolidada do setor financeiro.",
-  "sector": "financeiro",
-  "sourceType": "view",
-  "sourceName": "reports.vw_financial_reports",
-  "parameters": [
-    {
-      "name": "startDate",
-      "type": "date",
-      "required": true
-    }
-  ],
-  "requiredPermissions": ["reports:financeiro:read"],
-  "isActive": true
-}
-```
-
-### Consultar relatório
-
-```json
-{
-  "filters": {
-    "startDate": "2026-05-01",
-    "sectorId": "financeiro"
-  },
-  "page": 1,
-  "pageSize": 20
-}
-```
-
-## Regras reais de segurança e comportamento
-
-- `sourceName` deve seguir o formato seguro `schema.nome`;
-- a API não aceita SQL livre vindo do cliente;
-- filtros só são aceitos quando declarados nos parâmetros do relatório;
-- a autorização roda antes da execução no SQL Server;
-- a resposta pública evita expor `sourceName`;
-- erros de SQL são sanitizados.
-
-## Persistência real da API
-
-Estado atual confirmado:
-
-- execução dos relatórios: SQL Server externo;
-- definições administrativas de relatórios: repositório em memória;
-- usuários e grupos administrativos: repositórios em memória;
-- autenticação: fluxo próprio da API, sem Supabase Auth como base principal.
-
-Implicação:
-
-- reiniciar a API afeta partes do estado administrativo que ainda não estão persistidas em banco pela própria aplicação.
-
-## O que a API não faz hoje
-
-- não possui módulo de exportação com `POST /reports/{id}/export`;
-- não possui fila BullMQ;
-- não possui Redis funcional na camada de aplicação;
-- não possui módulo dedicado de auditoria;
-- não possui notificações via API;
-- não possui 2FA/TOTP;
-- não usa Prisma.
-
-## Execução local
-
-```bash
-pnpm dev:api
-```
-
-## Validação
-
-```bash
-pnpm --filter @dashboard-power-bi/api test
-pnpm --filter @dashboard-power-bi/api typecheck
-pnpm --filter @dashboard-power-bi/api build
-```
+- parte do domínio administrativo ainda usa fallbacks em memória quando dependências de persistência não estão disponíveis;
+- definições administrativas de relatórios persistem em `api_report_definitions` via Supabase no runtime principal quando `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` estão configurados;
+- parte desses fluxos ainda usa Supabase e memória como persistência real por trás da API;
+- a home de BI agora expõe payload consolidado em `GET /dashboard/home`, mantendo `GET /dashboard/kpis` por compatibilidade;
+- o primeiro drill-down funcional do dashboard está disponível em `GET /dashboard/kpis/:kpiId/drilldown`, retornando série e tabela de comparação do KPI selecionado;
+- exportações de relatórios agora geram PDF, XLSX, CSV e JSON com worker, fila, histórico, download autenticado e auditoria, mas a cobertura total do escopo V1 ainda não está fechada.
+- settings administrativos podem ser atualizados pela API e geram evento de auditoria;
+- permissões administrativas geram auditoria em create, update e delete, mas a matriz fina de herança e governança ainda é parcial.

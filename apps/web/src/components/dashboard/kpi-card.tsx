@@ -1,7 +1,15 @@
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react';
 
+import { SparklineChart } from '@/components/charts';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
-import { calculateKpiDelta, formatDelta, formatKpiValue, getKpiTrend, type KpiItem, type KpiTrend } from '@/lib/kpis';
+import {
+  calculateKpiDelta,
+  formatDelta,
+  formatKpiValue,
+  getKpiTrend,
+  type KpiItem,
+  type KpiTrend,
+} from '@/lib/kpis';
 
 type KpiCardProps = {
   kpi: KpiItem;
@@ -22,7 +30,8 @@ const trendClassName: Record<KpiTrend, string> = {
 export function KpiCard({ kpi }: KpiCardProps) {
   const delta = calculateKpiDelta(kpi.value, kpi.previousValue ?? 0);
   const trend = getKpiTrend(delta);
-  const TrendIcon = trend === 'positive' ? ArrowUpRight : trend === 'negative' ? ArrowDownRight : ArrowRight;
+  const TrendIcon =
+    trend === 'positive' ? ArrowUpRight : trend === 'negative' ? ArrowDownRight : ArrowRight;
 
   return (
     <Card className="h-full">
@@ -40,6 +49,9 @@ export function KpiCard({ kpi }: KpiCardProps) {
       <CardContent>
         <p className="text-3xl font-bold tracking-tight text-slate-950">{formatKpiValue(kpi)}</p>
         <p className="mt-2 text-xs text-slate-500">Comparado ao periodo anterior</p>
+        <div className="mt-3">
+          <SparklineChart value={kpi.value} previousValue={kpi.previousValue ?? kpi.value} />
+        </div>
       </CardContent>
     </Card>
   );
