@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AuthenticatedRequestUser } from '../auth/types/auth.types';
+import { DatabaseProviderService } from '../sql-server/database-provider.service';
 import { SqlQueryService } from '../sql-server/sql-query.service';
 import { ReportDefinition, ReportParameterDefinition } from './entities/report-definition.entity';
 import { normalizeListReportsQuery, PaginationInput, QueryReportInput, validateReportQuery } from './report-query.validator';
@@ -14,6 +15,7 @@ export class ReportsApiService {
     private readonly reportDefinitionsService: ReportDefinitionsService,
     private readonly reportAuthorizationService: ReportAuthorizationService,
     private readonly sqlQueryService: SqlQueryService,
+    private readonly databaseProviderService: DatabaseProviderService,
   ) {}
 
   async listReports(
@@ -63,11 +65,11 @@ export class ReportsApiService {
         ? await this.sqlQueryService.executeView<Record<string, unknown>>({
             viewName: report.sourceName,
             filters: toViewFilters(report.parameters, query.filters),
-          })
+          }, this.databaseProviderService.getProvider())
         : await this.sqlQueryService.executeStoredProcedure<Record<string, unknown>>({
             procedureName: report.sourceName,
             parameters: toProcedureParameters(report.parameters, query.filters),
-          });
+          }, this.databaseProviderService.getProvider());
 
     const items = paginate(rows, query.pagination.offset, query.pagination.limit);
 

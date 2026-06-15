@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import {
   CreateReportDefinitionInput,
@@ -10,6 +11,10 @@ import {
 export class ReportDefinitionsRepository {
   private readonly reports = new Map<string, ReportDefinition>();
   private sequence = 0;
+
+  constructor(private readonly configService: ConfigService = new ConfigService()) {
+    this.seedDemoReports();
+  }
 
   async create(input: CreateReportDefinitionInput): Promise<ReportDefinition> {
     const now = new Date().toISOString();
@@ -81,4 +86,66 @@ export class ReportDefinitionsRepository {
 
     return `report-${this.sequence}`;
   }
+
+  private seedDemoReports(): void {
+    if (!isDemoMode(this.configService)) {
+      return;
+    }
+
+    const seeds: CreateReportDefinitionInput[] = [
+      {
+        name: 'Resumo Financeiro Mensal',
+        description: 'Indicadores financeiros mockados carregados do SQL Server local.',
+        sector: 'financeiro',
+        sourceType: 'view',
+        sourceName: 'reports.vw_financeiro_resumo',
+        parameters: [],
+        requiredPermissions: [],
+      },
+      {
+        name: 'Pipeline Comercial por Regional',
+        description: 'Visao comercial com filtro de regional no ambiente demo.',
+        sector: 'comercial',
+        sourceType: 'view',
+        sourceName: 'reports.vw_comercial_pipeline',
+        parameters: [{ name: 'regional', type: 'string', required: false, maxLength: 40 }],
+        requiredPermissions: [],
+      },
+      {
+        name: 'Status Operacional',
+        description: 'Consulta por stored procedure para validar execucao com parametros.',
+        sector: 'operacoes',
+        sourceType: 'stored_procedure',
+        sourceName: 'reports.sp_operacoes_status',
+        parameters: [{ name: 'status', type: 'string', required: false, maxLength: 20 }],
+        requiredPermissions: [],
+      },
+      {
+        name: 'Visao Executiva Diretoria',
+        description: 'Relatorio reservado para o fluxo administrativo de demonstracao.',
+        sector: 'diretoria',
+        sourceType: 'view',
+        sourceName: 'reports.vw_diretoria_estrategica',
+        parameters: [],
+        requiredPermissions: [],
+      },
+    ];
+
+    for (const seed of seeds) {
+      const now = new Date().toISOString();
+      const report: ReportDefinition = {
+        id: this.nextId(),
+        ...seed,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      this.reports.set(report.id, report);
+    }
+  }
+}
+
+function isDemoMode(configService: ConfigService): boolean {
+  return configService.get<string>('APP_MODE') === 'demo' || configService.get<string>('DATA_MODE') === 'mock';
 }

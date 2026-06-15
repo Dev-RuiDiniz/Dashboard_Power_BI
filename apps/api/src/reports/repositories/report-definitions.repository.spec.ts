@@ -1,4 +1,5 @@
 import { ReportDefinitionsRepository } from './report-definitions.repository';
+import { ConfigService } from '@nestjs/config';
 
 describe('ReportDefinitionsRepository', () => {
   const createInput = {
@@ -64,6 +65,24 @@ describe('ReportDefinitionsRepository', () => {
     await expect(repository.existsBySourceAndSector(createInput.sourceName, createInput.sector)).resolves.toBe(true);
     await expect(repository.existsBySourceAndSector(createInput.sourceName, createInput.sector, created.id)).resolves.toBe(
       false,
+    );
+  });
+
+  it('deve semear relatorios de demo quando APP_MODE=demo', async () => {
+    const repository = new ReportDefinitionsRepository(
+      new ConfigService({
+        APP_MODE: 'demo',
+      }),
+    );
+
+    const reports = await repository.findAll();
+
+    expect(reports).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ sourceName: 'reports.vw_financeiro_resumo', sector: 'financeiro' }),
+        expect.objectContaining({ sourceName: 'reports.vw_comercial_pipeline', sector: 'comercial' }),
+        expect.objectContaining({ sourceName: 'reports.sp_operacoes_status', sourceType: 'stored_procedure' }),
+      ]),
     );
   });
 });
