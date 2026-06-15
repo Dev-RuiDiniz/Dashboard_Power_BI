@@ -4,6 +4,7 @@ import { SqlServerService } from './sql-server.service';
 const mockInput = jest.fn();
 const mockQuery = jest.fn();
 const mockExecute = jest.fn();
+const mockOracleExecute = jest.fn();
 
 const createSqlServerService = (): jest.Mocked<Pick<SqlServerService, 'getPool'>> =>
   ({
@@ -16,12 +17,18 @@ const createSqlServerService = (): jest.Mocked<Pick<SqlServerService, 'getPool'>
     }),
   }) as unknown as jest.Mocked<Pick<SqlServerService, 'getPool'>>;
 
+const createOracleExecutor = () =>
+  ({
+    execute: mockOracleExecute,
+  }) as const;
+
 describe('SqlQueryService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockInput.mockReturnThis();
     mockQuery.mockResolvedValue({ recordset: [{ id: 1 }] });
     mockExecute.mockResolvedValue({ recordset: [{ id: 2 }] });
+    mockOracleExecute.mockResolvedValue([{ id: 3 }]);
   });
 
   it('deve executar view com query parametrizada e sem interpolar valores', async () => {
@@ -99,5 +106,48 @@ describe('SqlQueryService', () => {
         viewName: 'reports.vw_dashboard_reports',
       }),
     ).rejects.toThrow(SqlQueryExecutionError);
+  });
+
+  it('deve executar view em Oracle com bind por nome', async () => {
+    const service = new SqlQueryService(createSqlServerService() as SqlServerService, createOracleExecutor());
+
+    const result = await service.executeView(
+      {
+        viewName: 'AGNEW.ESTOQUE',
+        columns: ['SEQ_EMPRESA', 'DESCRICAO'],
+        filters: [{ column: 'SEQ_EMPRESA', name: 'SEQ_EMPRESA', type: 'int', value: 1 }],
+      },
+      'oracle',
+    );
+
+    expect(result).toEqual([{ id: 3 }]);
+    expect(mockOracleExecute).toHaveBeenCalledWith(
+      'SELECT SEQ_EMPRESA, DESCRICAO FROM AGNEW.ESTOQUE WHERE SEQ_EMPRESA = :SEQ_EMPRESA',
+      expect.objectContaining({
+        SEQ_EMPRESA: expect.objectContaining({ val: 1 }),
+      }),
+      expect.objectContaining({ outFormat: expect.anything() }),
+    );
+  });
+
+  it('deve executar procedure Oracle via bloco PL/SQL', async () => {
+    const service = new SqlQueryService(createSqlServerService() as SqlServerService, createOracleExecutor());
+
+    const result = await service.executeStoredProcedure(
+      {
+        procedureName: 'AGNEW.PRELATORIO',
+        parameters: [{ name: 'P_EMPRESA', type: 'int', value: 1 }],
+      },
+      'oracle',
+    );
+
+    expect(result).toEqual([{ id: 3 }]);
+    expect(mockOracleExecute).toHaveBeenCalledWith(
+      expect.stringContaining('BEGIN AGNEW.PRELATORIO('),
+      expect.objectContaining({
+        P_EMPRESA: expect.objectContaining({ val: 1 }),
+        result_cursor: expect.anything(),
+      }),
+    );
   });
 });
