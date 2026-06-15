@@ -1,4 +1,5 @@
-﻿import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 
 import { SectorCode, UserRole } from '../../auth/types/auth.types';
@@ -29,6 +30,10 @@ export type UpdateGroupInput = Partial<CreateGroupInput> & {
 export class GroupsRepository {
   private readonly groups = new Map<string, UserGroup>();
 
+  constructor(private readonly configService: ConfigService = new ConfigService()) {
+    this.seedDemoGroups();
+  }
+
   async findAll(): Promise<UserGroup[]> {
     return Array.from(this.groups.values());
   }
@@ -49,7 +54,7 @@ export class GroupsRepository {
     const existing = await this.findByName(input.name);
 
     if (existing) {
-      throw new ConflictException('Já existe um grupo com este nome.');
+      throw new ConflictException('Ja existe um grupo com este nome.');
     }
 
     const now = new Date();
@@ -80,7 +85,7 @@ export class GroupsRepository {
       const existing = await this.findByName(input.name);
 
       if (existing && existing.id !== id) {
-        throw new ConflictException('Já existe um grupo com este nome.');
+        throw new ConflictException('Ja existe um grupo com este nome.');
       }
     }
 
@@ -100,4 +105,52 @@ export class GroupsRepository {
   async delete(id: string): Promise<boolean> {
     return this.groups.delete(id);
   }
+
+  private seedDemoGroups(): void {
+    if (!isDemoMode(this.configService)) {
+      return;
+    }
+
+    const now = new Date();
+    const defaults: UserGroup[] = [
+      {
+        id: 'group-admin',
+        name: 'Administradores',
+        description: 'Grupo completo para demonstracao local.',
+        roles: ['admin'],
+        sectors: ['diretoria', 'financeiro', 'comercial', 'operacoes'],
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'group-financeiro-viewer',
+        name: 'Financeiro Viewer',
+        description: 'Acesso de leitura ao setor financeiro.',
+        roles: ['viewer'],
+        sectors: ['financeiro'],
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'group-comercial-viewer',
+        name: 'Comercial Viewer',
+        description: 'Acesso de leitura ao setor comercial.',
+        roles: ['viewer'],
+        sectors: ['comercial'],
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    for (const group of defaults) {
+      this.groups.set(group.id, group);
+    }
+  }
+}
+
+function isDemoMode(configService: ConfigService): boolean {
+  return configService.get<string>('APP_MODE') === 'demo' || configService.get<string>('DATA_MODE') === 'mock';
 }
