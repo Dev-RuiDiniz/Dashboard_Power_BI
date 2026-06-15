@@ -1,17 +1,19 @@
-import { SqlServerService } from '../sql-server/sql-server.service';
+import { DatabaseProvider, DatabaseProviderService } from '../sql-server/database-provider.service';
 import { HealthService } from './health.service';
 
 describe('HealthService', () => {
-  const sqlServerService = {
+  const databaseProviderService = {
     checkHealth: jest.fn(),
-  } as unknown as jest.Mocked<SqlServerService>;
+    getProvider: jest.fn(),
+  } as unknown as jest.Mocked<DatabaseProviderService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    databaseProviderService.getProvider.mockReturnValue('sqlserver' as DatabaseProvider);
   });
 
   it('deve retornar o status da API', () => {
-    const service = new HealthService(sqlServerService);
+    const service = new HealthService(databaseProviderService);
 
     expect(service.getHealth()).toEqual({
       status: 'ok',
@@ -19,8 +21,8 @@ describe('HealthService', () => {
     });
   });
 
-  it('deve delegar o healthcheck SQL Server ao serviço de banco', async () => {
-    sqlServerService.checkHealth.mockResolvedValue({
+  it('deve delegar o healthcheck do banco ao provider ativo', async () => {
+    databaseProviderService.checkHealth.mockResolvedValue({
       status: 'ok',
       dependency: 'sql-server',
       details: {
@@ -38,7 +40,7 @@ describe('HealthService', () => {
       },
     });
 
-    const service = new HealthService(sqlServerService);
+    const service = new HealthService(databaseProviderService);
 
     await expect(service.getSqlHealth()).resolves.toEqual(
       expect.objectContaining({

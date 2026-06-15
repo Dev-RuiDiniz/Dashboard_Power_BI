@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { SqlServerHealthResponse, SqlServerService } from '../sql-server/sql-server.service';
+import { DatabaseHealthResponse, DatabaseProviderService } from '../sql-server/database-provider.service';
 
 export interface HealthResponse {
   status: 'ok';
@@ -9,7 +9,7 @@ export interface HealthResponse {
 
 @Injectable()
 export class HealthService {
-  constructor(private readonly sqlServerService: SqlServerService) {}
+  constructor(private readonly databaseProviderService: DatabaseProviderService) {}
 
   getHealth(): HealthResponse {
     return {
@@ -18,7 +18,7 @@ export class HealthService {
     };
   }
 
-  async getSqlHealth(): Promise<SqlServerHealthResponse> {
-    return this.sqlServerService.checkHealth();
+  async getSqlHealth(): Promise<DatabaseHealthResponse> {
+    return this.databaseProviderService.checkHealth();
   }
 }
