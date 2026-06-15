@@ -1,0 +1,21 @@
+services:
+  oracle:
+    image: ${ORACLE_IMAGE:-gvenzl/oracle-free:23.26.2-full-faststart}
+    container_name: ${ORACLE_CONTAINER_NAME:-dashboard-power-bi-oracle-import}
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:?ORACLE_PASSWORD is required}
+    ports:
+      - '${ORACLE_PORT:-1521}:1521'
+      - '${ORACLE_EM_PORT:-5500}:5500'
+    volumes:
+      - oracle-import-data:/opt/oracle/oradata
+      - ${ORACLE_DUMP_DIR_HOST:?ORACLE_DUMP_DIR_HOST is required}:/opt/oracle/dumpfiles
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh']
+      interval: 20s
+      timeout: 10s
+      retries: 30
+      start_period: 120s
+
+volumes:
+  oracle-import-data:
