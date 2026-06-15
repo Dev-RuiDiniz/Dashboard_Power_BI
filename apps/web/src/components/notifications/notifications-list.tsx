@@ -12,23 +12,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { getAppDataClient, type NotificationItem } from '@/lib/app-data';
 
-type Notification = {
-  id: string;
-  notification_type: 'report_available' | 'access_granted' | 'export_ready' | 'alert';
-  title: string;
-  message: string;
-  related_resource_id?: string;
-  is_read: boolean;
-  read_at?: string;
-  created_at: string;
-};
+type Notification = NotificationItem;
 
 const typeLabel: Record<Notification['notification_type'], string> = {
-  report_available: 'Relatório disponível',
+  report_available: 'Relatorio disponivel',
   access_granted: 'Acesso concedido',
-  export_ready: 'Exportação pronta',
+  export_ready: 'Exportacao pronta',
   alert: 'Alerta',
 };
 
@@ -48,18 +39,14 @@ export function NotificationsList() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadNotifications = useCallback(async () => {
+    const client = getAppDataClient();
+
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      setNotifications(data ?? []);
+      setNotifications(await client.listNotifications());
     } catch {
-      setErrorMessage('Não foi possível carregar as notificações.');
+      setErrorMessage('Nao foi possivel carregar as notificacoes.');
     } finally {
       setIsLoading(false);
     }
@@ -70,19 +57,17 @@ export function NotificationsList() {
   }, [loadNotifications]);
 
   async function markAsRead(id: string) {
+    const client = getAppDataClient();
+
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true, read_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
+      await client.markNotificationAsRead(id);
       setNotifications((prev) =>
         prev.map((n) =>
           n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n,
         ),
       );
     } catch {
-      alert('Erro ao marcar notificação como lida.');
+      alert('Erro ao marcar notificacao como lida.');
     }
   }
 
@@ -90,18 +75,16 @@ export function NotificationsList() {
     const unread = notifications.filter((n) => !n.is_read);
     if (unread.length === 0) return;
 
+    const client = getAppDataClient();
+
     try {
       const ids = unread.map((n) => n.id);
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true, read_at: new Date().toISOString() })
-        .in('id', ids);
-      if (error) throw error;
+      await client.markAllNotificationsAsRead(ids);
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, is_read: true, read_at: n.read_at ?? new Date().toISOString() })),
       );
     } catch {
-      alert('Erro ao marcar notificações como lidas.');
+      alert('Erro ao marcar notificacoes como lidas.');
     }
   }
 
@@ -112,7 +95,7 @@ export function NotificationsList() {
       <Card className="border-dashed text-center">
         <CardHeader>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-700" aria-hidden="true" />
-          <CardTitle>Carregando notificações</CardTitle>
+          <CardTitle>Carregando notificacoes</CardTitle>
         </CardHeader>
       </Card>
     );
@@ -135,23 +118,23 @@ export function NotificationsList() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
-              Notificações
+              Notificacoes
             </p>
             <h1
               id="notifications-title"
               className="mt-3 text-3xl font-bold tracking-tight text-slate-950"
             >
-              Central de notificações
+              Central de notificacoes
             </h1>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-              Acompanhe alertas, concessões de acesso, exportações concluídas e outros avisos
+              Acompanhe alertas, concessoes de acesso, exportacoes concluidas e outros avisos
               importantes.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                Não lidas
+                Nao lidas
               </p>
               <p className="mt-2 text-3xl font-bold text-slate-950">{unreadCount}</p>
             </div>
@@ -168,8 +151,8 @@ export function NotificationsList() {
         <Card className="border-dashed text-center">
           <CardHeader>
             <Bell className="mx-auto h-8 w-8 text-slate-400" aria-hidden="true" />
-            <CardTitle>Nenhuma notificação</CardTitle>
-            <CardDescription>Você está em dia com todas as notificações.</CardDescription>
+            <CardTitle>Nenhuma notificacao</CardTitle>
+            <CardDescription>Voce esta em dia com todas as notificacoes.</CardDescription>
           </CardHeader>
         </Card>
       ) : (

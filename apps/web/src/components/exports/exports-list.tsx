@@ -24,20 +24,9 @@ import {
   TableRow,
   TableEmpty,
 } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { getAppDataClient, type ExportJobItem } from '@/lib/app-data';
 
-type ExportJob = {
-  id: string;
-  report_id: string;
-  export_format: 'pdf' | 'excel' | 'csv' | 'json';
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  file_url?: string;
-  file_size_bytes?: number;
-  error_message?: string;
-  created_at: string;
-  completed_at?: string;
-  expires_at: string;
-};
+type ExportJob = ExportJobItem;
 
 const formatLabel: Record<ExportJob['export_format'], string> = {
   pdf: 'PDF',
@@ -73,18 +62,14 @@ export function ExportsList() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadExports = useCallback(async () => {
+    const client = getAppDataClient();
+
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { data, error } = await supabase
-        .from('export_jobs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      setExports(data ?? []);
+      setExports(await client.listExportJobs());
     } catch {
-      setErrorMessage('Não foi possível carregar o histórico de exportações.');
+      setErrorMessage('Nao foi possivel carregar o historico de exportacoes.');
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +84,7 @@ export function ExportsList() {
       <Card className="border-dashed text-center">
         <CardHeader>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-700" aria-hidden="true" />
-          <CardTitle>Carregando exportações</CardTitle>
+          <CardTitle>Carregando exportacoes</CardTitle>
         </CardHeader>
       </Card>
     );
@@ -125,17 +110,17 @@ export function ExportsList() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
-              Exportações
+              Exportacoes
             </p>
             <h1
               id="exports-title"
               className="mt-3 text-3xl font-bold tracking-tight text-slate-950"
             >
-              Histórico de exportações
+              Historico de exportacoes
             </h1>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-              Acompanhe o status das suas exportações em PDF, Excel, CSV e JSON. Downloads
-              disponíveis por 7 dias.
+              Acompanhe o status das suas exportacoes em PDF, Excel, CSV e JSON. Downloads
+              disponiveis por 7 dias.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -149,9 +134,9 @@ export function ExportsList() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="h-5 w-5 text-blue-700" aria-hidden="true" />
-            Exportações recentes
+            Exportacoes recentes
           </CardTitle>
-          <CardDescription>Últimas 50 exportações solicitadas.</CardDescription>
+          <CardDescription>Ultimas 50 exportacoes solicitadas.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -162,12 +147,12 @@ export function ExportsList() {
                 <TableHead>Tamanho</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead>Expira em</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="text-right">Acoes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {exports.length === 0 ? (
-                <TableEmpty colSpan={6}>Nenhuma exportação encontrada.</TableEmpty>
+                <TableEmpty colSpan={6}>Nenhuma exportacao encontrada.</TableEmpty>
               ) : (
                 exports.map((exp) => {
                   const Icon = formatIcon[exp.export_format];

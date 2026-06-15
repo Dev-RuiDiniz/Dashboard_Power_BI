@@ -5,13 +5,11 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
   Table,
   TableBody,
   TableCell,
@@ -20,16 +18,9 @@ import {
   TableRow,
   TableEmpty,
 } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { getAppDataClient, type SystemSettingItem } from '@/lib/app-data';
 
-type SystemSetting = {
-  id: string;
-  setting_key: string;
-  setting_value: unknown;
-  description?: string;
-  is_sensitive: boolean;
-  updated_at: string;
-};
+type SystemSetting = SystemSettingItem;
 
 export function AdminSettings() {
   const [settings, setSettings] = useState<SystemSetting[]>([]);
@@ -37,17 +28,14 @@ export function AdminSettings() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadSettings = useCallback(async () => {
+    const client = getAppDataClient();
+
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('*')
-        .order('setting_key');
-      if (error) throw error;
-      setSettings(data ?? []);
+      setSettings(await client.listSystemSettings());
     } catch {
-      setErrorMessage('Não foi possível carregar as configurações.');
+      setErrorMessage('Nao foi possivel carregar as configuracoes.');
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +50,7 @@ export function AdminSettings() {
       <Card className="border-dashed text-center">
         <CardHeader>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-700" aria-hidden="true" />
-          <CardTitle>Carregando configurações</CardTitle>
+          <CardTitle>Carregando configuracoes</CardTitle>
         </CardHeader>
       </Card>
     );
@@ -75,7 +63,7 @@ export function AdminSettings() {
           <AlertTriangle className="mx-auto h-8 w-8 text-amber-700" aria-hidden="true" />
           <CardTitle>{errorMessage}</CardTitle>
           <CardDescription>
-            Verifique a conexão com o Supabase e as permissões de acesso.
+            Verifique a conexao com a fonte de dados ativa do ambiente.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -86,16 +74,16 @@ export function AdminSettings() {
     <section className="space-y-6" aria-labelledby="admin-settings-title">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
-          Administração
+          Administracao
         </p>
         <h1
           id="admin-settings-title"
           className="mt-3 text-3xl font-bold tracking-tight text-slate-950"
         >
-          Configurações do sistema
+          Configuracoes do sistema
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
-          Gerencie as configurações globais da plataforma, incluindo SMTP, pool de conexão e cache.
+          Gerencie as configuracoes globais da plataforma, incluindo SMTP, pool de conexao e cache.
         </p>
       </div>
 
@@ -103,10 +91,10 @@ export function AdminSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-blue-700" aria-hidden="true" />
-            Configurações cadastradas
+            Configuracoes cadastradas
           </CardTitle>
           <CardDescription>
-            Parâmetros globais que controlam o comportamento da plataforma.
+            Parametros globais que controlam o comportamento da plataforma.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,14 +103,14 @@ export function AdminSettings() {
               <TableRow>
                 <TableHead>Chave</TableHead>
                 <TableHead>Valor</TableHead>
-                <TableHead>Descrição</TableHead>
+                <TableHead>Descricao</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Atualizado em</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {settings.length === 0 ? (
-                <TableEmpty colSpan={5}>Nenhuma configuração encontrada.</TableEmpty>
+                <TableEmpty colSpan={5}>Nenhuma configuracao encontrada.</TableEmpty>
               ) : (
                 settings.map((setting) => (
                   <TableRow key={setting.id}>
@@ -135,7 +123,7 @@ export function AdminSettings() {
                     <TableCell>{setting.description ?? '-'}</TableCell>
                     <TableCell>
                       <Badge variant={setting.is_sensitive ? 'warning' : 'default'}>
-                        {setting.is_sensitive ? 'Sensível' : 'Público'}
+                        {setting.is_sensitive ? 'Sensivel' : 'Publico'}
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(setting.updated_at)}</TableCell>

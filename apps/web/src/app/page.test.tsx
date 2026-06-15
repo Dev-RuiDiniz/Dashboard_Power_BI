@@ -3,13 +3,17 @@ import { render, screen } from '@testing-library/react';
 import HomePage from './page';
 
 describe('HomePage', () => {
-  it('deve renderizar a home com informações do produto', () => {
+  it('deve renderizar a home institucional com CTA para login', () => {
     render(<HomePage />);
 
     expect(screen.getByRole('heading', { name: 'Dashboard Power BI' })).toBeInTheDocument();
-    expect(screen.getByText(/Plataforma web para centralizar relatórios/i)).toBeInTheDocument();
-    expect(screen.getByText('Relatórios')).toBeInTheDocument();
-    expect(screen.getByText('Dashboards')).toBeInTheDocument();
-    expect(screen.getByText('Administração')).toBeInTheDocument();
+    expect(screen.getByText(/governanca, visibilidade e controle/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Entrar na plataforma' })).toHaveAttribute(
+      'href',
+      '/login',
+    );
+    expect(screen.getByText('Controle de acesso')).toBeInTheDocument();
+    expect(screen.getByText('Visao consolidada')).toBeInTheDocument();
+    expect(screen.getByText('Operacao mais segura')).toBeInTheDocument();
   });
 });

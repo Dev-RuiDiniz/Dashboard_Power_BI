@@ -4,6 +4,7 @@ import { TriangleAlert as AlertTriangle, Loader as Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react';
 
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import { getAuthSession } from '@/lib/auth/session';
 import { fetchReports, type PaginatedReports } from '@/lib/reports-api';
 import type { ReportFilters } from '@/lib/report-filters';
 
@@ -33,7 +34,7 @@ export function ReportCatalogContainer({ token, onSelectReport }: ReportCatalogC
         const response = await fetchReports({
           page: INITIAL_PAGE,
           pageSize: INITIAL_PAGE_SIZE,
-          token,
+          token: token ?? getAuthSession()?.accessToken,
           filters: appliedFilters,
         });
 
