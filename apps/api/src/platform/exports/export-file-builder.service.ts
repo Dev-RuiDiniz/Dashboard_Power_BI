@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
+import { Buffer } from 'node:buffer';
 
 import { ExportJobPayload } from './exports.queue';
 
@@ -65,7 +66,7 @@ export class ExportFileBuilderService {
         },
       });
 
-      document.on('data', (chunk) => {
+      document.on('data', (chunk: Buffer | Uint8Array) => {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
       });
       document.on('end', () => resolve(Buffer.concat(chunks)));

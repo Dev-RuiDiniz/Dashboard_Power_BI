@@ -5,7 +5,6 @@ import oracledb from 'oracledb';
 import {
   getOracleConfig,
   getOracleSafeConfig,
-  OracleConfig,
   OracleConfigError,
   OracleSafeConfig,
 } from './oracle.config';
@@ -29,14 +28,14 @@ export class OracleConnectionError extends Error {
 
 @Injectable()
 export class OracleService implements OnModuleDestroy {
-  private pool?: any;
-  private connectingPool?: Promise<any>;
+  private pool?: oracledb.Pool;
+  private connectingPool?: Promise<oracledb.Pool>;
 
   constructor(private readonly configService: ConfigService) {
     oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
   }
 
-  async getPool(): Promise<any> {
+  async getPool(): Promise<oracledb.Pool> {
     if (this.pool) {
       return this.pool;
     }
@@ -53,13 +52,13 @@ export class OracleService implements OnModuleDestroy {
   async execute<TRecord extends Record<string, unknown> = Record<string, unknown>>(
     sql: string,
     bindParams: Record<string, unknown> = {},
-    options: Record<string, unknown> = {},
+    options: oracledb.ExecuteOptions = {},
   ): Promise<TRecord[]> {
     const pool = await this.getPool();
     const connection = await pool.getConnection();
 
     try {
-      const result = await connection.execute<Record<string, unknown>>(sql, bindParams, {
+      const result = await connection.execute(sql, bindParams, {
         outFormat: oracledb.OUT_FORMAT_OBJECT,
         autoCommit: false,
         ...options,
@@ -69,8 +68,12 @@ export class OracleService implements OnModuleDestroy {
         return result.rows as TRecord[];
       }
 
-      const outBinds = result.outBinds as Record<string, any> | undefined;
-      const firstResultSet = outBinds ? Object.values(outBinds).find((value) => value && typeof value.getRows === 'function') : undefined;
+      const outBinds = result.outBinds as Record<string, unknown> | undefined;
+      const firstResultSet = outBinds
+        ? (Object.values(outBinds).find(isOracleResultSet) as
+            | oracledb.ResultSet<Record<string, unknown>>
+            | undefined)
+        : undefined;
 
       if (!firstResultSet) {
         return [];
@@ -123,7 +126,7 @@ export class OracleService implements OnModuleDestroy {
     this.connectingPool = undefined;
   }
 
-  private async createPool(): Promise<any> {
+  private async createPool(): Promise<oracledb.Pool> {
     try {
       const config = getOracleConfig(this.configService);
 
@@ -150,4 +153,13 @@ export class OracleService implements OnModuleDestroy {
       throw new OracleConnectionError();
     }
   }
+}
+
+function isOracleResultSet(value: unknown): value is oracledb.ResultSet<Record<string, unknown>> {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    'getRows' in value &&
+    typeof (value as { getRows?: unknown }).getRows === 'function',
+  );
 }

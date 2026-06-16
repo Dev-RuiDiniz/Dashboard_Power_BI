@@ -1,4 +1,5 @@
 import { SqlQueryExecutionError, SqlQueryService } from './sql-query.service';
+import { OracleService } from './oracle.service';
 import { SqlServerService } from './sql-server.service';
 
 const mockInput = jest.fn();
@@ -22,6 +23,12 @@ const createOracleExecutor = () =>
     execute: mockOracleExecute,
   }) as const;
 
+const createService = () =>
+  new SqlQueryService(
+    createSqlServerService() as unknown as SqlServerService,
+    createOracleExecutor() as unknown as OracleService,
+  );
+
 describe('SqlQueryService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -32,23 +39,27 @@ describe('SqlQueryService', () => {
   });
 
   it('deve executar view com query parametrizada e sem interpolar valores', async () => {
-    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
+    const service = createService();
     const injectionPayload = "'; DROP TABLE users; --";
 
     const result = await service.executeView({
       viewName: 'reports.vw_dashboard_reports',
       columns: ['id', 'name'],
-      filters: [{ column: 'name', name: 'search', type: 'string', value: injectionPayload, maxLength: 100 }],
+      filters: [
+        { column: 'name', name: 'search', type: 'string', value: injectionPayload, maxLength: 100 },
+      ],
     });
 
     expect(result).toEqual([{ id: 1 }]);
-    expect(mockQuery).toHaveBeenCalledWith('SELECT id, name FROM reports.vw_dashboard_reports WHERE name = @search');
+    expect(mockQuery).toHaveBeenCalledWith(
+      'SELECT id, name FROM reports.vw_dashboard_reports WHERE name = @search',
+    );
     expect(mockInput).toHaveBeenCalledWith('search', expect.anything(), injectionPayload);
     expect(mockQuery.mock.calls[0][0]).not.toContain(injectionPayload);
   });
 
   it('deve rejeitar view, coluna e parâmetro inseguros', async () => {
-    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
+    const service = createService();
 
     await expect(
       service.executeView({
@@ -72,7 +83,7 @@ describe('SqlQueryService', () => {
   });
 
   it('deve executar stored procedure usando execute e parâmetros tipados', async () => {
-    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
+    const service = createService();
     const injectionPayload = '1; DROP TABLE users';
 
     const result = await service.executeStoredProcedure({
@@ -87,7 +98,7 @@ describe('SqlQueryService', () => {
   });
 
   it('deve rejeitar stored procedure insegura', async () => {
-    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
+    const service = createService();
 
     await expect(
       service.executeStoredProcedure({
@@ -97,9 +108,11 @@ describe('SqlQueryService', () => {
   });
 
   it('deve retornar erro sanitizado quando driver falhar', async () => {
-    mockQuery.mockRejectedValueOnce(new Error('Login failed for user powerbi_readonly with password secret'));
+    mockQuery.mockRejectedValueOnce(
+      new Error('Login failed for user powerbi_readonly with password secret'),
+    );
 
-    const service = new SqlQueryService(createSqlServerService() as unknown as SqlServerService);
+    const service = createService();
 
     await expect(
       service.executeView({
@@ -109,7 +122,7 @@ describe('SqlQueryService', () => {
   });
 
   it('deve executar view em Oracle com bind por nome', async () => {
-    const service = new SqlQueryService(createSqlServerService() as SqlServerService, createOracleExecutor());
+    const service = createService();
 
     const result = await service.executeView(
       {
@@ -131,7 +144,7 @@ describe('SqlQueryService', () => {
   });
 
   it('deve executar procedure Oracle via bloco PL/SQL', async () => {
-    const service = new SqlQueryService(createSqlServerService() as SqlServerService, createOracleExecutor());
+    const service = createService();
 
     const result = await service.executeStoredProcedure(
       {

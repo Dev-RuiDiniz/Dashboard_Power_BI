@@ -37,15 +37,18 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
 
     try {
       this.connection = new IORedis({ host, port, maxRetriesPerRequest: null, lazyConnect: true });
-      this.worker = new Worker(EXPORTS_QUEUE_NAME, async (job) => this.processJob(job), {
-        connection: this.connection as never,
-      });
+      this.worker = new Worker(
+        EXPORTS_QUEUE_NAME,
+        async (job: Job<ExportJobPayload>) => this.processJob(job),
+        {
+          connection: this.connection as never,
+        },
+      );
 
-      this.worker.on('failed', (job, error) => {
+      this.worker.on('failed', (job: Job<ExportJobPayload> | undefined, error: Error) => {
         this.logger.error(`Export job ${job?.id} failed: ${error.message}`);
       });
-
-      void this.connection.connect().then(() => {
+      this.worker.on('ready', () => {
         this.logger.log('Export worker iniciado.');
       });
     } catch (error) {

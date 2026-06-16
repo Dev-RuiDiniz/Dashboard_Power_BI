@@ -1,5 +1,5 @@
 import { apiDelete, apiGet, apiGetBlob, apiPatch, apiPost } from '@/lib/admin-api';
-import type { KpiItem, SectorKpiSummary } from '@/lib/kpis';
+import type { BusinessArea, KpiItem, SectorKpiSummary } from '@/lib/kpis';
 import type { PaginatedReports } from '@/lib/reports-api';
 
 export type DashboardHomeResponse = {
@@ -9,12 +9,19 @@ export type DashboardHomeResponse = {
     averageDelta: number;
   };
   kpis: KpiItem[];
+  businessAreas: Array<{
+    businessArea: BusinessArea;
+    label: string;
+    total: number;
+    averageDelta: number;
+  }>;
   sectorSummaries: SectorKpiSummary[];
   charts: {
     sectorDistribution: SectorKpiSummary[];
     kpiPerformance: Array<{
       id: string;
       title: string;
+      businessArea: BusinessArea;
       sector: string;
       value: number;
       previousValue: number;
@@ -24,14 +31,14 @@ export type DashboardHomeResponse = {
   availableDrilldowns: Array<{
     kpiId: string;
     label: string;
-    dimension: 'sector';
+    dimension: 'businessArea';
   }>;
 };
 
 export type DashboardDrilldownResponse = {
   kpiId: string;
   label: string;
-  dimension: 'sector';
+  dimension: 'businessArea';
   series: Array<{
     label: string;
     value: number;
@@ -54,6 +61,8 @@ export type KpiHistoryResponse = {
   kpiId: string;
   label: string;
   unit: 'number' | 'currency' | 'percent';
+  granularity: 'monthly' | 'annual-comparative';
+  rangeMonths: 12;
   periods: KpiHistoryItem[];
 };
 

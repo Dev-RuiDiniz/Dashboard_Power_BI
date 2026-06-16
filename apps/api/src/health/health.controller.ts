@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import { SqlServerHealthResponse } from '../sql-server/sql-server.service';
+import { DatabaseHealthResponse } from '../sql-server/database-provider.service';
 import { HealthResponse, HealthService } from './health.service';
 
 @ApiTags('health')
@@ -46,7 +46,7 @@ export class HealthController {
       },
     },
   })
-  getSqlHealth(): Promise<SqlServerHealthResponse> {
+  getSqlHealth(): Promise<DatabaseHealthResponse> {
     return this.healthService.getSqlHealth();
   }
 }

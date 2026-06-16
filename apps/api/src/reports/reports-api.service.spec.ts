@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 
+import { DatabaseProviderService } from '../sql-server/database-provider.service';
 import { SqlQueryService } from '../sql-server/sql-query.service';
 import { ReportDefinitionsRepository } from './repositories/report-definitions.repository';
 import { ReportAuthorizationService } from './report-authorization.service';
@@ -15,11 +16,15 @@ describe('ReportsApiService', () => {
     } as unknown as jest.Mocked<SqlQueryService>;
     const definitionsService = new ReportDefinitionsService(repository, sqlQueryService);
     const authorizationService = new ReportAuthorizationService();
+    const databaseProviderService = {
+      getProvider: jest.fn().mockReturnValue('sqlserver'),
+    } as unknown as jest.Mocked<Pick<DatabaseProviderService, 'getProvider'>>;
 
     const service = new ReportsApiService(
       definitionsService,
       authorizationService,
       sqlQueryService,
+      databaseProviderService as unknown as DatabaseProviderService,
     );
 
     const report = await definitionsService.create({
@@ -96,19 +101,22 @@ describe('ReportsApiService', () => {
       user,
     );
 
-    expect(sqlQueryService.executeView).toHaveBeenCalledWith({
-      viewName: 'reports.vw_financeiro',
-      filters: [
-        {
-          column: 'sectorId',
-          name: 'sectorId',
-          type: 'string',
-          value: 'financeiro',
-          required: true,
-          maxLength: 80,
-        },
-      ],
-    });
+    expect(sqlQueryService.executeView).toHaveBeenCalledWith(
+      {
+        viewName: 'reports.vw_financeiro',
+        filters: [
+          {
+            column: 'sectorId',
+            name: 'sectorId',
+            type: 'string',
+            value: 'financeiro',
+            required: true,
+            maxLength: 80,
+          },
+        ],
+      },
+      'sqlserver',
+    );
     expect(response).toEqual({ items: [{ id: 3 }], page: 2, pageSize: 2, total: 3, totalPages: 2 });
   });
 });

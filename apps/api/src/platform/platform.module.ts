@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 import { ReportsModule } from '../reports/reports.module';
+import { SqlServerModule } from '../sql-server/sql-server.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { DashboardController } from './dashboard/dashboard.controller';
 import { DashboardService } from './dashboard/dashboard.service';
@@ -19,7 +20,7 @@ import { SettingsController } from './settings/settings.controller';
 import { SettingsService } from './settings/settings.service';
 
 @Module({
-  imports: [AuthModule, SupabaseModule, ReportsModule, AuditModule],
+  imports: [AuthModule, SupabaseModule, ReportsModule, AuditModule, SqlServerModule],
   controllers: [
     DashboardController,
     DashboardsController,

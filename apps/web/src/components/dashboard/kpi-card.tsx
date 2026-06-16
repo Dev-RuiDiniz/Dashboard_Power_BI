@@ -1,6 +1,6 @@
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react';
 
-import { SparklineChart } from '@/components/charts';
+import { SparklineChart } from '@/components/charts/sparkline-chart';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import {
   calculateKpiDelta,

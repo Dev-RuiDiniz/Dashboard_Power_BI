@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import oracledb from 'oracledb';
 
-import { normalizeSqlParameters, SqlParameterDefinition, SqlParameterPrimitive, SqlParameterType } from './sql-parameters';
+import {
+  normalizeSqlParameters,
+  SqlParameterDefinition,
+  SqlParameterPrimitive,
+  SqlParameterType,
+} from './sql-parameters';
 import { DatabaseProvider } from './database-provider.service';
 import { OracleService } from './oracle.service';
 import { validateSqlColumnName, validateSqlObjectName } from './sql-query-validator';
@@ -34,7 +39,7 @@ export class SqlQueryExecutionError extends Error {
 export class SqlQueryService {
   constructor(
     private readonly sqlServerService: SqlServerService,
-    private readonly oracleService: Pick<OracleService, 'execute'>,
+    private readonly oracleService: OracleService,
   ) {}
 
   async executeView<TRecord extends Record<string, unknown> = Record<string, unknown>>(
@@ -61,7 +66,7 @@ export class SqlQueryService {
       const request = pool.request();
 
       for (const parameter of normalizedParameters) {
-        request.input(parameter.name, parameter.driverType as any, parameter.value);
+        request.input(parameter.name, parameter.driverType, parameter.value);
       }
 
       const result = await request.query<TRecord>(query);
@@ -93,7 +98,7 @@ export class SqlQueryService {
       const request = pool.request();
 
       for (const parameter of normalizedParameters) {
-        request.input(parameter.name, parameter.driverType as any, parameter.value);
+        request.input(parameter.name, parameter.driverType, parameter.value);
       }
 
       const result = await request.execute<TRecord>(procedureName);
@@ -162,7 +167,9 @@ export class SqlQueryService {
     );
   }
 
-  private normalizeProcedureParameters(parameters: Array<SqlParameterDefinition & { value: SqlParameterPrimitive }>) {
+  private normalizeProcedureParameters(
+    parameters: Array<SqlParameterDefinition & { value: SqlParameterPrimitive }>,
+  ) {
     return normalizeSqlParameters(
       parameters.map((parameter) => ({
         name: parameter.name,
@@ -174,7 +181,9 @@ export class SqlQueryService {
     );
   }
 
-  private toOracleBindParameters(parameters: ReturnType<SqlQueryService['normalizeProcedureParameters']>) {
+  private toOracleBindParameters(
+    parameters: ReturnType<SqlQueryService['normalizeProcedureParameters']>,
+  ) {
     return Object.fromEntries(
       parameters.map((parameter) => [
         parameter.name,

@@ -1,9 +1,11 @@
 export type KpiUnit = 'number' | 'currency' | 'percent';
 export type KpiTrend = 'positive' | 'negative' | 'neutral';
+export type BusinessArea = 'producao' | 'comercial' | 'algodoeira';
 
 export type KpiItem = {
   id: string;
   title: string;
+  businessArea?: BusinessArea;
   sector: string;
   value: number;
   previousValue?: number;
@@ -98,7 +100,10 @@ export function aggregateKpisBySector(kpis: KpiItem[]): SectorKpiSummary[] {
 
 export function summarizeKpis(kpis: KpiItem[]): KpiSummary {
   const sectors = new Set(kpis.map((kpi) => kpi.sector));
-  const deltaSum = kpis.reduce((sum, kpi) => sum + calculateKpiDelta(kpi.value, kpi.previousValue ?? 0), 0);
+  const deltaSum = kpis.reduce(
+    (sum, kpi) => sum + calculateKpiDelta(kpi.value, kpi.previousValue ?? 0),
+    0,
+  );
 
   return {
     totalKpis: kpis.length,
