@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import oracledb from 'oracledb';
 
 import {
@@ -9,6 +9,7 @@ import {
 } from './sql-parameters';
 import { DatabaseProvider } from './database-provider.service';
 import { OracleService } from './oracle.service';
+import { QueryCacheService } from './query-cache.service';
 import { validateSqlColumnName, validateSqlObjectName } from './sql-query-validator';
 import { SqlServerService } from './sql-server.service';
 
@@ -40,6 +41,7 @@ export class SqlQueryService {
   constructor(
     private readonly sqlServerService: SqlServerService,
     private readonly oracleService: OracleService,
+    @Optional() private readonly queryCache?: QueryCacheService,
   ) {}
 
   async executeView<TRecord extends Record<string, unknown> = Record<string, unknown>>(
@@ -53,25 +55,43 @@ export class SqlQueryService {
     const whereClause = this.buildWhereClause(filters, provider);
     const query = `SELECT ${columns} FROM ${viewName}${whereClause}`;
 
+    const cacheKey = this.queryCache
+      ? QueryCacheService.buildKey(query, this.toParamsObject(normalizedParameters), provider)
+      : undefined;
+
+    if (cacheKey) {
+      const cached = this.queryCache!.get<TRecord[]>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     try {
+      let result: TRecord[];
+
       if (provider === 'oracle') {
-        return this.oracleService.execute<TRecord>(
+        result = await this.oracleService.execute<TRecord>(
           query,
           this.toOracleBindParameters(normalizedParameters),
           { outFormat: oracledb.OUT_FORMAT_OBJECT },
         );
+      } else {
+        const pool = await this.sqlServerService.getPool();
+        const request = pool.request();
+
+        for (const parameter of normalizedParameters) {
+          request.input(parameter.name, parameter.driverType as never, parameter.value);
+        }
+
+        const queryResult = await request.query<TRecord>(query);
+        result = queryResult.recordset;
       }
 
-      const pool = await this.sqlServerService.getPool();
-      const request = pool.request();
-
-      for (const parameter of normalizedParameters) {
-        request.input(parameter.name, parameter.driverType, parameter.value);
+      if (cacheKey) {
+        this.queryCache!.set(cacheKey, result);
       }
 
-      const result = await request.query<TRecord>(query);
-
-      return result.recordset;
+      return result;
     } catch (error) {
       if (error instanceof SqlQueryExecutionError) {
         throw error;
@@ -89,21 +109,46 @@ export class SqlQueryService {
     const parameters = input.parameters ?? [];
     const normalizedParameters = this.normalizeProcedureParameters(parameters);
 
+    const cacheKey = this.queryCache
+      ? QueryCacheService.buildKey(
+          `SP:${procedureName}`,
+          this.toParamsObject(normalizedParameters),
+          provider,
+        )
+      : undefined;
+
+    if (cacheKey) {
+      const cached = this.queryCache!.get<TRecord[]>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     try {
+      let result: TRecord[];
+
       if (provider === 'oracle') {
-        return this.executeOracleStoredProcedure<TRecord>(procedureName, normalizedParameters);
+        result = await this.executeOracleStoredProcedure<TRecord>(
+          procedureName,
+          normalizedParameters,
+        );
+      } else {
+        const pool = await this.sqlServerService.getPool();
+        const request = pool.request();
+
+        for (const parameter of normalizedParameters) {
+          request.input(parameter.name, parameter.driverType as never, parameter.value);
+        }
+
+        const spResult = await request.execute<TRecord>(procedureName);
+        result = spResult.recordset;
       }
 
-      const pool = await this.sqlServerService.getPool();
-      const request = pool.request();
-
-      for (const parameter of normalizedParameters) {
-        request.input(parameter.name, parameter.driverType, parameter.value);
+      if (cacheKey) {
+        this.queryCache!.set(cacheKey, result);
       }
 
-      const result = await request.execute<TRecord>(procedureName);
-
-      return result.recordset;
+      return result;
     } catch (error) {
       if (error instanceof SqlQueryExecutionError) {
         throw error;
@@ -179,6 +224,12 @@ export class SqlQueryService {
       })),
       Object.fromEntries(parameters.map((parameter) => [parameter.name, parameter.value])),
     );
+  }
+
+  private toParamsObject(
+    parameters: ReturnType<SqlQueryService['normalizeFilterParameters']>,
+  ): Record<string, unknown> {
+    return Object.fromEntries(parameters.map((parameter) => [parameter.name, parameter.value]));
   }
 
   private toOracleBindParameters(

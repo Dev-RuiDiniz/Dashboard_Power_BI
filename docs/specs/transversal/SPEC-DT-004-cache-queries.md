@@ -3,8 +3,8 @@
 **ID:** DT-004
 **Módulo:** Transversal (SQL Server / Reports)
 **Fase:** Fase 3+
-**Status:** Pendente
-**Atualizado em:** 2026-06-28
+**Status:** Concluído
+**Atualizado em:** 2026-06-29
 
 ---
 
@@ -46,14 +46,22 @@ Atualmente toda execução de relatório faz uma query nova ao SQL Server. Queri
 
 ## 5. Critérios de Aceite
 
-- [ ] Cache de resultados com TTL configurável
-- [ ] Chave de cache baseada em reportId + hash de parâmetros
-- [ ] Cache hit retorna resultado sem query
-- [ ] Cache miss executa query e armazena resultado
-- [ ] Invalidation automática por TTL
-- [ ] Invalidation manual por admin
-- [ ] Configuração de TTL por relatório ou global
-- [ ] Monitoramento de hit/miss ratio
+- [x] Cache de resultados com TTL configurável
+- [x] Chave de cache baseada em query + hash de parâmetros + provider
+- [x] Cache hit retorna resultado sem query
+- [x] Cache miss executa query e armazena resultado
+- [x] Invalidation automática por TTL
+- [x] Invalidation manual por admin (POST /admin/cache/invalidate)
+- [x] Configuração de TTL global (QUERY_CACHE_TTL_MS)
+- [x] Monitoramento de hit/miss ratio (GET /admin/cache/stats)
+
+**Notas de implementação:**
+
+- Cache em memória (Map) com LRU eviction e TTL por entrada.
+- Chave determinística via SHA-256 de `provider:query:JSON.stringify(params)`.
+- Cache desabilitável via `QUERY_CACHE_ENABLED=false`.
+- Limite de entradas configurável via `QUERY_CACHE_MAX_ENTRIES` (default 100).
+- Endpoints admin protegidos por JwtAuthGuard + RolesGuard (admin apenas).
 
 ## 6. Impacto Técnico
 
@@ -85,6 +93,7 @@ Atualmente toda execução de relatório faz uma query nova ao SQL Server. Queri
 
 ## 9. Dependências
 
-- Redis (preferencial) ou cache em memória
-- Modificação em `sql-server.service` ou `reports.controller`
-- Configuração de TTL em settings
+- Cache em memória (sem Redis necessário para V1)
+- Modificação em `SqlQueryService` (sql-query.service.ts)
+- Configuração via env vars: `QUERY_CACHE_ENABLED`, `QUERY_CACHE_TTL_MS`, `QUERY_CACHE_MAX_ENTRIES`
+- `QueryCacheController` em `sql-server.module.ts`

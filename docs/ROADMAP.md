@@ -119,7 +119,7 @@ Documentos detalhados por categoria:
 | DT-001  | Débito técnico | 2FA obrigatório para admins                    | Alta       | PENDENTE           |
 | DT-002  | Débito técnico | Hardening final de sessão                      | Alta       | CONCLUÍDO          |
 | DT-003  | Débito técnico | Herança de permissões via grupos               | Média      | CONCLUÍDO          |
-| DT-004  | Débito técnico | Cache de queries SQL Server                    | Média      | PENDENTE           |
+| DT-004  | Débito técnico | Cache de queries SQL Server                    | Média      | CONCLUÍDO          |
 | DT-005  | Débito técnico | Testes E2E (Playwright)                        | Média      | PENDENTE           |
 | DT-006  | Débito técnico | Política de retenção de logs (LGPD)            | Alta       | PENDENTE           |
 

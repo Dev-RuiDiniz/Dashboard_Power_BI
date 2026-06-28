@@ -1,5 +1,6 @@
 import { SqlQueryExecutionError, SqlQueryService } from './sql-query.service';
 import { OracleService } from './oracle.service';
+import { QueryCacheService } from './query-cache.service';
 import { SqlServerService } from './sql-server.service';
 
 const mockInput = jest.fn();
@@ -28,6 +29,16 @@ const createService = () =>
     createSqlServerService() as unknown as SqlServerService,
     createOracleExecutor() as unknown as OracleService,
   );
+
+const createServiceWithCache = () => {
+  const cache = new QueryCacheService({ ttlMs: 60000, maxEntries: 100 });
+  const service = new SqlQueryService(
+    createSqlServerService() as unknown as SqlServerService,
+    createOracleExecutor() as unknown as OracleService,
+    cache,
+  );
+  return { service, cache };
+};
 
 describe('SqlQueryService', () => {
   beforeEach(() => {
@@ -162,5 +173,47 @@ describe('SqlQueryService', () => {
         result_cursor: expect.anything(),
       }),
     );
+  });
+
+  it('deve retornar resultado cacheado na segunda chamada de executeView (cache hit)', async () => {
+    const { service } = createServiceWithCache();
+
+    await service.executeView({ viewName: 'reports.vw_test' });
+    await service.executeView({ viewName: 'reports.vw_test' });
+
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('deve executar query quando parametros diferem (cache miss)', async () => {
+    const { service } = createServiceWithCache();
+
+    await service.executeView({
+      viewName: 'reports.vw_test',
+      filters: [{ column: 'id', name: 'id', type: 'int', value: 1 }],
+    });
+    await service.executeView({
+      viewName: 'reports.vw_test',
+      filters: [{ column: 'id', name: 'id', type: 'int', value: 2 }],
+    });
+
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+  });
+
+  it('deve retornar resultado cacheado na segunda chamada de executeStoredProcedure (cache hit)', async () => {
+    const { service } = createServiceWithCache();
+
+    await service.executeStoredProcedure({ procedureName: 'reports.sp_test' });
+    await service.executeStoredProcedure({ procedureName: 'reports.sp_test' });
+
+    expect(mockExecute).toHaveBeenCalledTimes(1);
+  });
+
+  it('deve sempre executar query quando cache nao esta injetado', async () => {
+    const service = createService();
+
+    await service.executeView({ viewName: 'reports.vw_test' });
+    await service.executeView({ viewName: 'reports.vw_test' });
+
+    expect(mockQuery).toHaveBeenCalledTimes(2);
   });
 });

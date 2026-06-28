@@ -31,6 +31,8 @@
 - `PATCH /dashboards/:id/widgets/reorder` — reordena widgets do dashboard (batch)
 - `GET /admin/dashboard` — métricas operacionais do painel administrativo
 - `POST /admin/reports/validate` — valida se fonte SQL (view ou stored_procedure) existe e é acessível
+- `POST /admin/cache/invalidate` — invalida todas as entradas do cache de queries (admin apenas)
+- `GET /admin/cache/stats` — retorna estatísticas de hit/miss/evictions do cache de queries (admin apenas)
 - fluxo de recuperação e redefinição de senha
 - 2FA/TOTP: setup (`POST /auth/totp/setup`), verificação (`POST /auth/totp/verify`), desativação (`POST /auth/totp/disable`), login TOTP (`POST /auth/totp/login`) — quando ativo, login retorna `requiresTwoFactor: true` + `tempToken`
 - CRUD básico administrativo de usuários

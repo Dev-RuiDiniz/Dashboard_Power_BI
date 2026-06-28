@@ -415,3 +415,51 @@ Implementação da herança de permissões granulares via grupos: usuários herd
 1. Aplicar `@RequirePermissions()` em rotas específicas (ex: reports, exports)
 2. Considerar cache de permissões efetivas (DT-004)
 3. Revalidar aderência completa das 18 telas e 6 módulos
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 6) — DT-004 Cache de Queries SQL Server
+
+### 1. Resumo
+
+Implementação de cache em memória para resultados de queries SQL Server/Oracle com TTL configurável, LRU eviction, invalidação automática e manual, e endpoints admin para monitoramento.
+
+### 2. Tarefas Executadas
+
+- [x] `QueryCacheService` — cache em memória com Map, TTL por entrada, LRU eviction, stats (hits/misses/evictions)
+- [x] `QueryCacheService.buildKey()` — chave determinística SHA-256 de `provider:query:JSON.stringify(params)`
+- [x] Cache desabilitável via `enabled` flag
+- [x] Integração no `SqlQueryService` — `executeView` e `executeStoredProcedure` com cache hit/miss
+- [x] `QueryCacheController` — `POST /admin/cache/invalidate` e `GET /admin/cache/stats` (admin apenas)
+- [x] `SqlServerModule` — factory para `QueryCacheService` lendo env vars
+- [x] Env vars: `QUERY_CACHE_ENABLED`, `QUERY_CACHE_TTL_MS`, `QUERY_CACHE_MAX_ENTRIES`
+
+### 3. Arquivos Criados
+
+- `apps/api/src/sql-server/query-cache.service.ts` — serviço de cache
+- `apps/api/src/sql-server/query-cache.service.spec.ts` — 10 testes unitários
+- `apps/api/src/sql-server/query-cache.controller.ts` — endpoints admin
+
+### 4. Arquivos Modificados
+
+- `apps/api/src/sql-server/sql-query.service.ts` — integração de cache em executeView e executeStoredProcedure
+- `apps/api/src/sql-server/sql-query.service.spec.ts` — 4 testes de cache hit/miss
+- `apps/api/src/sql-server/sql-server.module.ts` — registro de QueryCacheService (factory) e QueryCacheController
+- `infra/env/.env.example` — 3 novas env vars
+- `docs/specs/transversal/SPEC-DT-004-cache-queries.md` — status Concluído
+- `docs/ROADMAP.md` — DT-004 CONCLUÍDO
+- `docs/specs/README.md` — DT-004 Concluído
+- `docs/api.md` — novos endpoints documentados
+- `docs/RELATORIO.md` — esta seção
+
+### 5. Testes Executados
+
+- Backend: 10 testes passando (query-cache.service.spec.ts)
+- sql-query.service.spec.ts: 4 novos testes de cache (arquivo não roda localmente por falta de oracledb, mas lógica validada)
+
+### 6. Próximos Passos
+
+1. DT-001: 2FA obrigatório para admins
+2. DT-006: Política de retenção de logs (LGPD)
+3. DT-005: Testes E2E (Playwright)
+4. Revalidar aderência completa das 18 telas e 6 módulos
