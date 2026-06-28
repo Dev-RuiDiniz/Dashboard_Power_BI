@@ -55,7 +55,7 @@ describe('AuthenticatedLayout', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Sair' }));
 
-    expect(authApi.logout).toHaveBeenCalledWith('refresh');
+    expect(authApi.logout).toHaveBeenCalledWith('refresh', 'access');
     expect(session.clearAuthSession).toHaveBeenCalled();
     expect(replace).toHaveBeenCalledWith('/login');
   });

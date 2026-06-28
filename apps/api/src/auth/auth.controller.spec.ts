@@ -25,6 +25,8 @@ describe('AuthController', () => {
       email: 'admin@example.com',
       roles: ['admin'],
       sectors: ['financeiro'],
+      jti: 'test-jti',
+      tv: 0,
     };
 
     authService.getCurrentUser.mockResolvedValue({
@@ -36,6 +38,7 @@ describe('AuthController', () => {
       isActive: true,
       totpSecret: null,
       isTwoFactorEnabled: false,
+      tokenVersion: 0,
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       updatedAt: new Date('2026-01-02T00:00:00.000Z'),
       deactivatedAt: null,
@@ -54,6 +57,8 @@ describe('AuthController', () => {
       email: 'admin@example.com',
       roles: ['admin'],
       sectors: ['financeiro'],
+      jti: 'test-jti',
+      tv: 0,
     };
 
     authService.changePassword.mockResolvedValue({ success: true });

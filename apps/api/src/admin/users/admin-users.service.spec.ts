@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 
 import { UsersRepository } from '../../auth/repositories/users.repository';
+import { RefreshTokenRepository } from '../../auth/repositories/refresh-token.repository';
 import { GroupsRepository } from '../repositories/groups.repository';
 import { AdminUsersService } from './admin-users.service';
 
@@ -16,7 +17,12 @@ describe('AdminUsersService', () => {
     });
 
     groupsRepository = new GroupsRepository();
-    service = new AdminUsersService(new UsersRepository(configService), groupsRepository, configService);
+    service = new AdminUsersService(
+      new UsersRepository(configService),
+      groupsRepository,
+      new RefreshTokenRepository(),
+      configService,
+    );
   });
 
   it('deve criar usuário sem expor passwordHash', async () => {
@@ -80,5 +86,19 @@ describe('AdminUsersService', () => {
 
     expect(deactivated.isActive).toBe(false);
     expect(deactivated.deactivatedAt).toEqual(expect.any(Date));
+    expect(deactivated.tokenVersion).toBe(1);
+  });
+
+  it('deve revogar sessões ao resetar senha via admin', async () => {
+    const user = await service.create({
+      email: 'novo@example.com',
+      password: 'Senha123!',
+      roles: ['viewer'],
+      sectors: ['financeiro'],
+    });
+
+    await expect(service.resetPassword(user.id, { newPassword: 'NovaSenha123!' })).resolves.toEqual(
+      { success: true },
+    );
   });
 });

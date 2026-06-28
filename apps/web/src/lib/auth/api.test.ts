@@ -60,6 +60,24 @@ describe('auth api client', () => {
     );
   });
 
+  it('deve enviar accessToken no header Authorization no logout', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    await expect(logout('refresh', 'access-token')).resolves.toEqual({ success: true });
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://localhost:3001/auth/logout',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer access-token',
+        }),
+      }),
+    );
+  });
+
   it('deve mapear 401 para credenciais invalidas', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,

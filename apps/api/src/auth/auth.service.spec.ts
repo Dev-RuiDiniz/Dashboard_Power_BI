@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { UsersRepository } from './repositories/users.repository';
 import { LoginAttemptsService } from './services/login-attempts.service';
+import { TokenBlacklistService } from './services/token-blacklist.service';
 import { TokenService } from './services/token.service';
 import { TotpService } from './services/totp.service';
 
@@ -38,6 +39,7 @@ describe('AuthService', () => {
       loginAttemptsService,
       new TokenService(configService),
       new TotpService(),
+      new TokenBlacklistService(),
       configService,
     );
   });
@@ -138,6 +140,49 @@ describe('AuthService', () => {
     );
 
     await expect(authService.logout(tokens.refreshToken)).resolves.toEqual({ success: true });
+    await expect(authService.refresh(tokens.refreshToken)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it('deve blacklistar access token no logout quando jti e exp fornecidos', async () => {
+    const tokens = getTokens(
+      await authService.login('admin@example.com', 'Admin123!', '127.0.0.1'),
+    );
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+
+    await expect(authService.logout(tokens.refreshToken, tokens.jti, futureExp)).resolves.toEqual({
+      success: true,
+    });
+  });
+
+  it('deve revogar todas as sessões do usuário com revokeAllSessions', async () => {
+    const tokens = getTokens(
+      await authService.login('admin@example.com', 'Admin123!', '127.0.0.1'),
+    );
+
+    await expect(authService.revokeAllSessions('demo-admin')).resolves.toEqual({ success: true });
+
+    const user = await usersRepository.findById('demo-admin');
+    expect(user!.tokenVersion).toBe(1);
+
+    await expect(authService.refresh(tokens.refreshToken)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it('deve invalidar todas as sessões ao trocar senha', async () => {
+    const tokens = getTokens(
+      await authService.login('admin@example.com', 'Admin123!', '127.0.0.1'),
+    );
+
+    await expect(
+      authService.changePassword('demo-admin', 'Admin123!', 'NovaSenha123!'),
+    ).resolves.toEqual({ success: true });
+
+    const user = await usersRepository.findById('demo-admin');
+    expect(user!.tokenVersion).toBe(1);
+
     await expect(authService.refresh(tokens.refreshToken)).rejects.toBeInstanceOf(
       UnauthorizedException,
     );

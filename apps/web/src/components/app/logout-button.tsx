@@ -14,7 +14,7 @@ export function LogoutButton() {
 
     try {
       if (session) {
-        await logout(session.refreshToken);
+        await logout(session.refreshToken, session.accessToken);
       }
     } catch {
       // A limpeza local continua obrigatória mesmo se a API falhar.

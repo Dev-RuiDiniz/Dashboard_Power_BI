@@ -3,7 +3,7 @@
 **ID:** DT-002
 **Módulo:** Auth
 **Fase:** Fase 4
-**Status:** Pendente
+**Status:** Concluído (parcial — timeout por inatividade pendente)
 **Atualizado em:** 2026-06-28
 
 ---
@@ -48,13 +48,17 @@ Atualmente, tokens JWT permanecem válidos até expirar naturalmente (15min acce
 
 ## 5. Critérios de Aceite
 
-- [ ] Blacklist de access tokens (jti) com Redis
-- [ ] Logout revoga access token (blacklist) + refresh token (delete)
-- [ ] Endpoint admin para invalidar todas as sessões de um usuário
-- [ ] Timeout de sessão por inatividade (30min configurável)
-- [ ] Frontend faz logout automático após inatividade
-- [ ] Configuração de timeout editável em settings
-- [ ] Testes unitários e de integração
+- [x] Blacklist de access tokens (jti) — implementada em memória (Map) com cleanup automático
+- [x] Logout revoga access token (blacklist) + refresh token (revoke)
+- [x] Endpoint admin para invalidar todas as sessões de um usuário (`POST /auth/sessions/revoke-all`)
+- [x] Invalidação em massa via token versioning (`tv` no JWT + `tokenVersion` no usuário)
+- [x] Integração em changePassword, resetPassword, admin deactivate/resetPassword
+- [x] RefreshTokenRepository híbrido (Supabase + memória)
+- [x] Frontend envia access token no logout para blacklist
+- [x] Testes unitários e de integração (70 testes passando)
+- [ ] Timeout de sessão por inatividade (30min configurável) — pendente
+- [ ] Frontend faz logout automático após inatividade — pendente
+- [ ] Configuração de timeout editável em settings — pendente
 
 ## 6. Impacto Técnico
 
@@ -88,8 +92,15 @@ Atualmente, tokens JWT permanecem válidos até expirar naturalmente (15min acce
 
 ## 9. Dependências
 
-- Redis para blacklist de tokens (pendente)
-- Modificação em JwtAuthGuard (checar blacklist)
-- Modificação em auth.controller (logout revoga token)
-- Modificação em admin-users.controller (invalidação em massa)
-- Frontend: tracking de inatividade
+- ~~Redis para blacklist de tokens~~ — substituído por blacklist em memória (Map) com TTL
+- ~~Modificação em JwtAuthGuard~~ — concluído (blacklist + tv check)
+- ~~Modificação em auth.controller~~ — concluído (logout revoga token, endpoint revoke-all)
+- ~~Modificação em admin-users~~ — concluído (deactivate e resetPassword invalidam sessões)
+- Frontend: tracking de inatividade — pendente
+
+## 10. Notas de Implementação
+
+- **Blacklist em memória:** Escolha por simplicidade. Access tokens têm TTL curto (15min), então a blacklist cresce pouco e é limpa automaticamente. Para ambientes multi-instância, considerar Redis no futuro.
+- **Token versioning (`tv`):** Campo `tokenVersion` no usuário, incrementado a cada `revokeAllSessions`. O JWT inclui `tv` no payload e o `JwtAuthGuard` compara com o `tokenVersion` atual do usuário.
+- **JTI:** Cada access token recebe um `jti` (UUID) único. No logout, o `jti` é adicionado à blacklist com a data de expiração do token.
+- **RefreshTokenRepository híbrido:** Segue o padrão de `PermissionsRepository` e `AuditLogsRepository` — usa Supabase quando configurado, fallback em memória.

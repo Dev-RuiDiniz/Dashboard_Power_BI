@@ -24,6 +24,7 @@ export type UpdateUserInput = Partial<
     | 'passwordHash'
     | 'totpSecret'
     | 'isTwoFactorEnabled'
+    | 'tokenVersion'
   >
 >;
 
@@ -59,6 +60,7 @@ export class UsersRepository {
       isActive: true,
       totpSecret: null,
       isTwoFactorEnabled: false,
+      tokenVersion: 0,
       createdAt: now,
       updatedAt: now,
       deactivatedAt: null,
@@ -116,6 +118,19 @@ export class UsersRepository {
 
   async disableTotp(id: string): Promise<void> {
     await this.update(id, { isTwoFactorEnabled: false, totpSecret: null });
+  }
+
+  async incrementTokenVersion(id: string): Promise<number> {
+    const current = await this.findById(id);
+
+    if (!current) {
+      return 0;
+    }
+
+    const nextVersion = current.tokenVersion + 1;
+    await this.update(id, { tokenVersion: nextVersion });
+
+    return nextVersion;
   }
 
   private seedDevelopmentUsers(): void {
@@ -177,6 +192,7 @@ export class UsersRepository {
       isActive: true,
       totpSecret: null,
       isTwoFactorEnabled: false,
+      tokenVersion: 0,
       createdAt: now,
       updatedAt: now,
       deactivatedAt: null,

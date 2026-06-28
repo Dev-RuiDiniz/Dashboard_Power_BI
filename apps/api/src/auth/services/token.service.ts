@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHmac } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 
 import { AuthTokenPayload, TotpPendingPayload } from '../types/auth.types';
 
@@ -15,11 +15,13 @@ type TotpPendingJwtPayload = TotpPendingPayload;
 export class TokenService {
   constructor(private readonly configService: ConfigService) {}
 
-  createAccessToken(payload: AuthTokenPayload): { token: string; expiresIn: number } {
+  createAccessToken(payload: AuthTokenPayload): { token: string; expiresIn: number; jti: string } {
     const expiresIn = Number(this.configService.get<number>('JWT_ACCESS_EXPIRES_IN_SECONDS', 900));
     const now = Math.floor(Date.now() / 1000);
+    const jti = randomUUID();
     const jwtPayload: JwtPayload = {
       ...payload,
+      jti,
       iat: now,
       exp: now + expiresIn,
     };
@@ -27,6 +29,7 @@ export class TokenService {
     return {
       token: this.sign(jwtPayload),
       expiresIn,
+      jti,
     };
   }
 

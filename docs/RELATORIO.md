@@ -250,3 +250,69 @@ Criação e atualização dos 7 arquivos de governança do repositório (AGENTS.
 
 1. [Próxima ação]
 ```
+
+---
+
+## 2026-06-28 — Registro do Dia (Sessão 3) — DT-002 Hardening de Sessão
+
+### 1. Resumo
+
+Implementação completa do DT-002: blacklist de tokens revogados e estratégia de invalidação em massa de sessões. Inclui token versioning (`tv`), JTI-based blacklist, `revokeAllSessions`, integração em fluxos críticos (changePassword, resetPassword, admin deactivate/resetPassword), repositório híbrido Supabase para refresh tokens, e atualização do frontend para envio de access token no logout.
+
+### 2. Tarefas Executadas
+
+- [x] Migration + tipos: `tokenVersion` em `AuthUser`, `jti`/`tv` em `AuthTokenPayload`, `jti` em `AuthTokens`, `RevokeSessionsRequest`
+- [x] `TokenBlacklistService` com `add`, `isBlacklisted`, `cleanup` automático por threshold
+- [x] `JwtAuthGuard` atualizado: verifica blacklist de `jti` e `tv` do usuário
+- [x] `AuthService`: `logout` blacklista access token, `revokeAllSessions` incrementa `tokenVersion` e revoga refresh tokens, `changePassword` invalida sessões
+- [x] Integração em `PasswordResetService.resetPassword`, `AdminUsersService.deactivate` e `resetPassword`
+- [x] `RefreshTokenRepository` híbrido: Supabase quando configurado, fallback em memória
+- [x] Frontend: `logout` envia `accessToken` no header `Authorization`, adicionada `revokeAllSessions` na API client
+- [x] Endpoint `POST /auth/sessions/revoke-all` com controle de permissão (admin para outros usuários)
+
+### 3. Arquivos Criados
+
+- `supabase/migrations/20260628200000_007_add_token_version_to_users.sql`
+- `apps/api/src/auth/services/token-blacklist.service.ts`
+- `apps/api/src/auth/services/token-blacklist.service.spec.ts`
+- `apps/api/src/auth/guards/jwt-auth.guard.spec.ts`
+- `apps/api/src/auth/dto/revoke-sessions.dto.ts`
+
+### 4. Arquivos Modificados
+
+- `apps/api/src/auth/types/auth.types.ts` — `tokenVersion`, `jti`, `tv`, `RevokeSessionsRequest`
+- `apps/api/src/auth/services/token.service.ts` — geração de `jti` via `randomUUID`
+- `apps/api/src/auth/repositories/users.repository.ts` — `incrementTokenVersion`, `tokenVersion: 0` em seed
+- `apps/api/src/auth/services/token-blacklist.service.ts` — implementação completa
+- `apps/api/src/auth/guards/jwt-auth.guard.ts` — blacklist + tv check + async
+- `apps/api/src/auth/auth.service.ts` — `TokenBlacklistService` injetado, `logout` com blacklist, `revokeAllSessions`, `changePassword` invalida sessões
+- `apps/api/src/auth/auth.controller.ts` — extrai `jti`/`exp` do access token no logout, endpoint `revoke-all`
+- `apps/api/src/auth/auth.module.ts` — `TokenBlacklistService` provider/export, `SupabaseModule` import, `RefreshTokenRepository` export
+- `apps/api/src/auth/repositories/refresh-token.repository.ts` — repositório híbrido Supabase
+- `apps/api/src/auth/services/password-reset.service.ts` — `incrementTokenVersion` no reset
+- `apps/api/src/admin/users/admin-users.service.ts` — `RefreshTokenRepository` injetado, `deactivate` e `resetPassword` invalidam sessões
+- `apps/api/src/platform/exports/export-job-runner.service.ts` — `jti`/`tv` no `toRequestUser`
+- `apps/web/src/lib/auth/api.ts` — `jti` em `LoginResponse`, `logout` com `accessToken`, `revokeAllSessions`
+- `apps/web/src/components/app/logout-button.tsx` — passa `accessToken` no logout
+- Testes: `auth.service.spec.ts`, `auth.controller.spec.ts`, `token.service.spec.ts`, `password-reset.service.spec.ts`, `admin-users.service.spec.ts`, `api.test.ts`, `authenticated-layout.test.tsx`
+
+### 5. Testes Executados
+
+- `npx jest --testPathPattern="auth|admin-users"` — 13 suites, 70 testes, todos passando
+- `pnpm --filter @dashboard-power-bi/web typecheck` — passou
+- `pnpm --filter @dashboard-power-bi/api typecheck` — apenas erros pré-existentes (oracledb)
+
+### 6. Decisões Tomadas
+
+| Decisão                          | Motivo                                                               | Impacto                                                               |
+| -------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Blacklist em memória (Map)       | Simplicidade; access tokens têm TTL curto (15min)                    | Reinício do servidor limpa blacklist, mas tokens expiram naturalmente |
+| Token versioning no usuário      | Invalidação em massa sem precisar rastrear cada token emitido        | Incrementar `tv` invalida todos os access tokens anteriores           |
+| `RefreshTokenRepository` híbrido | Seguir padrão existente (PermissionsRepository, AuditLogsRepository) | Supabase quando configurado, memória como fallback                    |
+| `@Optional()` no SupabaseService | Não quebrar testes e dev sem Supabase                                | Funciona em ambos os modos                                            |
+
+### 7. Próximos Passos
+
+1. Considerar persistência da blacklist em Redis para ambientes multi-instância
+2. Adicionar UI para revogar sessões de outros usuários no painel admin
+3. Revalidar aderência completa das 18 telas e 6 módulos

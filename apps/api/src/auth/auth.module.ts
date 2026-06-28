@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { SupabaseModule } from '../supabase/supabase.module';
 import { AuthController } from './auth.controller';
 import { AuthzTestController } from './authz-test.controller';
 import { AuthService } from './auth.service';
@@ -12,10 +13,12 @@ import { UsersRepository } from './repositories/users.repository';
 import { EmailService } from './services/email.service';
 import { LoginAttemptsService } from './services/login-attempts.service';
 import { PasswordResetService } from './services/password-reset.service';
+import { TokenBlacklistService } from './services/token-blacklist.service';
 import { TokenService } from './services/token.service';
 import { TotpService } from './services/totp.service';
 
 @Module({
+  imports: [SupabaseModule],
   controllers: [AuthController, AuthzTestController],
   providers: [
     AuthService,
@@ -27,6 +30,7 @@ import { TotpService } from './services/totp.service';
     EmailService,
     TokenService,
     TotpService,
+    TokenBlacklistService,
     JwtAuthGuard,
     RolesGuard,
     SectorsGuard,
@@ -34,11 +38,13 @@ import { TotpService } from './services/totp.service';
   exports: [
     AuthService,
     UsersRepository,
+    RefreshTokenRepository,
     PasswordResetService,
     LoginAttemptsService,
     EmailService,
     TokenService,
     TotpService,
+    TokenBlacklistService,
     JwtAuthGuard,
     RolesGuard,
     SectorsGuard,

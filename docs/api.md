@@ -12,7 +12,8 @@
 
 - `POST /auth/login`
 - `POST /auth/refresh`
-- `POST /auth/logout`
+- `POST /auth/logout` — revoga refresh token e blacklista access token (jti)
+- `POST /auth/sessions/revoke-all` — revoga todas as sessões do usuário (access + refresh)
 - `GET /auth/me`
 - `PATCH /auth/me/password`
 - `PATCH /admin/settings/:key`

@@ -13,6 +13,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { UsersRepository } from './repositories/users.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { LoginAttemptsService } from './services/login-attempts.service';
+import { TokenBlacklistService } from './services/token-blacklist.service';
 import { TokenService } from './services/token.service';
 import { TotpService } from './services/totp.service';
 import { AuthTokens, AuthUser, RefreshSession } from './types/auth.types';
@@ -31,6 +32,7 @@ export class AuthService {
     private readonly loginAttemptsService: LoginAttemptsService,
     private readonly tokenService: TokenService,
     private readonly totpService: TotpService,
+    private readonly tokenBlacklistService: TokenBlacklistService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -82,10 +84,18 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
-  async logout(refreshToken: string): Promise<{ success: true }> {
+  async logout(
+    refreshToken: string,
+    accessTokenJti?: string,
+    accessTokenExp?: number,
+  ): Promise<{ success: true }> {
     const session = await this.findValidRefreshSession(refreshToken);
 
     await this.refreshTokenRepository.revoke(session.id);
+
+    if (accessTokenJti && accessTokenExp) {
+      this.tokenBlacklistService.add(accessTokenJti, accessTokenExp);
+    }
 
     return { success: true };
   }
@@ -122,6 +132,7 @@ export class AuthService {
     }
 
     await this.usersRepository.updatePasswordHash(user.id, await this.hashPassword(newPassword));
+    await this.revokeAllSessions(user.id);
 
     return { success: true };
   }
@@ -193,6 +204,15 @@ export class AuthService {
     return { disabled: true };
   }
 
+  async revokeAllSessions(userId: string): Promise<{ success: true }> {
+    await this.usersRepository.incrementTokenVersion(userId);
+    await this.refreshTokenRepository.revokeActiveByUserId(userId);
+
+    this.logger.log(`revoke_all_sessions userId=${userId}`);
+
+    return { success: true };
+  }
+
   private registerFailedLogin(email: string, ipAddress: string): void {
     const status = this.loginAttemptsService.recordFailure(email, ipAddress);
     const maskedEmail = this.loginAttemptsService.maskEmail(email);
@@ -222,6 +242,8 @@ export class AuthService {
       email: user.email,
       roles: user.roles,
       sectors: user.sectors,
+      jti: '',
+      tv: user.tokenVersion,
     });
 
     const refreshToken = this.createOpaqueRefreshToken();
@@ -240,6 +262,7 @@ export class AuthService {
       refreshToken,
       tokenType: 'Bearer',
       expiresIn: accessToken.expiresIn,
+      jti: accessToken.jti,
     };
   }
 

@@ -32,7 +32,9 @@ export class PasswordResetService {
     const user = await this.usersRepository.findByEmail(normalizedEmail);
 
     if (!user || !user.isActive) {
-      this.logger.warn(`password_reset_requested_unknown_email email=${this.maskEmail(normalizedEmail)}`);
+      this.logger.warn(
+        `password_reset_requested_unknown_email email=${this.maskEmail(normalizedEmail)}`,
+      );
       return this.getGenericResult();
     }
 
@@ -57,7 +59,9 @@ export class PasswordResetService {
       expiresInSeconds,
     });
 
-    this.logger.log(`password_reset_requested userId=${user.id} email=${this.maskEmail(user.email)}`);
+    this.logger.log(
+      `password_reset_requested userId=${user.id} email=${this.maskEmail(user.email)}`,
+    );
 
     return this.getGenericResult();
   }
@@ -76,6 +80,7 @@ export class PasswordResetService {
     await this.usersRepository.updatePasswordHash(user.id, passwordHash);
     await this.passwordResetTokenRepository.markAsUsed(passwordResetToken.id);
     await this.refreshTokenRepository.revokeActiveByUserId(user.id);
+    await this.usersRepository.incrementTokenVersion(user.id);
 
     this.logger.log(`password_reset_completed userId=${user.id}`);
 
@@ -103,7 +108,10 @@ export class PasswordResetService {
   }
 
   private buildResetUrl(token: string): string {
-    const publicUrl = this.configService.get<string>('PASSWORD_RESET_PUBLIC_URL', 'http://localhost:3000/reset-password');
+    const publicUrl = this.configService.get<string>(
+      'PASSWORD_RESET_PUBLIC_URL',
+      'http://localhost:3000/reset-password',
+    );
     const url = new URL(publicUrl);
     url.searchParams.set('token', token);
 

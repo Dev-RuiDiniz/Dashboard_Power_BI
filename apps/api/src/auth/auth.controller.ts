@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -26,8 +27,10 @@ import { LoginDto } from './dto/login.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RevokeSessionsDto } from './dto/revoke-sessions.dto';
 import { TotpLoginDto, TotpVerifyDto } from './dto/totp-setup.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 import { PasswordResetService } from './services/password-reset.service';
 import { AuthenticatedRequestUser, AuthTokens } from './types/auth.types';
 import { LoginResult } from './auth.service';
@@ -79,11 +82,52 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Invalida o refresh token atual.' })
+  @ApiOperation({ summary: 'Invalida o refresh token e blacklist o access token.' })
   @ApiOkResponse({ description: 'Logout realizado com sucesso.' })
   @ApiUnauthorizedResponse({ description: 'Refresh token inválido.' })
-  logout(@Body() body: LogoutDto): Promise<{ success: true }> {
-    return this.authService.logout(body.refreshToken);
+  logout(
+    @Body() body: LogoutDto,
+    @Req() request: Request & { user?: AuthenticatedRequestUser },
+  ): Promise<{ success: true }> {
+    const accessToken = request.headers.authorization?.replace('Bearer ', '').trim();
+    let accessTokenJti: string | undefined;
+    let accessTokenExp: number | undefined;
+
+    if (accessToken) {
+      try {
+        const parts = accessToken.split('.');
+        const encodedPayload = parts[1];
+        if (parts.length === 3 && encodedPayload) {
+          const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
+          accessTokenJti = payload.jti;
+          accessTokenExp = payload.exp;
+        }
+      } catch {
+        // ignore — best effort
+      }
+    }
+
+    return this.authService.logout(body.refreshToken, accessTokenJti, accessTokenExp);
+  }
+
+  @Post('sessions/revoke-all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Revoga todas as sessões do usuário (access + refresh tokens).' })
+  @ApiOkResponse({ description: 'Todas as sessões revogadas com sucesso.' })
+  revokeAllSessions(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Body() body: RevokeSessionsDto,
+  ): Promise<{ success: true }> {
+    const targetUserId = body.userId ?? user.sub;
+
+    if (targetUserId !== user.sub && !user.roles.includes('admin')) {
+      throw new ForbiddenException(
+        'Apenas administradores podem revogar sessões de outros usuários.',
+      );
+    }
+
+    return this.authService.revokeAllSessions(targetUserId);
   }
 
   @Get('me')

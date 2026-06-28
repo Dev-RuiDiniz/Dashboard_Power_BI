@@ -24,7 +24,7 @@ Toda funcionalidade — existente ou pendente — deve ter uma spec corresponden
 | [SPEC-T02-recuperacao-senha](auth/SPEC-T02-recuperacao-senha.md)     | T02 — Recuperação de senha           | Concluído |
 | [SPEC-T10-perfil](auth/SPEC-T10-perfil.md)                           | T10 — Meu perfil                     | Concluído |
 | [SPEC-DT-001-2fa-obrigatorio](auth/SPEC-DT-001-2fa-obrigatorio.md)   | DT-001 — 2FA obrigatório para admins | Pendente  |
-| [SPEC-DT-002-hardening-sessao](auth/SPEC-DT-002-hardening-sessao.md) | DT-002 — Hardening final de sessão   | Pendente  |
+| [SPEC-DT-002-hardening-sessao](auth/SPEC-DT-002-hardening-sessao.md) | DT-002 — Hardening final de sessão   | Concluído |
 
 ### Permissions
 

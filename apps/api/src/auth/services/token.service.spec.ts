@@ -20,6 +20,8 @@ describe('TokenService', () => {
       email: 'viewer.financeiro@example.com',
       roles: ['viewer'],
       sectors: ['financeiro'],
+      jti: '',
+      tv: 0,
     });
 
     const payload = service.verifyAccessToken(token.token);
@@ -27,6 +29,8 @@ describe('TokenService', () => {
     expect(payload.sub).toBe('user-1');
     expect(payload.roles).toEqual(['viewer']);
     expect(payload.sectors).toEqual(['financeiro']);
+    expect(payload.jti).toBeDefined();
+    expect(payload.tv).toBe(0);
   });
 
   it('deve rejeitar token com assinatura inválida', () => {
@@ -35,6 +39,8 @@ describe('TokenService', () => {
       email: 'viewer.financeiro@example.com',
       roles: ['viewer'],
       sectors: ['financeiro'],
+      jti: '',
+      tv: 0,
     });
 
     expect(() => service.verifyAccessToken(`${token.token}invalid`)).toThrow();

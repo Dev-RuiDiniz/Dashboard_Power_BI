@@ -5,6 +5,7 @@ export type LoginResponse = {
   refreshToken: string;
   tokenType: 'Bearer';
   expiresIn: number;
+  jti?: string;
 };
 
 export type LoginResult = LoginResponse | { requiresTwoFactor: true; tempToken: string };
@@ -64,12 +65,17 @@ function mapAuthError(status: number, body: Record<string, unknown>): AuthClient
   );
 }
 
-async function post<T>(path: string, payload: Record<string, unknown>): Promise<T> {
+async function post<T>(
+  path: string,
+  payload: Record<string, unknown>,
+  extraHeaders?: Record<string, string>,
+): Promise<T> {
   try {
     const response = await fetch(`${getApiUrl()}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...extraHeaders,
       },
       body: JSON.stringify(payload),
     });
@@ -111,8 +117,36 @@ export function refreshSession(refreshToken: string): Promise<LoginResponse> {
   return post<LoginResponse>('/auth/refresh', { refreshToken });
 }
 
-export function logout(refreshToken: string): Promise<{ success: true }> {
-  return post<{ success: true }>('/auth/logout', { refreshToken });
+export function logout(refreshToken: string, accessToken?: string): Promise<{ success: true }> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  try {
+    return post<{ success: true }>('/auth/logout', { refreshToken }, headers);
+  } catch (error) {
+    if (error instanceof AuthClientError) {
+      throw error;
+    }
+
+    throw new AuthClientError(
+      'network_error',
+      'Não foi possível conectar à API. Verifique sua conexão.',
+    );
+  }
+}
+
+export function revokeAllSessions(
+  accessToken: string,
+  userId?: string,
+): Promise<{ success: true }> {
+  return post<{ success: true }>('/auth/sessions/revoke-all', userId ? { userId } : {}, {
+    Authorization: `Bearer ${accessToken}`,
+  });
 }
 
 export function forgotPassword(email: string): Promise<ForgotPasswordResponse> {

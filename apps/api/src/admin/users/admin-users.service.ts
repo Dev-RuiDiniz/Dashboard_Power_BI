@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { GroupsRepository } from '../repositories/groups.repository';
 import { AuthUser } from '../../auth/types/auth.types';
 import { UsersRepository } from '../../auth/repositories/users.repository';
+import { RefreshTokenRepository } from '../../auth/repositories/refresh-token.repository';
 import { AssignUserGroupsDto } from './dto/assign-user-groups.dto';
 import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 import { ResetAdminUserPasswordDto } from './dto/reset-admin-user-password.dto';
@@ -18,6 +19,7 @@ export class AdminUsersService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly groupsRepository: GroupsRepository,
+    private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly configService: ConfigService,
   ) {}
 
@@ -82,12 +84,18 @@ export class AdminUsersService {
       throw new NotFoundException('Usuário não encontrado.');
     }
 
-    return this.toResponse(user);
+    await this.usersRepository.incrementTokenVersion(id);
+    await this.refreshTokenRepository.revokeActiveByUserId(id);
+
+    const updated = await this.usersRepository.findById(id);
+    return this.toResponse(updated ?? user);
   }
 
   async resetPassword(id: string, dto: ResetAdminUserPasswordDto): Promise<{ success: true }> {
     await this.getUserOrThrow(id);
     await this.usersRepository.updatePasswordHash(id, await this.hashPassword(dto.newPassword));
+    await this.usersRepository.incrementTokenVersion(id);
+    await this.refreshTokenRepository.revokeActiveByUserId(id);
 
     return { success: true };
   }

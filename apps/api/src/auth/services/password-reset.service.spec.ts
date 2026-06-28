@@ -65,9 +65,9 @@ describe('PasswordResetService', () => {
   });
 
   it('deve rejeitar token inválido', async () => {
-    await expect(service.resetPassword('token-invalido-com-tamanho-minimo-para-teste', 'NovaSenha123!')).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      service.resetPassword('token-invalido-com-tamanho-minimo-para-teste', 'NovaSenha123!'),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('deve rejeitar token já utilizado', async () => {
@@ -78,7 +78,9 @@ describe('PasswordResetService', () => {
 
     await service.resetPassword(token, 'NovaSenha123!');
 
-    await expect(service.resetPassword(token, 'OutraSenha123!')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.resetPassword(token, 'OutraSenha123!')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('deve rejeitar token expirado', async () => {
@@ -109,7 +111,9 @@ describe('PasswordResetService', () => {
     expect(firstEmail).toBeDefined();
     const token = new URL(firstEmail!.resetUrl).searchParams.get('token') as string;
 
-    await expect(service.resetPassword(token, 'NovaSenha123!')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.resetPassword(token, 'NovaSenha123!')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('deve atualizar senha com bcrypt e permitir validação da nova senha', async () => {
@@ -125,5 +129,20 @@ describe('PasswordResetService', () => {
     expect(user).not.toBeNull();
     await expect(bcrypt.compare('NovaSenha123!', user!.passwordHash)).resolves.toBe(true);
     await expect(bcrypt.compare('Admin123!', user!.passwordHash)).resolves.toBe(false);
+  });
+
+  it('deve incrementar tokenVersion ao resetar senha', async () => {
+    const userBefore = await usersRepository.findByEmail('admin@example.com');
+    expect(userBefore!.tokenVersion).toBe(0);
+
+    await service.forgotPassword('admin@example.com');
+    const firstEmail = emailService.getSentEmails()[0];
+    expect(firstEmail).toBeDefined();
+    const token = new URL(firstEmail!.resetUrl).searchParams.get('token') as string;
+
+    await service.resetPassword(token, 'NovaSenha123!');
+
+    const userAfter = await usersRepository.findByEmail('admin@example.com');
+    expect(userAfter!.tokenVersion).toBe(1);
   });
 });

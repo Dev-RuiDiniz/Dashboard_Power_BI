@@ -12,6 +12,7 @@ export type AuthUser = {
   isActive: boolean;
   totpSecret: string | null;
   isTwoFactorEnabled: boolean;
+  tokenVersion: number;
   createdAt: Date;
   updatedAt: Date;
   deactivatedAt: Date | null;
@@ -22,6 +23,8 @@ export type AuthTokenPayload = {
   email: string;
   roles: UserRole[];
   sectors: SectorCode[];
+  jti: string;
+  tv: number;
 };
 
 export type TotpPendingPayload = {
@@ -33,11 +36,16 @@ export type TotpPendingPayload = {
 
 export type AuthenticatedRequestUser = AuthTokenPayload;
 
+export type RevokeSessionsRequest = {
+  userId?: string;
+};
+
 export type AuthTokens = {
   accessToken: string;
   refreshToken: string;
   tokenType: 'Bearer';
   expiresIn: number;
+  jti: string;
 };
 
 export type RefreshSession = {

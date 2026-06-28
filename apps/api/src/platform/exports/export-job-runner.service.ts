@@ -66,6 +66,8 @@ export class ExportJobRunnerService {
       email: payload.requestContext.email,
       roles: payload.requestContext.roles as AuthenticatedRequestUser['roles'],
       sectors: payload.requestContext.sectors as AuthenticatedRequestUser['sectors'],
+      jti: '',
+      tv: 0,
       permissions: payload.requestContext.permissions,
     };
   }
