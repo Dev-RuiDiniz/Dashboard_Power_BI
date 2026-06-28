@@ -109,8 +109,8 @@ export function verifyTotpSetup(code: string): Promise<{ enabled: true }> {
   return post<{ enabled: true }>('/auth/totp/verify', { code });
 }
 
-export function disableTotp(code: string): Promise<{ disabled: true }> {
-  return post<{ disabled: true }>('/auth/totp/disable', { code });
+export function disableTotp(code: string, password: string): Promise<{ disabled: true }> {
+  return post<{ disabled: true }>('/auth/totp/disable', { code, password });
 }
 
 export function refreshSession(refreshToken: string): Promise<LoginResponse> {

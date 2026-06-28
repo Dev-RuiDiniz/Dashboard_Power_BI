@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
@@ -8,6 +8,8 @@ import { UsersRepository } from './repositories/users.repository';
 import { LoginAttemptsService } from './services/login-attempts.service';
 import { TokenBlacklistService } from './services/token-blacklist.service';
 import { TokenService } from './services/token.service';
+import { TotpAttemptsService } from './services/totp-attempts.service';
+import { TotpEncryptionService } from './services/totp-encryption.service';
 import { TotpService } from './services/totp.service';
 
 describe('AuthService', () => {
@@ -27,6 +29,9 @@ describe('AuthService', () => {
       AUTH_LOGIN_MAX_ATTEMPTS: 2,
       AUTH_LOGIN_WINDOW_SECONDS: 60,
       AUTH_LOGIN_LOCKOUT_SECONDS: 60,
+      TOTP_MAX_ATTEMPTS: 3,
+      TOTP_WINDOW_SECONDS: 300,
+      TOTP_LOCKOUT_SECONDS: 900,
     });
 
     usersRepository = new UsersRepository(configService);
@@ -39,6 +44,8 @@ describe('AuthService', () => {
       loginAttemptsService,
       new TokenService(configService),
       new TotpService(),
+      new TotpAttemptsService(configService),
+      new TotpEncryptionService(configService),
       new TokenBlacklistService(),
       configService,
     );
@@ -309,7 +316,30 @@ describe('AuthService', () => {
     expect(user!.isTwoFactorEnabled).toBe(true);
   });
 
-  it('deve desativar 2FA com sucesso', async () => {
+  it('deve desativar 2FA com sucesso para usuario nao-admin', async () => {
+    const totpService = new TotpService();
+    const viewer = await usersRepository.findByEmail('viewer.financeiro@example.com');
+
+    expect(viewer).toBeDefined();
+    const setup = totpService.generateSecret(viewer!.id, viewer!.email);
+
+    await usersRepository.updateTotpSecret(viewer!.id, setup.secret);
+    await usersRepository.enableTotp(viewer!.id);
+
+    const counter = Math.floor(Date.now() / 1000 / 30);
+    const code = totpService.generateTokenAtCounter(setup.secret, counter);
+
+    await expect(authService.disableTotp(viewer!.id, code, 'Admin123!')).resolves.toEqual({
+      disabled: true,
+    });
+
+    const user = await usersRepository.findById(viewer!.id);
+
+    expect(user!.isTwoFactorEnabled).toBe(false);
+    expect(user!.totpSecret).toBeNull();
+  });
+
+  it('deve rejeitar desativacao de 2FA para admin', async () => {
     const totpService = new TotpService();
     const setup = totpService.generateSecret('demo-admin', 'admin@example.com');
 
@@ -319,12 +349,9 @@ describe('AuthService', () => {
     const counter = Math.floor(Date.now() / 1000 / 30);
     const code = totpService.generateTokenAtCounter(setup.secret, counter);
 
-    await expect(authService.disableTotp('demo-admin', code)).resolves.toEqual({ disabled: true });
-
-    const user = await usersRepository.findById('demo-admin');
-
-    expect(user!.isTwoFactorEnabled).toBe(false);
-    expect(user!.totpSecret).toBeNull();
+    await expect(authService.disableTotp('demo-admin', code, 'Admin123!')).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('deve rejeitar refresh por inatividade após timeout', async () => {
@@ -339,6 +366,9 @@ describe('AuthService', () => {
       AUTH_LOGIN_MAX_ATTEMPTS: 2,
       AUTH_LOGIN_WINDOW_SECONDS: 60,
       AUTH_LOGIN_LOCKOUT_SECONDS: 60,
+      TOTP_MAX_ATTEMPTS: 3,
+      TOTP_WINDOW_SECONDS: 300,
+      TOTP_LOCKOUT_SECONDS: 900,
     });
 
     const inactivityAuthService = new AuthService(
@@ -347,6 +377,8 @@ describe('AuthService', () => {
       new LoginAttemptsService(configWithShortTimeout),
       new TokenService(configWithShortTimeout),
       new TotpService(),
+      new TotpAttemptsService(configWithShortTimeout),
+      new TotpEncryptionService(configWithShortTimeout),
       new TokenBlacklistService(),
       configWithShortTimeout,
     );
@@ -374,6 +406,9 @@ describe('AuthService', () => {
       AUTH_LOGIN_MAX_ATTEMPTS: 2,
       AUTH_LOGIN_WINDOW_SECONDS: 60,
       AUTH_LOGIN_LOCKOUT_SECONDS: 60,
+      TOTP_MAX_ATTEMPTS: 3,
+      TOTP_WINDOW_SECONDS: 300,
+      TOTP_LOCKOUT_SECONDS: 900,
     });
 
     const noTimeoutAuthService = new AuthService(
@@ -382,6 +417,8 @@ describe('AuthService', () => {
       new LoginAttemptsService(configNoTimeout),
       new TokenService(configNoTimeout),
       new TotpService(),
+      new TotpAttemptsService(configNoTimeout),
+      new TotpEncryptionService(configNoTimeout),
       new TokenBlacklistService(),
       configNoTimeout,
     );

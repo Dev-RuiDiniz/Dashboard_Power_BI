@@ -34,7 +34,7 @@
 - `POST /admin/cache/invalidate` — invalida todas as entradas do cache de queries (admin apenas)
 - `GET /admin/cache/stats` — retorna estatísticas de hit/miss/evictions do cache de queries (admin apenas)
 - fluxo de recuperação e redefinição de senha
-- 2FA/TOTP: setup (`POST /auth/totp/setup`), verificação (`POST /auth/totp/verify`), desativação (`POST /auth/totp/disable`), login TOTP (`POST /auth/totp/login`) — quando ativo, login retorna `requiresTwoFactor: true` + `tempToken`
+- 2FA/TOTP: setup (`POST /auth/totp/setup`), verificação (`POST /auth/totp/verify`), desativação (`POST /auth/totp/disable` — exige `code` + `password`, proibido para admin), login TOTP (`POST /auth/totp/login`) — quando ativo, login retorna `requiresTwoFactor: true` + `tempToken`. Rate limiting: 3 tentativas, bloqueio 15min. Secret criptografado com AES-256-GCM (`TOTP_ENCRYPTION_KEY`). Admin sem 2FA ativo recebe 403 em rotas admin (`TwoFactorGuard`).
 - CRUD básico administrativo de usuários
 - CRUD básico administrativo de grupos
 - catálogo, detalhe e execução de relatórios

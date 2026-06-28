@@ -5,6 +5,14 @@ export class TotpVerifyDto {
   code!: string;
 }
 
+export class TotpDisableDto {
+  @ApiProperty({ example: '123456' })
+  code!: string;
+
+  @ApiProperty({ example: 'SenhaAtual123!' })
+  password!: string;
+}
+
 export class TotpLoginDto {
   @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
   tempToken!: string;

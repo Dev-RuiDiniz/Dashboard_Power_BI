@@ -2,11 +2,12 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { TwoFactorGuard } from '../../auth/guards/two-factor.guard';
 import { AdminDashboardService, AdminDashboardMetrics } from './admin-dashboard.service';
 
 @ApiTags('admin')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TwoFactorGuard)
 @Controller('admin/dashboard')
 export class AdminDashboardController {
   constructor(private readonly adminDashboardService: AdminDashboardService) {}

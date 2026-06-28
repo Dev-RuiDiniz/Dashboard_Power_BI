@@ -28,7 +28,7 @@ import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RevokeSessionsDto } from './dto/revoke-sessions.dto';
-import { TotpLoginDto, TotpVerifyDto } from './dto/totp-setup.dto';
+import { TotpDisableDto, TotpLoginDto, TotpVerifyDto } from './dto/totp-setup.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { PasswordResetService } from './services/password-reset.service';
@@ -189,9 +189,9 @@ export class AuthController {
   @ApiOkResponse({ description: '2FA desativado com sucesso.' })
   disableTotp(
     @CurrentUser() user: AuthenticatedRequestUser,
-    @Body() body: TotpVerifyDto,
+    @Body() body: TotpDisableDto,
   ): Promise<{ disabled: true }> {
-    return this.authService.disableTotp(user.sub, body.code);
+    return this.authService.disableTotp(user.sub, body.code, body.password);
   }
 
   private getClientIp(request: Request): string {

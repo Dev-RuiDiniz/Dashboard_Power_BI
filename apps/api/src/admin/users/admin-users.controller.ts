@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { TwoFactorGuard } from '../../auth/guards/two-factor.guard';
 import { AdminUsersService } from './admin-users.service';
 import { AssignUserGroupsDto } from './dto/assign-user-groups.dto';
 import { CreateAdminUserDto } from './dto/create-admin-user.dto';
@@ -13,7 +14,7 @@ import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 @ApiTags('Admin Users')
 @ApiBearerAuth()
 @Controller('admin/users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TwoFactorGuard)
 @Roles('admin')
 export class AdminUsersController {
   constructor(private readonly adminUsersService: AdminUsersService) {}

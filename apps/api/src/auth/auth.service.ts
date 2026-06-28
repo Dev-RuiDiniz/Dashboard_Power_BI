@@ -15,6 +15,8 @@ import { RefreshTokenRepository } from './repositories/refresh-token.repository'
 import { LoginAttemptsService } from './services/login-attempts.service';
 import { TokenBlacklistService } from './services/token-blacklist.service';
 import { TokenService } from './services/token.service';
+import { TotpAttemptsService } from './services/totp-attempts.service';
+import { TotpEncryptionService } from './services/totp-encryption.service';
 import { TotpService } from './services/totp.service';
 import { AuthTokens, AuthUser, RefreshSession } from './types/auth.types';
 
@@ -32,6 +34,8 @@ export class AuthService {
     private readonly loginAttemptsService: LoginAttemptsService,
     private readonly tokenService: TokenService,
     private readonly totpService: TotpService,
+    private readonly totpAttemptsService: TotpAttemptsService,
+    private readonly totpEncryptionService: TotpEncryptionService,
     private readonly tokenBlacklistService: TokenBlacklistService,
     private readonly configService: ConfigService,
   ) {}
@@ -154,10 +158,16 @@ export class AuthService {
       throw new UnauthorizedException('Autenticação de dois fatores não configurada.');
     }
 
-    if (!this.totpService.verifyToken(user.totpSecret, code)) {
+    this.totpAttemptsService.assertCanAttempt(user.id);
+
+    const decryptedSecret = this.totpEncryptionService.decrypt(user.totpSecret);
+
+    if (!this.totpService.verifyToken(decryptedSecret, code)) {
+      this.totpAttemptsService.registerFailure(user.id);
       throw new UnauthorizedException('Código de verificação inválido.');
     }
 
+    this.totpAttemptsService.clearFailures(user.id);
     return this.issueTokens(user);
   }
 
@@ -169,7 +179,10 @@ export class AuthService {
     }
 
     const result = this.totpService.generateSecret(user.id, user.email);
-    await this.usersRepository.updateTotpSecret(user.id, result.secret);
+    await this.usersRepository.updateTotpSecret(
+      user.id,
+      this.totpEncryptionService.encrypt(result.secret),
+    );
 
     return result;
   }
@@ -181,23 +194,41 @@ export class AuthService {
       throw new UnauthorizedException('Configuração de 2FA não iniciada.');
     }
 
-    if (!this.totpService.verifyToken(user.totpSecret, code)) {
+    this.totpAttemptsService.assertCanAttempt(user.id);
+
+    const decryptedSecret = this.totpEncryptionService.decrypt(user.totpSecret);
+
+    if (!this.totpService.verifyToken(decryptedSecret, code)) {
+      this.totpAttemptsService.registerFailure(user.id);
       throw new UnauthorizedException('Código de verificação inválido.');
     }
 
+    this.totpAttemptsService.clearFailures(user.id);
     await this.usersRepository.enableTotp(user.id);
 
     return { enabled: true };
   }
 
-  async disableTotp(userId: string, code: string): Promise<{ disabled: true }> {
+  async disableTotp(userId: string, code: string, password: string): Promise<{ disabled: true }> {
     const user = await this.usersRepository.findById(userId);
 
     if (!user || !user.isActive || !user.totpSecret) {
       throw new UnauthorizedException('2FA não está ativo.');
     }
 
-    if (!this.totpService.verifyToken(user.totpSecret, code)) {
+    if (user.roles.includes('admin')) {
+      throw new BadRequestException(
+        '2FA é obrigatório para administradores e não pode ser desativado.',
+      );
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Senha atual inválida.');
+    }
+
+    if (!this.totpService.verifyToken(this.totpEncryptionService.decrypt(user.totpSecret), code)) {
       throw new UnauthorizedException('Código de verificação inválido.');
     }
 

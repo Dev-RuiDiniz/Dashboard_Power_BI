@@ -459,7 +459,71 @@ Implementação de cache em memória para resultados de queries SQL Server/Oracl
 
 ### 6. Próximos Passos
 
-1. DT-001: 2FA obrigatório para admins
-2. DT-006: Política de retenção de logs (LGPD)
-3. DT-005: Testes E2E (Playwright)
-4. Revalidar aderência completa das 18 telas e 6 módulos
+1. DT-006: Política de retenção de logs (LGPD)
+2. DT-005: Testes E2E (Playwright)
+3. Revalidar aderência completa das 18 telas e 6 módulos
+
+---
+
+## Sessão 7 — DT-001: 2FA Obrigatório para Admins (2026-06-28)
+
+### Resumo
+
+Implementado enforcement de 2FA/TOTP obrigatório para usuários com role `admin`, com rate limiting em tentativas TOTP, criptografia do secret TOTP com AES-256-GCM, exigência de senha para desativação, e UI de enforcement no frontend.
+
+### Tarefas executadas
+
+1. **TwoFactorGuard** — guard NestJS que bloqueia admin sem 2FA ativo de acessar rotas admin (403)
+2. **TotpAttemptsService** — rate limiting: 3 tentativas, bloqueio 15min, integrado em `totpLogin` e `verifyTotpSetup`
+3. **disableTotp com senha** — endpoint agora exige `password` + `code`; admin não pode desativar 2FA (`BadRequestException`)
+4. **Frontend enforcement** — `TwoFactorEnforcement` no `AuthenticatedLayout` redireciona admin sem 2FA para `/app/profile`; banner de aviso; botão disable oculto para admin; campo senha no formulário de disable
+5. **TotpEncryptionService** — AES-256-GCM com chave de `TOTP_ENCRYPTION_KEY`; fallback plain text se não definida
+6. **Documentação** — SPEC-DT-001, ROADMAP, api.md, specs/README atualizados
+
+### Arquivos criados
+
+- `apps/api/src/auth/guards/two-factor.guard.ts`
+- `apps/api/src/auth/guards/two-factor.guard.spec.ts`
+- `apps/api/src/auth/services/totp-attempts.service.ts`
+- `apps/api/src/auth/services/totp-attempts.service.spec.ts`
+- `apps/api/src/auth/services/totp-encryption.service.ts`
+- `apps/api/src/auth/services/totp-encryption.service.spec.ts`
+
+### Arquivos modificados
+
+- `apps/api/src/auth/auth.module.ts` — registrar TwoFactorGuard, TotpAttemptsService, TotpEncryptionService
+- `apps/api/src/auth/auth.service.ts` — integrar rate limiting, encryption, disableTotp com senha + proibição admin
+- `apps/api/src/auth/auth.service.spec.ts` — atualizar construtor e testes
+- `apps/api/src/auth/auth.controller.ts` — usar TotpDisableDto
+- `apps/api/src/auth/dto/totp-setup.dto.ts` — adicionar TotpDisableDto
+- `apps/api/src/admin/users/admin-users.controller.ts` — adicionar TwoFactorGuard
+- `apps/api/src/admin/groups/admin-groups.controller.ts` — adicionar TwoFactorGuard
+- `apps/api/src/admin/dashboard/admin-dashboard.controller.ts` — adicionar TwoFactorGuard
+- `apps/api/src/reports/report-definitions.admin.controller.ts` — adicionar guards (JwtAuthGuard, RolesGuard, TwoFactorGuard, Roles)
+- `apps/api/src/sql-server/query-cache.controller.ts` — adicionar TwoFactorGuard
+- `apps/web/src/lib/auth/api.ts` — disableTotp agora envia password
+- `apps/web/src/components/user-profile.tsx` — campo senha no disable, banner admin, ocultar disable para admin
+- `apps/web/src/components/app/authenticated-layout.tsx` — TwoFactorEnforcement redirect
+- `infra/env/.env.example` — TOTP_ENCRYPTION_KEY, TOTP_MAX_ATTEMPTS, TOTP_WINDOW_SECONDS, TOTP_LOCKOUT_SECONDS
+- `docs/specs/auth/SPEC-DT-001-2fa-obrigatorio.md` — status Concluído
+- `docs/ROADMAP.md` — DT-001 CONCLUÍDO
+- `docs/specs/README.md` — DT-001 Concluído
+- `docs/api.md` — atualizar endpoint totp/disable
+
+### Testes
+
+- 38 testes passando (auth.service: 24, totp-attempts: 5, two-factor.guard: 5, totp-encryption: 4)
+- Typecheck web: OK
+- Typecheck API: apenas erros pre-existentes em oracle.service.ts
+
+### Débitos técnicos remanescentes
+
+- `TOTP_ENCRYPTION_KEY` deve ser definida em produção para criptografia efetiva
+- Códigos de backup TOTP não implementados (futuro)
+- Testes E2E do fluxo de 2FA (DT-005)
+
+### Próximos passos recomendados
+
+1. DT-006: Política de retenção de logs (LGPD)
+2. DT-005: Testes E2E (Playwright)
+3. Revalidar aderência completa das 18 telas e 6 módulos

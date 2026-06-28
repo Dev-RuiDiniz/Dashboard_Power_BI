@@ -116,7 +116,7 @@ Documentos detalhados por categoria:
 | T08b    | Tarefa         | Widgets editáveis e dashboard padrão por setor | Média      | PENDENTE           |
 | T09b    | Tarefa         | Pipeline BullMQ + Redis para exports           | Média      | CONCLUÍDO          |
 | T12b    | Tarefa         | Dashboard admin com gráficos de tendência      | Baixa      | PENDENTE           |
-| DT-001  | Débito técnico | 2FA obrigatório para admins                    | Alta       | PENDENTE           |
+| DT-001  | Débito técnico | 2FA obrigatório para admins                    | Alta       | CONCLUÍDO          |
 | DT-002  | Débito técnico | Hardening final de sessão                      | Alta       | CONCLUÍDO          |
 | DT-003  | Débito técnico | Herança de permissões via grupos               | Média      | CONCLUÍDO          |
 | DT-004  | Débito técnico | Cache de queries SQL Server                    | Média      | CONCLUÍDO          |

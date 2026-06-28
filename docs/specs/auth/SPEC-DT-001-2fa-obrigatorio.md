@@ -3,7 +3,7 @@
 **ID:** DT-001
 **Módulo:** Auth
 **Fase:** Fase 4
-**Status:** Pendente
+**Status:** Concluído
 **Atualizado em:** 2026-06-28
 
 ---
@@ -21,7 +21,7 @@ O `otplib` já está instalado em `apps/api`. O 2FA é opcional para todos os us
 | Código | Regra                                              | Status     |
 | ------ | -------------------------------------------------- | ---------- |
 | RN-014 | 2FA/TOTP é opcional para todos os usuários         | Confirmado |
-| RN-015 | 2FA/TOTP deve ser obrigatório para administradores | Pendente   |
+| RN-015 | 2FA/TOTP deve ser obrigatório para administradores | Concluído  |
 
 ## 4. Fluxo Esperado
 
@@ -65,16 +65,16 @@ O `otplib` já está instalado em `apps/api`. O 2FA é opcional para todos os us
 
 ## 5. Critérios de Aceite
 
-- [ ] Endpoint POST /auth/2fa/enable — gera secret + QR code
-- [ ] Endpoint POST /auth/2fa/verify — valida código TOTP
-- [ ] Endpoint POST /auth/2fa/disable — exige senha + TOTP
-- [ ] Endpoint POST /auth/login/2fa — login com código TOTP
-- [ ] Secret armazenado criptografado no banco
-- [ ] UI de configuração de 2FA no perfil
-- [ ] UI de verificação de código no login
-- [ ] 2FA obrigatório para role admin
-- [ ] Bloqueio após 3 tentativas falhas de TOTP
-- [ ] Testes unitários e de integração
+- [x] Endpoint POST /auth/totp/setup — gera secret + otpauthUrl
+- [x] Endpoint POST /auth/totp/verify — valida código TOTP
+- [x] Endpoint POST /auth/totp/disable — exige senha + TOTP (proibido para admin)
+- [x] Endpoint POST /auth/totp/login — login com código TOTP
+- [x] Secret armazenado criptografado no banco (AES-256-GCM)
+- [x] UI de configuração de 2FA no perfil
+- [x] UI de verificação de código no login
+- [x] 2FA obrigatório para role admin (TwoFactorGuard + redirect frontend)
+- [x] Bloqueio após 3 tentativas falhas de TOTP (TotpAttemptsService)
+- [x] Testes unitários e de integração
 
 ## 6. Impacto Técnico
 

@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { TwoFactorGuard } from '../../auth/guards/two-factor.guard';
 import { AdminGroupsService } from './admin-groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -11,7 +12,7 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 @ApiTags('Admin Groups')
 @ApiBearerAuth()
 @Controller('admin/groups')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TwoFactorGuard)
 @Roles('admin')
 export class AdminGroupsController {
   constructor(private readonly adminGroupsService: AdminGroupsService) {}

@@ -56,6 +56,7 @@ export function UserProfile() {
   const [totpError, setTotpError] = useState<string | null>(null);
   const [isDisablingTotp, setIsDisablingTotp] = useState(false);
   const [disableTotpCode, setDisableTotpCode] = useState('');
+  const [disableTotpPassword, setDisableTotpPassword] = useState('');
 
   const loadUserProfile = useCallback(async () => {
     setIsLoading(true);
@@ -151,14 +152,20 @@ export function UserProfile() {
       return;
     }
 
+    if (!disableTotpPassword) {
+      setTotpError('Informe sua senha atual.');
+      return;
+    }
+
     setIsDisablingTotp(true);
     try {
-      await disableTotp(disableTotpCode);
+      await disableTotp(disableTotpCode, disableTotpPassword);
       setDisableTotpCode('');
+      setDisableTotpPassword('');
       await loadUserProfile();
       alert('2FA desativado com sucesso.');
     } catch {
-      setTotpError('Código inválido. Tente novamente.');
+      setTotpError('Código ou senha inválidos. Tente novamente.');
     } finally {
       setIsDisablingTotp(false);
     }
@@ -359,33 +366,62 @@ export function UserProfile() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Badge variant="success">2FA ativado</Badge>
-                </div>
-                <form onSubmit={handleDisableTotp} className="space-y-3 max-w-md">
-                  <p className="text-sm text-slate-600">
-                    Para desativar o 2FA, informe um código válido do seu aplicativo autenticador.
-                  </p>
-                  <Input
-                    id="disable-totp"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="000000"
-                    value={disableTotpCode}
-                    onChange={(e) => setDisableTotpCode(e.target.value.replace(/\D/g, ''))}
-                    required
-                  />
-                  {totpError && (
-                    <p className="text-xs font-medium text-danger" role="alert">
-                      {totpError}
-                    </p>
+                  {user.roles.includes('admin') && (
+                    <span className="text-xs text-slate-500">
+                      (obrigatório para administradores)
+                    </span>
                   )}
-                  <Button type="submit" variant="outline" disabled={isDisablingTotp}>
-                    {isDisablingTotp ? 'Desativando...' : 'Desativar 2FA'}
-                  </Button>
-                </form>
+                </div>
+                {user.roles.includes('admin') ? (
+                  <p className="text-sm text-slate-600">
+                    2FA é obrigatório para administradores e não pode ser desativado.
+                  </p>
+                ) : (
+                  <form onSubmit={handleDisableTotp} className="space-y-3 max-w-md">
+                    <p className="text-sm text-slate-600">
+                      Para desativar o 2FA, informe um código válido do seu aplicativo autenticador
+                      e sua senha atual.
+                    </p>
+                    <Input
+                      id="disable-totp"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={disableTotpCode}
+                      onChange={(e) => setDisableTotpCode(e.target.value.replace(/\D/g, ''))}
+                      required
+                    />
+                    <Input
+                      id="disable-totp-password"
+                      type="password"
+                      placeholder="Senha atual"
+                      value={disableTotpPassword}
+                      onChange={(e) => setDisableTotpPassword(e.target.value)}
+                      required
+                    />
+                    {totpError && (
+                      <p className="text-xs font-medium text-danger" role="alert">
+                        {totpError}
+                      </p>
+                    )}
+                    <Button type="submit" variant="outline" disabled={isDisablingTotp}>
+                      {isDisablingTotp ? 'Desativando...' : 'Desativar 2FA'}
+                    </Button>
+                  </form>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
+                {user.roles.includes('admin') && (
+                  <div
+                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+                    role="alert"
+                  >
+                    <strong>2FA obrigatório para administradores.</strong> Você precisa ativar a
+                    autenticação de dois fatores para acessar funcionalidades administrativas.
+                  </div>
+                )}
                 {!totpSetupData ? (
                   <div className="space-y-3">
                     <p className="text-sm text-slate-600">

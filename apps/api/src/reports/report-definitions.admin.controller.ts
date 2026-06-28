@@ -1,6 +1,10 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
+import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { TwoFactorGuard } from '../auth/guards/two-factor.guard';
 import { CreateReportDefinitionDto } from './dto/create-report-definition.dto';
 import { UpdateReportDefinitionDto } from './dto/update-report-definition.dto';
 import { ValidateReportSourceDto } from './dto/validate-report-source.dto';
@@ -8,6 +12,9 @@ import { ReportDefinition } from './entities/report-definition.entity';
 import { ReportDefinitionsService, ValidateSourceResult } from './report-definitions.service';
 
 @ApiTags('admin-reports')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard, TwoFactorGuard)
+@Roles('admin')
 @Controller('admin/reports')
 export class ReportDefinitionsAdminController {
   constructor(private readonly reportDefinitionsService: ReportDefinitionsService) {}

@@ -3,12 +3,13 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { TwoFactorGuard } from '../auth/guards/two-factor.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { QueryCacheService, QueryCacheStats } from './query-cache.service';
 
 @ApiTags('admin/cache')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TwoFactorGuard)
 @Roles('admin')
 @Controller('admin/cache')
 export class QueryCacheController {
