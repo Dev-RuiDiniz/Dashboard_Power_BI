@@ -2,10 +2,12 @@
 
 import {
   TriangleAlert as AlertTriangle,
+  Download,
   Loader as Loader2,
   LogOut,
   Plus,
   Search,
+  ShieldX,
   UserCog,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -27,7 +29,7 @@ import {
   TableRow,
   TableEmpty,
 } from '@/components/ui';
-import { apiGet, apiPost, apiPatch } from '@/lib/admin-api';
+import { apiGet, apiPost, apiPatch, anonymizeUser, exportUserData } from '@/lib/admin-api';
 
 type AdminUser = {
   id: string;
@@ -271,6 +273,49 @@ export function AdminUsers() {
                           }}
                         >
                           Resetar senha
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={async () => {
+                            const confirmed = confirm(
+                              `Anonimizar dados de ${user.email}? Esta ação é IRREVERSÍVEL (LGPD - direito de exclusão).`,
+                            );
+                            if (!confirmed) return;
+                            try {
+                              await anonymizeUser(user.id);
+                              alert('Dados anonimizados com sucesso.');
+                              void loadUsers();
+                            } catch {
+                              alert('Erro ao anonimizar usuário.');
+                            }
+                          }}
+                        >
+                          <ShieldX className="mr-1 h-3 w-3" aria-hidden="true" />
+                          Anonimizar (LGPD)
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const data = await exportUserData(user.id);
+                              const blob = new Blob([JSON.stringify(data, null, 2)], {
+                                type: 'application/json',
+                              });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `user-${user.id}-data-export.json`;
+                              a.click();
+                              URL.revokeObjectURL(url);
+                            } catch {
+                              alert('Erro ao exportar dados do usuário.');
+                            }
+                          }}
+                        >
+                          <Download className="mr-1 h-3 w-3" aria-hidden="true" />
+                          Exportar dados (LGPD)
                         </Button>
                       </div>
                     </TableCell>

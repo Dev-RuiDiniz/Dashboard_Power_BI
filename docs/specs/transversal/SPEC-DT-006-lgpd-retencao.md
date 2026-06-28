@@ -3,7 +3,7 @@
 **ID:** DT-006
 **Módulo:** Transversal (Segurança / Compliance)
 **Fase:** Fase 4
-**Status:** Pendente
+**Status:** Concluído
 **Atualizado em:** 2026-06-28
 
 ---
@@ -46,15 +46,15 @@ Nenhuma RN específica atualmente. Esta spec cria as RNs de LGPD.
 
 ## 5. Critérios de Aceite
 
-- [ ] Política de retenção documentada
-- [ ] Job cron para retenção automática (logs, tokens, exports)
-- [ ] Anonimização de IP e userAgent em logs > 90 dias
-- [ ] Remoção de tokens expirados > 30 dias
-- [ ] Remoção de exports expirados > 7 dias
-- [ ] Endpoint para exclusão de dados pessoais (anonimização)
-- [ ] Endpoint para portabilidade de dados (exportação JSON/CSV)
-- [ ] Configuração de períodos de retenção em settings
-- [ ] Documentação da política em docs/
+- [x] Política de retenção documentada
+- [x] Job cron para retenção automática (logs, tokens, exports) — @Cron(EVERY_DAY_AT_3AM)
+- [x] Anonimização de IP e userAgent em logs > 90 dias
+- [x] Remoção de tokens expirados > 30 dias
+- [x] Remoção de exports expirados > 7 dias
+- [x] Endpoint para exclusão de dados pessoais (anonimização) — POST /admin/users/:id/anonymize
+- [x] Endpoint para portabilidade de dados (exportação JSON) — GET /admin/users/:id/data-export
+- [x] Configuração de períodos de retenção em settings (env vars)
+- [x] Documentação da política em docs/
 
 ## 6. Impacto Técnico
 

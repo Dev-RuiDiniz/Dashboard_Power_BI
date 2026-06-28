@@ -1,5 +1,10 @@
 import * as bcrypt from 'bcrypt';
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 
@@ -7,6 +12,7 @@ import { GroupsRepository } from '../repositories/groups.repository';
 import { AuthUser } from '../../auth/types/auth.types';
 import { UsersRepository } from '../../auth/repositories/users.repository';
 import { RefreshTokenRepository } from '../../auth/repositories/refresh-token.repository';
+import { AuditService } from '../../audit/audit.service';
 import { AssignUserGroupsDto } from './dto/assign-user-groups.dto';
 import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 import { ResetAdminUserPasswordDto } from './dto/reset-admin-user-password.dto';
@@ -20,6 +26,7 @@ export class AdminUsersService {
     private readonly usersRepository: UsersRepository,
     private readonly groupsRepository: GroupsRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
+    private readonly auditService: AuditService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -111,6 +118,56 @@ export class AdminUsersService {
     }
 
     return this.toResponse(updated);
+  }
+
+  async anonymizeUser(
+    id: string,
+    actor: { userId: string; userEmail: string },
+  ): Promise<{ anonymized: true }> {
+    if (id === actor.userId) {
+      throw new BadRequestException('Não é possível anonimizar a si mesmo.');
+    }
+
+    const user = await this.getUserOrThrow(id);
+
+    const anonymizedEmail = `[anonymized-${randomUUID().slice(0, 8)}]@deleted.local`;
+
+    await this.usersRepository.update(id, {
+      email: anonymizedEmail,
+      isActive: false,
+      totpSecret: null,
+      isTwoFactorEnabled: false,
+    });
+
+    await this.refreshTokenRepository.revokeActiveByUserId(id);
+
+    await this.auditService.log({
+      userId: actor.userId,
+      userEmail: actor.userEmail,
+      action: 'anonymize',
+      resource: 'user',
+      resourceId: id,
+      details: { originalEmail: user.email },
+    });
+
+    return { anonymized: true };
+  }
+
+  async exportUserData(id: string): Promise<Record<string, unknown>> {
+    const user = await this.getUserOrThrow(id);
+    const { passwordHash: _passwordHash, ...userData } = user;
+
+    const tokens = await this.refreshTokenRepository.findActiveByUserId(id);
+
+    return {
+      user: userData,
+      activeSessions: tokens.map((t) => ({
+        id: t.id,
+        expiresAt: t.expiresAt,
+        lastUsedAt: t.lastUsedAt,
+      })),
+      exportedAt: new Date().toISOString(),
+    };
   }
 
   private async assertGroupsExist(groupIds: string[]): Promise<void> {

@@ -121,7 +121,7 @@ Documentos detalhados por categoria:
 | DT-003  | Débito técnico | Herança de permissões via grupos               | Média      | CONCLUÍDO          |
 | DT-004  | Débito técnico | Cache de queries SQL Server                    | Média      | CONCLUÍDO          |
 | DT-005  | Débito técnico | Testes E2E (Playwright)                        | Média      | PENDENTE           |
-| DT-006  | Débito técnico | Política de retenção de logs (LGPD)            | Alta       | PENDENTE           |
+| DT-006  | Débito técnico | Política de retenção de logs (LGPD)            | Alta       | CONCLUÍDO          |
 
 ---
 

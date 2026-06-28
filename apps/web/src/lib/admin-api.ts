@@ -144,3 +144,31 @@ export type AdminDashboardMetrics = {
 export async function getAdminDashboard(): Promise<AdminDashboardMetrics> {
   return apiGet<AdminDashboardMetrics>('/admin/dashboard');
 }
+
+export type RetentionConfig = {
+  auditLogDays: number;
+  refreshTokenDays: number;
+  exportDays: number;
+};
+
+export type RetentionResult = {
+  anonymizedLogs: number;
+  deletedTokens: number;
+  deletedExports: number;
+};
+
+export async function getRetentionStatus(): Promise<RetentionConfig> {
+  return apiGet<RetentionConfig>('/admin/retention/status');
+}
+
+export async function runRetention(): Promise<RetentionResult> {
+  return apiPost<RetentionResult>('/admin/retention/run', {});
+}
+
+export async function anonymizeUser(userId: string): Promise<{ anonymized: true }> {
+  return apiPost<{ anonymized: true }>(`/admin/users/${userId}/anonymize`, {});
+}
+
+export async function exportUserData(userId: string): Promise<Record<string, unknown>> {
+  return apiGet<Record<string, unknown>>(`/admin/users/${userId}/data-export`);
+}

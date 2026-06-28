@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { AdminModule } from './admin/admin.module';
 import { AuditModule } from './audit/audit.module';
@@ -17,6 +18,7 @@ import { ValidationTestModule } from './validation-test/validation-test.module';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
+    ScheduleModule.forRoot(),
     AdminModule,
     AuditModule,
     AuthModule,

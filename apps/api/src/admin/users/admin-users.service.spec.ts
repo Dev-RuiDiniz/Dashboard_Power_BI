@@ -21,6 +21,7 @@ describe('AdminUsersService', () => {
       new UsersRepository(configService),
       groupsRepository,
       new RefreshTokenRepository(),
+      { log: jest.fn().mockResolvedValue(undefined) } as never,
       configService,
     );
   });

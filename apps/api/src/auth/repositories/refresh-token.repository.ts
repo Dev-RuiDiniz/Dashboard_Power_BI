@@ -137,6 +137,31 @@ export class RefreshTokenRepository {
     await Promise.all(activeSessions.map((session) => this.revoke(session.id)));
   }
 
+  async deleteExpiredRevoked(cutoffDate: Date): Promise<number> {
+    if (this.useSupabase()) {
+      const { count, error } = await this.supabaseService!.getClient()
+        .from('refresh_tokens')
+        .delete()
+        .lt('expires_at', cutoffDate.toISOString())
+        .not('revoked_at', 'is', null);
+
+      if (error) {
+        throw error;
+      }
+
+      return count ?? 0;
+    }
+
+    let deleted = 0;
+    for (const [id, session] of this.sessions) {
+      if (session.expiresAt < cutoffDate && session.revokedAt !== null) {
+        this.sessions.delete(id);
+        deleted++;
+      }
+    }
+    return deleted;
+  }
+
   private useSupabase(): boolean {
     return this.supabaseService?.isEnabled() ?? false;
   }

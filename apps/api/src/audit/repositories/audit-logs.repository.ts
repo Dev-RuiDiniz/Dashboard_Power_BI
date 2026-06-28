@@ -103,6 +103,24 @@ export class AuditLogsRepository {
     return null;
   }
 
+  async anonymizeOldLogs(cutoffDate: Date): Promise<number> {
+    if (this.useSupabase()) {
+      const { count, error } = await this.supabaseService!.getClient()
+        .from('api_audit_logs')
+        .update({ ip_address: null, user_agent: null })
+        .lt('created_at', cutoffDate.toISOString())
+        .not('ip_address', 'is', null);
+
+      if (error) {
+        throw error;
+      }
+
+      return count ?? 0;
+    }
+
+    return 0;
+  }
+
   private useSupabase(): boolean {
     return this.supabaseService?.isEnabled() ?? false;
   }

@@ -40,6 +40,8 @@
 - catálogo, detalhe e execução de relatórios
 - dashboard, notificações, exportações e settings no runtime principal
 - permissões e auditoria no runtime principal
+- retenção LGPD: `GET /admin/retention/status` (config), `POST /admin/retention/run` (execução manual), cron diário às 03:00
+- LGPD direitos do titular: `POST /admin/users/:id/anonymize` (anonimização irreversível), `GET /admin/users/:id/data-export` (portabilidade JSON)
 - healthchecks da API e do SQL Server
 
 ## Padrões importantes

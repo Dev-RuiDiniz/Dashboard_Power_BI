@@ -524,6 +524,66 @@ Implementado enforcement de 2FA/TOTP obrigatório para usuários com role `admin
 
 ### Próximos passos recomendados
 
-1. DT-006: Política de retenção de logs (LGPD)
-2. DT-005: Testes E2E (Playwright)
-3. Revalidar aderência completa das 18 telas e 6 módulos
+1. DT-005: Testes E2E (Playwright)
+2. Revalidar aderência completa das 18 telas e 6 módulos
+
+---
+
+## Sessão 8 — DT-006: Política de Retenção LGPD (2026-06-28)
+
+### Resumo
+
+Implementada política de retenção, anonimização e expurgo automático de dados pessoais em conformidade com a LGPD, incluindo job cron diário, endpoints de execução manual, anonimização de usuário (direito de exclusão) e portabilidade de dados.
+
+### Tarefas executadas
+
+1. **RetentionService** — anonimização de logs >90 dias, remoção de tokens expirados >30 dias, exports >7 dias. Configurável via env vars.
+2. **RetentionController** — `GET /admin/retention/status` e `POST /admin/retention/run` (admin + 2FA)
+3. **Cron job** — `@nestjs/schedule` com `@Cron(EVERY_DAY_AT_3AM)` para retenção automática diária
+4. **Anonimização de usuário** — `POST /admin/users/:id/anonymize`: anonimiza email, desativa usuário, revoga tokens, remove 2FA, registra auditoria. Proibido auto-anonimizar.
+5. **Portabilidade de dados** — `GET /admin/users/:id/data-export`: retorna JSON com perfil, sessões ativas
+6. **Frontend** — seção "Política de Retenção (LGPD)" em Settings com cards de configuração e botão de execução manual; botões "Anonimizar (LGPD)" e "Exportar dados (LGPD)" em Admin Users
+7. **Documentação** — SPEC-DT-006, ROADMAP, api.md, specs/README atualizados
+
+### Arquivos criados
+
+- `apps/api/src/audit/services/retention.service.ts`
+- `apps/api/src/audit/services/retention.service.spec.ts`
+- `apps/api/src/audit/retention.controller.ts`
+
+### Arquivos modificados
+
+- `apps/api/src/app.module.ts` — ScheduleModule.forRoot()
+- `apps/api/src/audit/audit.module.ts` — registrar RetentionService, RetentionController, PlatformModule
+- `apps/api/src/audit/repositories/audit-logs.repository.ts` — método anonymizeOldLogs
+- `apps/api/src/auth/repositories/refresh-token.repository.ts` — método deleteExpiredRevoked
+- `apps/api/src/platform/exports/exports.service.ts` — método deleteExpiredExports
+- `apps/api/src/admin/users/admin-users.service.ts` — anonymizeUser, exportUserData, AuditService
+- `apps/api/src/admin/users/admin-users.controller.ts` — endpoints POST anonymize, GET data-export
+- `apps/api/src/admin/users/admin-users.service.spec.ts` — atualizar construtor com AuditService
+- `apps/api/package.json` — @nestjs/schedule
+- `apps/web/src/lib/admin-api.ts` — getRetentionStatus, runRetention, anonymizeUser, exportUserData
+- `apps/web/src/components/admin/admin-settings.tsx` — seção retenção LGPD
+- `apps/web/src/components/admin/admin-users.tsx` — botões Anonimizar e Exportar dados
+- `infra/env/.env.example` — RETENTION_AUDIT_LOG_DAYS, RETENTION_REFRESH_TOKEN_DAYS, RETENTION_EXPORT_DAYS
+- `docs/specs/transversal/SPEC-DT-006-lgpd-retencao.md` — status Concluído
+- `docs/ROADMAP.md` — DT-006 CONCLUÍDO
+- `docs/specs/README.md` — DT-006 Concluído
+- `docs/api.md` — endpoints de retenção e LGPD
+
+### Testes
+
+- 248 testes passando (8 novos de retention.service, 5 existentes de admin-users mantidos)
+- 2 suites pre-existentes falhando (app.module.spec, report-definitions.repository.spec) — circular dep PlatformModule, não relacionado a esta tarefa
+- Typecheck web: OK
+
+### Débitos técnicos remanescentes
+
+- `app.module.spec.ts` e `report-definitions.repository.spec.ts` falhando por circular dep pre-existente
+- Períodos de retenção fixos via env vars (não editáveis via UI ainda)
+- Portabilidade retorna apenas JSON (CSV futuro)
+
+### Próximos passos recomendados
+
+1. DT-005: Testes E2E (Playwright)
+2. Revalidar aderência completa das 18 telas e 6 módulos

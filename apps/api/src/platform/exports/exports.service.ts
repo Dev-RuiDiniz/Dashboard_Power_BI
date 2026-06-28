@@ -203,6 +203,24 @@ export class ExportsService {
     return data.file_path;
   }
 
+  async deleteExpiredExports(cutoffDate: Date): Promise<number> {
+    if (this.supabaseService.isEnabled()) {
+      const { count, error } = await this.supabaseService
+        .getClient()
+        .from('api_export_jobs')
+        .delete()
+        .lt('expires_at', cutoffDate.toISOString());
+
+      if (error) {
+        throw error;
+      }
+
+      return count ?? 0;
+    }
+
+    return 0;
+  }
+
   private initQueue(): void {
     if (this.configService.get<string>('EXPORT_WORKER_ENABLED', 'true') === 'false') {
       return;
