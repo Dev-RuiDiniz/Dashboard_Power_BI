@@ -54,4 +54,5 @@ export type RefreshSession = {
   refreshTokenHash: string;
   expiresAt: Date;
   revokedAt: Date | null;
+  lastUsedAt: Date;
 };

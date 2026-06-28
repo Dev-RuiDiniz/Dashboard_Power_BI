@@ -3,7 +3,7 @@
 **ID:** DT-002
 **Módulo:** Auth
 **Fase:** Fase 4
-**Status:** Concluído (parcial — timeout por inatividade pendente)
+**Status:** Concluído
 **Atualizado em:** 2026-06-28
 
 ---
@@ -56,9 +56,9 @@ Atualmente, tokens JWT permanecem válidos até expirar naturalmente (15min acce
 - [x] RefreshTokenRepository híbrido (Supabase + memória)
 - [x] Frontend envia access token no logout para blacklist
 - [x] Testes unitários e de integração (70 testes passando)
-- [ ] Timeout de sessão por inatividade (30min configurável) — pendente
-- [ ] Frontend faz logout automático após inatividade — pendente
-- [ ] Configuração de timeout editável em settings — pendente
+- [x] Timeout de sessão por inatividade (30min configurável via `SESSION_INACTIVITY_TIMEOUT_SECONDS`)
+- [x] Frontend faz logout automático após inatividade (hook `useInactivityTimeout`)
+- [x] Configuração de timeout editável via env var
 
 ## 6. Impacto Técnico
 
@@ -96,7 +96,7 @@ Atualmente, tokens JWT permanecem válidos até expirar naturalmente (15min acce
 - ~~Modificação em JwtAuthGuard~~ — concluído (blacklist + tv check)
 - ~~Modificação em auth.controller~~ — concluído (logout revoga token, endpoint revoke-all)
 - ~~Modificação em admin-users~~ — concluído (deactivate e resetPassword invalidam sessões)
-- Frontend: tracking de inatividade — pendente
+- ~~Frontend: tracking de inatividade~~ — concluído (hook `useInactivityTimeout` integrado no `AuthenticatedLayout`)
 
 ## 10. Notas de Implementação
 
@@ -104,3 +104,5 @@ Atualmente, tokens JWT permanecem válidos até expirar naturalmente (15min acce
 - **Token versioning (`tv`):** Campo `tokenVersion` no usuário, incrementado a cada `revokeAllSessions`. O JWT inclui `tv` no payload e o `JwtAuthGuard` compara com o `tokenVersion` atual do usuário.
 - **JTI:** Cada access token recebe um `jti` (UUID) único. No logout, o `jti` é adicionado à blacklist com a data de expiração do token.
 - **RefreshTokenRepository híbrido:** Segue o padrão de `PermissionsRepository` e `AuditLogsRepository` — usa Supabase quando configurado, fallback em memória.
+- **Timeout por inatividade:** O backend rejeita refresh tokens quando `lastUsedAt` é mais antigo que `SESSION_INACTIVITY_TIMEOUT_SECONDS` (default 1800s = 30min). O frontend rastreia atividade do usuário (mousedown, keydown, scroll, touchstart) e faz logout automático após o mesmo período.
+- **UI admin — revogar sessões:** Botão "Revogar sessões" na tabela de usuários admin que chama `POST /auth/sessions/revoke-all` com `userId`.

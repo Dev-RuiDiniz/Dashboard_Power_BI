@@ -326,4 +326,72 @@ describe('AuthService', () => {
     expect(user!.isTwoFactorEnabled).toBe(false);
     expect(user!.totpSecret).toBeNull();
   });
+
+  it('deve rejeitar refresh por inatividade após timeout', async () => {
+    const configWithShortTimeout = new ConfigService({
+      AUTH_DEMO_USER_EMAIL: 'admin@example.com',
+      AUTH_DEMO_USER_PASSWORD: 'Admin123!',
+      JWT_ACCESS_SECRET: 'test-access-secret',
+      JWT_ACCESS_EXPIRES_IN_SECONDS: 900,
+      JWT_REFRESH_EXPIRES_IN_SECONDS: 604800,
+      SESSION_INACTIVITY_TIMEOUT_SECONDS: 1,
+      BCRYPT_SALT_ROUNDS: 4,
+      AUTH_LOGIN_MAX_ATTEMPTS: 2,
+      AUTH_LOGIN_WINDOW_SECONDS: 60,
+      AUTH_LOGIN_LOCKOUT_SECONDS: 60,
+    });
+
+    const inactivityAuthService = new AuthService(
+      new UsersRepository(configWithShortTimeout),
+      new RefreshTokenRepository(),
+      new LoginAttemptsService(configWithShortTimeout),
+      new TokenService(configWithShortTimeout),
+      new TotpService(),
+      new TokenBlacklistService(),
+      configWithShortTimeout,
+    );
+
+    const tokens = getTokens(
+      await inactivityAuthService.login('admin@example.com', 'Admin123!', '127.0.0.1'),
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    await expect(inactivityAuthService.refresh(tokens.refreshToken)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it('deve permitir refresh quando timeout é desabilitado (0)', async () => {
+    const configNoTimeout = new ConfigService({
+      AUTH_DEMO_USER_EMAIL: 'admin@example.com',
+      AUTH_DEMO_USER_PASSWORD: 'Admin123!',
+      JWT_ACCESS_SECRET: 'test-access-secret',
+      JWT_ACCESS_EXPIRES_IN_SECONDS: 900,
+      JWT_REFRESH_EXPIRES_IN_SECONDS: 604800,
+      SESSION_INACTIVITY_TIMEOUT_SECONDS: 0,
+      BCRYPT_SALT_ROUNDS: 4,
+      AUTH_LOGIN_MAX_ATTEMPTS: 2,
+      AUTH_LOGIN_WINDOW_SECONDS: 60,
+      AUTH_LOGIN_LOCKOUT_SECONDS: 60,
+    });
+
+    const noTimeoutAuthService = new AuthService(
+      new UsersRepository(configNoTimeout),
+      new RefreshTokenRepository(),
+      new LoginAttemptsService(configNoTimeout),
+      new TokenService(configNoTimeout),
+      new TotpService(),
+      new TokenBlacklistService(),
+      configNoTimeout,
+    );
+
+    const tokens = getTokens(
+      await noTimeoutAuthService.login('admin@example.com', 'Admin123!', '127.0.0.1'),
+    );
+
+    await expect(noTimeoutAuthService.refresh(tokens.refreshToken)).resolves.toMatchObject({
+      tokenType: 'Bearer',
+    });
+  });
 });

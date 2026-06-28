@@ -9,6 +9,7 @@ type RefreshTokenRow = {
   token_hash: string;
   expires_at: string;
   revoked_at: string | null;
+  last_used_at: string | null;
 };
 
 @Injectable()
@@ -64,6 +65,29 @@ export class RefreshTokenRepository {
         session.revokedAt === null &&
         session.expiresAt.getTime() > now.getTime(),
     );
+  }
+
+  async updateLastUsedAt(sessionId: string, date: Date): Promise<void> {
+    if (this.useSupabase()) {
+      const { error } = await this.supabaseService!.getClient()
+        .from('refresh_tokens')
+        .update({ last_used_at: date.toISOString() })
+        .eq('id', sessionId);
+
+      if (error) {
+        throw error;
+      }
+
+      return;
+    }
+
+    const session = this.sessions.get(sessionId);
+
+    if (!session) {
+      return;
+    }
+
+    this.sessions.set(sessionId, { ...session, lastUsedAt: date });
   }
 
   async revoke(sessionId: string): Promise<void> {
@@ -124,6 +148,7 @@ export class RefreshTokenRepository {
       refreshTokenHash: row.token_hash,
       expiresAt: new Date(row.expires_at),
       revokedAt: row.revoked_at ? new Date(row.revoked_at) : null,
+      lastUsedAt: row.last_used_at ? new Date(row.last_used_at) : new Date(row.expires_at),
     };
   }
 }

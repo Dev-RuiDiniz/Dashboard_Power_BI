@@ -26,6 +26,10 @@ jest.mock('@/lib/auth/api', () => ({
   logout: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('@/lib/auth/use-inactivity-timeout', () => ({
+  useInactivityTimeout: jest.fn(),
+}));
+
 describe('AuthenticatedLayout', () => {
   beforeEach(() => {
     jest.clearAllMocks();

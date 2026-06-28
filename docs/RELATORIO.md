@@ -316,3 +316,51 @@ Implementação completa do DT-002: blacklist de tokens revogados e estratégia 
 1. Considerar persistência da blacklist em Redis para ambientes multi-instância
 2. Adicionar UI para revogar sessões de outros usuários no painel admin
 3. Revalidar aderência completa das 18 telas e 6 módulos
+
+---
+
+## 2026-06-28 — Registro do Dia (Sessão 4) — DT-002 Timeout + UI Admin
+
+### 1. Resumo
+
+Implementação do timeout por inatividade (30min configurável) e UI admin para revogar sessões de outros usuários, completando todos os critérios de aceite do DT-002.
+
+### 2. Tarefas Executadas
+
+- [x] Backend: `assertSessionNotInactive` no `AuthService.refresh` — rejeita refresh tokens quando `lastUsedAt` excede `SESSION_INACTIVITY_TIMEOUT_SECONDS`
+- [x] Backend: `lastUsedAt` adicionado ao `RefreshSession` e `RefreshTokenRepository` (método `updateLastUsedAt`)
+- [x] Backend: Migration `008_add_last_used_at_to_refresh_tokens.sql`
+- [x] Backend: Env var `SESSION_INACTIVITY_TIMEOUT_SECONDS=1800` em `.env.example`
+- [x] Frontend: Hook `useInactivityTimeout` — rastreia mousedown/keydown/scroll/touchstart, faz logout automático após 30min
+- [x] Frontend: Integrado no `AuthenticatedLayout` com redirect para `/login`
+- [x] Frontend: Botão "Revogar sessões" na tabela de admin usuários (chama `POST /auth/sessions/revoke-all`)
+
+### 3. Arquivos Criados
+
+- `supabase/migrations/20260628210000_008_add_last_used_at_to_refresh_tokens.sql`
+- `apps/web/src/lib/auth/use-inactivity-timeout.ts`
+- `apps/web/src/lib/auth/use-inactivity-timeout.test.ts`
+
+### 4. Arquivos Modificados
+
+- `apps/api/src/auth/types/auth.types.ts` — `lastUsedAt` em `RefreshSession`
+- `apps/api/src/auth/repositories/refresh-token.repository.ts` — `updateLastUsedAt`, `last_used_at` no row mapping
+- `apps/api/src/auth/auth.service.ts` — `assertSessionNotInactive`, `lastUsedAt` em `issueTokens`
+- `apps/api/src/auth/auth.service.spec.ts` — testes de inatividade (timeout e disabled)
+- `infra/env/.env.example` — `SESSION_INACTIVITY_TIMEOUT_SECONDS`
+- `apps/web/src/components/app/authenticated-layout.tsx` — integra `useInactivityTimeout`
+- `apps/web/src/components/app/authenticated-layout.test.tsx` — mock do hook
+- `apps/web/src/components/admin/admin-users.tsx` — botão "Revogar sessões"
+- `docs/specs/auth/SPEC-DT-002-hardening-sessao.md` — status Concluído, critérios atualizados
+- `docs/RELATORIO.md` — esta seção
+
+### 5. Testes Executados
+
+- Backend: 49 testes passando (auth.service.spec.ts incluindo 2 novos de inatividade)
+- Frontend: 3 testes passando (use-inactivity-timeout.test.ts)
+- Web typecheck: passou
+
+### 6. Próximos Passos
+
+1. Considerar persistência da blacklist em Redis para ambientes multi-instância
+2. Revalidar aderência completa das 18 telas e 6 módulos

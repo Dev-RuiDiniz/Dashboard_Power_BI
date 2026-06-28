@@ -79,6 +79,8 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token inválido.');
     }
 
+    this.assertSessionNotInactive(session);
+
     await this.refreshTokenRepository.revoke(session.id);
 
     return this.issueTokens(user);
@@ -255,6 +257,7 @@ export class AuthService {
       refreshTokenHash,
       expiresAt: this.getRefreshTokenExpiresAt(),
       revokedAt: null,
+      lastUsedAt: new Date(),
     });
 
     return {
@@ -264,6 +267,26 @@ export class AuthService {
       expiresIn: accessToken.expiresIn,
       jti: accessToken.jti,
     };
+  }
+
+  private assertSessionNotInactive(session: RefreshSession): void {
+    const timeoutSeconds = Number(
+      this.configService.get<number>('SESSION_INACTIVITY_TIMEOUT_SECONDS', 1800),
+    );
+
+    if (timeoutSeconds <= 0) {
+      return;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const lastUsed = Math.floor(session.lastUsedAt.getTime() / 1000);
+
+    if (now - lastUsed > timeoutSeconds) {
+      this.logger.warn(
+        `refresh_rejected_inactivity userId=${session.userId} idleSeconds=${now - lastUsed}`,
+      );
+      throw new UnauthorizedException('Sessão expirada por inatividade.');
+    }
   }
 
   private async findValidRefreshSession(refreshToken: string): Promise<RefreshSession> {

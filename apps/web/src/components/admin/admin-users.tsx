@@ -3,6 +3,7 @@
 import {
   TriangleAlert as AlertTriangle,
   Loader as Loader2,
+  LogOut,
   Plus,
   Search,
   UserCog,
@@ -218,20 +219,39 @@ export function AdminUsers() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         {user.isActive && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={async () => {
-                              try {
-                                await apiPatch(`/admin/users/${user.id}/deactivate`, {});
-                                void loadUsers();
-                              } catch {
-                                alert('Erro ao desativar usuário.');
-                              }
-                            }}
-                          >
-                            Desativar
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await apiPost('/auth/sessions/revoke-all', {
+                                    userId: user.id,
+                                  });
+                                  alert('Sessões revogadas com sucesso.');
+                                } catch {
+                                  alert('Erro ao revogar sessões.');
+                                }
+                              }}
+                            >
+                              <LogOut className="mr-1 h-3 w-3" aria-hidden="true" />
+                              Revogar sessões
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await apiPatch(`/admin/users/${user.id}/deactivate`, {});
+                                  void loadUsers();
+                                } catch {
+                                  alert('Erro ao desativar usuário.');
+                                }
+                              }}
+                            >
+                              Desativar
+                            </Button>
+                          </>
                         )}
                         <Button
                           variant="ghost"
