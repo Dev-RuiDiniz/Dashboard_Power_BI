@@ -42,7 +42,7 @@ SDD — Especificação:
 - .env.example com todas as variáveis necessárias
 - Separação .env.local (dev) vs .env.production
 - Validação de variáveis obrigatórias no startup da API
-- Documentação em docs/environment.md
+- Documentação em `infra/env/.env.example`
 
 TDD — Testes:
 - pnpm verify:docs — documentação atualizada
@@ -52,7 +52,6 @@ TDD — Testes:
 Entregáveis:
 ✅ infra/env/.env.example
 ✅ infra/env/.env.production.example
-✅ docs/environment.md
 ```
 
 ### T03 — Supabase como Persistência
@@ -68,7 +67,7 @@ SDD — Especificação:
 - Documentação de ativação da persistência
 
 TDD — Testes:
-- pnpm verify:docs — docs/supabase-persistence.md existe
+- pnpm verify:docs — documentação atualizada
 - Testes de repositórios com modo memória
 - Testes de repositórios com modo Supabase (quando configurado)
 - Comandos: pnpm test
@@ -83,7 +82,6 @@ Entregáveis:
 ✅ supabase/migrations/20260607113000_005_report_definitions_unique_source_sector.sql
 ✅ supabase/migrations/20260607183000_006_api_favorite_reports.sql
 ✅ apps/api/src/supabase/supabase.service.ts
-✅ docs/supabase-persistence.md
 ```
 
 ---

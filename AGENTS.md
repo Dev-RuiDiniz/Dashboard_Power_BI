@@ -92,10 +92,13 @@ apps/web -> apps/api -> SQL Server
 Leia primeiro:
 
 - `README.md`
-- `HANDOFF.md`
-- `SPRINT_STATUS.md`
-- `ANALISE_ESCOPO_V1.md`
-- `docs/architecture.md`
+- `docs/CONTEXTO.md`
+- `docs/ARQUITETURA.md`
+- `docs/BANCO_DADOS.md`
+- `docs/ESCOPO.md`
+- `docs/ROADMAP.md`
+- `docs/RELATORIO.md`
+- `docs/ANALISE_ESCOPO_V1.md`
 - `docs/api.md`
 - `docs/web.md`
 
@@ -257,9 +260,13 @@ Atualize documentacao quando a mudanca alterar:
 Arquivos mais provaveis de ajuste:
 
 - `README.md`
-- `HANDOFF.md`
-- `ANALISE_ESCOPO_V1.md`
-- `docs/architecture.md`
+- `docs/ARQUITETURA.md`
+- `docs/BANCO_DADOS.md`
+- `docs/ESCOPO.md`
+- `docs/ROADMAP.md`
+- `docs/CONTEXTO.md`
+- `docs/RELATORIO.md`
+- `docs/ANALISE_ESCOPO_V1.md`
 - `docs/api.md`
 - `docs/web.md`
 
@@ -323,22 +330,22 @@ Exemplos:
 - `feat: adicionar React Query ao frontend`
 - `security: implementar CSRF middleware e headers CSP/HSTS/X-Frame-Options`
 - `chore: instalar recharts para gráficos no dashboard`
-- `docs: atualizar SPRINT_STATUS.md e README.md com estado atual`
+- `docs: atualizar docs/ROADMAP.md e README.md com estado atual`
 
 ### Regra de documentação
 
 **Toda tarefa deve atualizar documentação.** Nunca finalize uma tarefa sem:
 
 1. Atualizar `README.md` se o escopo mudar funcionalidades visíveis;
-2. Atualizar `SPRINT_STATUS.md` com o que foi entregue ou removido da lista de pendentes;
-3. Atualizar `ROADMAP.md` com marcos alcançados;
-4. Atualizar `docs/api.md` se novos endpoints foram criados;
-5. Atualizar `docs/web.md` se novas telas foram criadas;
-6. Registrar em `HANDOFF.md` qualquer contexto importante para a próxima sessão.
+2. Atualizar `docs/ROADMAP.md` com marcos alcançados;
+3. Atualizar `docs/api.md` se novos endpoints foram criados;
+4. Atualizar `docs/web.md` se novas telas foram criadas;
+5. Registrar em `docs/CONTEXTO.md` qualquer decisão técnica, bloqueio ou mudança importante;
+6. Atualizar `docs/RELATORIO.md` ao final da sessão com o que foi feito no dia.
 
-### Regra de RELATORIO_DIA.md
+### Regra de docs/RELATORIO.md
 
-**Ao final de cada sessão de implementação, atualize o `RELATORIO_DIA.md`** com o que foi feito naquele dia:
+**Ao final de cada sessão de implementação, atualize o `docs/RELATORIO.md`** com o que foi feito naquele dia:
 
 - Commits realizados (hash, mensagem, tarefa associada);
 - Funcionalidades entregues (backend e frontend);
@@ -348,11 +355,11 @@ Exemplos:
 - Débitos técnicos remanescentes;
 - Próximos passos recomendados.
 
-Se o arquivo `RELATORIO_DIA.md` ainda não existir para o dia atual, crie-o. Se já existir, apende ou atualize a seção correspondente. Use-o como fonte de acompanhamento diário do projeto.
+Se o arquivo `docs/RELATORIO.md` ainda não existir para o dia atual, crie-o. Se já existir, apende ou atualize a seção correspondente. Use-o como fonte de acompanhamento diário do projeto.
 
-### Regra de ROADMAP
+### Regra de docs/ROADMAP.md
 
-O arquivo `ROADMAP.md` deve ser mantido como fonte única da direção do projeto. A cada tarefa:
+O arquivo `docs/ROADMAP.md` deve ser mantido como fonte única da direção do projeto. A cada tarefa:
 
 - Mova o item de `## Em andamento / Pendente` para `## Concluído`;
 - Adicione data de conclusão;
@@ -374,6 +381,104 @@ Ao final de cada onda de trabalho (conjunto de tarefas relacionadas):
    - Limitações ou débitos técnicos remanescentes;
    - Screenshots ou evidências quando houver UI.
 
+## SDD — Specification-Driven Development
+
+Toda funcionalidade deve comecar por especificacao.
+
+Antes de codificar, o agente deve:
+
+1. Ler documentacao existente.
+2. Confirmar o requisito.
+3. Criar ou atualizar especificacao em documentacao.
+4. Definir criterios de aceite.
+5. Mapear impacto em:
+   - arquitetura
+   - banco de dados
+   - API
+   - frontend
+   - testes
+   - infraestrutura
+   - seguranca
+6. Registrar decisoes relevantes em `docs/CONTEXTO.md`.
+7. Atualizar `docs/ROADMAP.md` se a tarefa fizer parte de fase, epico ou historia.
+
+Toda especificacao deve conter:
+
+- Objetivo
+- Contexto
+- Regras de negocio
+- Fluxo esperado
+- Criterios de aceite
+- Impacto tecnico
+- Testes necessarios
+- Riscos
+- Dependencias
+
+## TDD — Test-Driven Development
+
+Fluxo obrigatorio:
+
+1. **RED** — escrever ou ajustar teste que falha.
+2. **GREEN** — implementar o minimo necessario para passar.
+3. **REFACTOR** — melhorar mantendo testes verdes.
+
+Regras:
+
+- Toda feature nova precisa de teste.
+- Todo bug corrigido precisa de teste de regressao.
+- Toda regra de negocio critica precisa de teste.
+- Toda migration relevante precisa ser validada.
+- Nao reduzir cobertura sem justificativa em `docs/RELATORIO.md`.
+- Se a stack nao tiver testes configurados, registrar isso e propor configuracao inicial.
+
+Comandos de teste do projeto:
+
+```bash
+pnpm test
+pnpm --filter @dashboard-power-bi/api test
+pnpm --filter @dashboard-power-bi/web test
+pnpm typecheck
+pnpm build
+```
+
+## Checklist obrigatorio por tarefa
+
+```markdown
+- [ ] Requisito compreendido
+- [ ] Especificacao criada/atualizada
+- [ ] Teste criado/atualizado
+- [ ] Implementacao validada
+- [ ] Documentacao atualizada
+- [ ] Arquitetura atualizada, se aplicavel
+- [ ] Banco de dados atualizado, se aplicavel
+- [ ] Roadmap atualizado, se aplicavel
+- [ ] Contexto atualizado
+- [ ] Relatorio do dia atualizado
+```
+
+## Seguranca e integridade
+
+Regras adicionais de seguranca:
+
+- Nunca expor `.env`, tokens, senhas, chaves privadas ou credenciais.
+- Nunca copiar secrets para documentacao.
+- Antes de registrar exemplos, usar valores ficticios seguros.
+- Nao criar backdoors, bypass de autenticacao ou desativar validacoes sem autorizacao.
+- Validar entradas de usuario.
+- Documentar riscos de seguranca encontrados.
+- Registrar pendencias criticas em `docs/CONTEXTO.md`.
+
+## Conduta para agentes
+
+- Ser conservador em mudancas.
+- Priorizar consistencia com padroes existentes.
+- Nao reescrever o projeto sem necessidade.
+- Nao substituir bibliotecas principais sem justificativa.
+- Nao remover testes.
+- Nao apagar historico de documentacao.
+- Em caso de duvida, investigar antes de perguntar.
+- Se ainda houver duvida, registrar como `A CONFIRMAR`.
+
 ## Definition of Done
 
 Uma tarefa esta pronta quando:
@@ -381,7 +486,7 @@ Uma tarefa esta pronta quando:
 - o escopo pedido foi cumprido;
 - os testes aplicaveis foram criados ou atualizados;
 - os comandos relevantes passaram, ou a limitacao ficou explicitada;
-- a documentacao relevante foi ajustada (README, SPRINT_STATUS, ROADMAP, api.md, web.md);
+- a documentacao relevante foi ajustada (README, docs/ROADMAP, docs/ARQUITETURA, docs/BANCO_DADOS, docs/ESCOPO, docs/CONTEXTO, docs/RELATORIO, docs/api.md, docs/web.md);
 - o commit foi feito com mensagem em pt-BR no padrão Conventional Commits;
 - nao ha segredo no diff;
 - nada importante foi descrito como pronto sem estar no runtime real.

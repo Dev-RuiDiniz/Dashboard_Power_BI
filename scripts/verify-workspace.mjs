@@ -18,7 +18,7 @@ const requiredPaths = [
   'package.json',
   'pnpm-workspace.yaml',
   'README.md',
-  'docs/architecture.md',
+  'docs/ARQUITETURA.md',
   'docs/decisions/ADR-0001-monorepo.md',
 ];
 

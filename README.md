@@ -31,10 +31,14 @@ Ele ainda não representa a plataforma V1 completa descrita no PDF de escopo.
 
 Documentos canônicos do estado atual:
 
-- `docs/system-map.md`
-- `docs/scope-v1-gap-analysis.md`
-- `SPRINT_STATUS.md`
-- `docs/ARCHITECTURE_DETAILED.md`
+- `AGENTS.md` — regras para agentes e colaboradores
+- `docs/ARQUITETURA.md` — arquitetura completa do sistema
+- `docs/BANCO_DADOS.md` — arquitetura de banco de dados
+- `docs/ESCOPO.md` — escopo consolidado do projeto
+- `docs/ROADMAP.md` — roadmap de desenvolvimento
+- `docs/CONTEXTO.md` — contexto vivo do projeto
+- `docs/RELATORIO.md` — registro diário de desenvolvimento
+- `docs/ANALISE_ESCOPO_V1.md` — análise de aderência ao escopo V1
 
 ## Stack
 
@@ -127,11 +131,7 @@ infra/docker/web.prod.Dockerfile
 .github/workflows/deploy-vps.yml
 ```
 
-O deploy automatizado está descrito em:
-
-- `docs/deploy-vps.md`
-- `docs/devops.md`
-- `docs/environment.md`
+O deploy automatizado está descrito em `docs/ARQUITETURA.md` (seção de infraestrutura) e `.github/workflows/deploy-vps.yml`.
 
 ## Arquitetura e monorepo
 
@@ -187,21 +187,22 @@ pnpm docker:prod
 
 ## Variáveis de ambiente
 
-A referência de variáveis está em `docs/environment.md`.
+A referência de variáveis está em `infra/env/.env.example` e `infra/env/.env.production.example`.
 
 ## Documentação complementar
 
-- `SPRINT_STATUS.md`: status verificado do projeto
-- `HANDOFF.md`: leitura rápida para continuidade
-- `docs/setup.md`: onboarding local
-- `docs/architecture.md`: resumo arquitetural do runtime
+- `docs/ARQUITETURA.md`: arquitetura completa do sistema
+- `docs/BANCO_DADOS.md`: arquitetura de banco de dados
+- `docs/ESCOPO.md`: escopo consolidado do projeto
+- `docs/ROADMAP.md`: roadmap de desenvolvimento
+- `docs/CONTEXTO.md`: contexto vivo do projeto (histórico, decisões, pendências)
+- `docs/RELATORIO.md`: registro diário de desenvolvimento
+- `docs/ANALISE_ESCOPO_V1.md`: análise de aderência ao escopo V1
+- `docs/KPIS.md`: KPIs sugeridos para o dashboard
 - `docs/api.md`: API realmente implementada
 - `docs/web.md`: visão da aplicação web
-- `docs/design-system.md`: base visual
-- `docs/devops.md`: Docker e operações
-- `docs/environment.md`: variáveis de ambiente
-- `docs/quality.md`: qualidade e validações
 - `docs/decisions/`: decisões arquiteturais curtas
+- `docs/roadmap/`: roadmap detalhado por telas, módulos e tarefas
 
 ## Troubleshooting
 

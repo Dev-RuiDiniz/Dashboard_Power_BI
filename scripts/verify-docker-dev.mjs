@@ -8,8 +8,6 @@ const requiredFiles = [
   'infra/docker/api.Dockerfile',
   'infra/docker/web.Dockerfile',
   'infra/env/.env.example',
-  'docs/devops.md',
-  'docs/environment.md',
 ];
 
 const missingFiles = requiredFiles.filter((path) => !existsSync(resolve(root, path)));
@@ -47,7 +45,9 @@ const requiredVariables = [
   'SQLSERVER_TRUST_SERVER_CERTIFICATE',
 ];
 
-const missingVariables = requiredVariables.filter((variable) => !envExample.includes(`${variable}=`));
+const missingVariables = requiredVariables.filter(
+  (variable) => !envExample.includes(`${variable}=`),
+);
 
 if (missingVariables.length > 0) {
   console.error('.env.example sem variáveis obrigatórias:');

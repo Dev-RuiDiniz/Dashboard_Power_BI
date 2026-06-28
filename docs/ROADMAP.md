@@ -1,17 +1,20 @@
-# ROADMAP — Dashboard Power BI
+# ROADMAP.md — Roadmap de Desenvolvimento
+
+**Projeto:** Dashboard Power BI
+**Atualizado em:** 2026-06-28
+**Metodologia:** Specification-Driven Development (SDD) + Test-Driven Development (TDD)
 
 **Fonte única de verdade para acompanhamento do projeto com base no escopo V1.**
 
-- **Base do escopo:** `ESCOPO_DASHBOARD_Plataforma_BI_V1.pdf`
+- **Base do escopo:** `ESCOPO_DASHBOARD_Plataforma_BI_V1.md`
 - **Análise de aderência:** `ANALISE_ESCOPO_V1.md`
-- **Metodologia:** SDD (Spec-Driven Development) + TDD (Test-Driven Development)
-- **Última atualização:** 2026-06-10
+- **Escopo consolidado:** `ESCOPO.md`
 
 ---
 
-## Como usar este ROADMAP
+## 1. Visão Geral do Roadmap
 
-Cada item segue o padrão **SDD + TDD**:
+O projeto evolui em fases, épicos, histórias e tarefas. Cada item segue o padrão **SDD + TDD**:
 
 - **SDD — Especificação:** o que deve ser entregue, critérios funcionais, dependências
 - **TDD — Testes:** testes unitários, integração, E2E, validação manual, comandos de verificação
@@ -22,6 +25,20 @@ Documentos detalhados por categoria:
 - [📋 Telas (18 do escopo V1)](docs/roadmap/01-telas.md)
 - [📋 Módulos (6 funcionais)](docs/roadmap/02-modulos.md)
 - [📋 Tarefas técnicas e infraestrutura](docs/roadmap/03-tarefas-tecnicas.md)
+
+---
+
+## 2. Convenções de Status
+
+- `PENDENTE` — não iniciado
+- `EM ESPECIFICAÇÃO` — SDD em andamento
+- `ESPECIFICADO` — especificação concluída, aguardando implementação
+- `EM TESTE` — TDD em andamento (fase RED/GREEN)
+- `EM DESENVOLVIMENTO` — implementação em andamento
+- `EM REVISÃO` — implementação concluída, aguardando validação
+- `CONCLUÍDO` — validado, testado e documentado
+- `BLOQUEADO` — impedido por dependência externa
+- `CANCELADO` — descartado ou fora de escopo
 
 ---
 
@@ -82,6 +99,69 @@ Documentos detalhados por categoria:
 | REPORTS     | 🔄 Parcial |   Catálogo, visualização, filtros, admin básico, persistência real, export pipeline   |    Ampliar favoritos     |             —             |
 | BI          | 🔄 Parcial | KPIs, payload consolidado, charts reais, sparklines, drill-down, editor visual mínimo |  Editor visual completo  | Drill-down multi-dimensão |
 | ADMIN       | 🔄 Parcial |        Usuários, grupos, permissões, auditoria, settings, dashboard admin KPIs        | Dashboard admin completo |    Governança completa    |
+
+---
+
+## 4. Backlog Geral
+
+| ID      | Tipo           | Descrição                                      | Prioridade | Status             |
+| ------- | -------------- | ---------------------------------------------- | ---------- | ------------------ |
+| EP-0001 | Épico          | Criar governança do repositório                | Alta       | CONCLUÍDO          |
+| EP-0002 | Épico          | Mapear arquitetura                             | Alta       | CONCLUÍDO          |
+| EP-0003 | Épico          | Mapear banco de dados                          | Alta       | CONCLUÍDO          |
+| EP-0004 | Épico          | Definir escopo inicial                         | Alta       | CONCLUÍDO          |
+| EP-0005 | Épico          | Definir estratégia de testes                   | Alta       | CONCLUÍDO          |
+| T16b    | Tarefa         | Editor visual drag-and-drop completo           | Alta       | EM DESENVOLVIMENTO |
+| T07b    | Tarefa         | Drill-down multi-dimensão                      | Média      | PENDENTE           |
+| T08b    | Tarefa         | Widgets editáveis e dashboard padrão por setor | Média      | PENDENTE           |
+| T09b    | Tarefa         | Pipeline BullMQ + Redis para exports           | Média      | PENDENTE           |
+| T12b    | Tarefa         | Dashboard admin com gráficos de tendência      | Baixa      | PENDENTE           |
+| DT-001  | Débito técnico | 2FA obrigatório para admins                    | Alta       | PENDENTE           |
+| DT-002  | Débito técnico | Hardening final de sessão                      | Alta       | PENDENTE           |
+| DT-003  | Débito técnico | Herança de permissões via grupos               | Média      | PENDENTE           |
+| DT-004  | Débito técnico | Cache de queries SQL Server                    | Média      | PENDENTE           |
+| DT-005  | Débito técnico | Testes E2E (Playwright)                        | Média      | PENDENTE           |
+| DT-006  | Débito técnico | Política de retenção de logs (LGPD)            | Alta       | PENDENTE           |
+
+---
+
+## 5. Matriz SDD/TDD por Tarefa
+
+| ID  | Tarefa                    | Spec criada | Teste criado | Implementado | Documentado |
+| --- | ------------------------- | ----------- | ------------ | ------------ | ----------- |
+| T01 | Login                     | Sim         | Sim          | Sim          | Sim         |
+| T02 | Recuperação de senha      | Sim         | Sim          | Sim          | Sim         |
+| T03 | Dashboard Home            | Sim         | Sim          | Sim          | Sim         |
+| T04 | Catálogo de relatórios    | Sim         | Sim          | Sim          | Sim         |
+| T05 | Visualização de relatório | Sim         | Sim          | Sim          | Sim         |
+| T06 | Filtros avançados         | Sim         | Sim          | Sim          | Sim         |
+| T07 | Dashboard interativo      | Sim         | Sim          | Sim          | Sim         |
+| T08 | Dashboards personalizados | Sim         | Sim          | Parcial      | Sim         |
+| T09 | Exportação PDF/Excel      | Sim         | Sim          | Parcial      | Sim         |
+| T10 | Meu perfil                | Sim         | Sim          | Sim          | Sim         |
+| T11 | Notificações              | Sim         | Sim          | Sim          | Sim         |
+| T12 | Dashboard administrativo  | Sim         | Sim          | Sim          | Sim         |
+| T13 | Gestão de usuários        | Sim         | Sim          | Sim          | Sim         |
+| T14 | Gestão de permissões      | Sim         | Sim          | Sim          | Sim         |
+| T15 | Gestão de relatórios      | Sim         | Sim          | Sim          | Sim         |
+| T16 | Editor visual             | Sim         | Sim          | Parcial      | Sim         |
+| T17 | Auditoria                 | Sim         | Sim          | Sim          | Sim         |
+| T18 | Configurações do sistema  | Sim         | Sim          | Sim          | Sim         |
+
+---
+
+## 6. Definição de Pronto
+
+Uma tarefa só é considerada pronta quando:
+
+- [ ] Requisito documentado
+- [ ] Critérios de aceite definidos
+- [ ] Teste criado ou justificativa registrada
+- [ ] Implementação concluída
+- [ ] Testes passando (`pnpm test`, `pnpm typecheck`)
+- [ ] Documentação atualizada
+- [ ] `CONTEXTO.md` atualizado
+- [ ] `RELATORIO.md` atualizado
 
 ---
 
