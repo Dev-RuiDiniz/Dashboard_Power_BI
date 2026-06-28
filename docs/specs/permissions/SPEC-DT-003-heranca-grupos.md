@@ -3,7 +3,7 @@
 **ID:** DT-003
 **Módulo:** Permissions
 **Fase:** Fase 4
-**Status:** Pendente
+**Status:** Concluído
 **Atualizado em:** 2026-06-28
 
 ---
@@ -47,12 +47,12 @@ Atualmente, grupos associam roles e setores a usuários, mas não herdam permiss
 
 ## 5. Critérios de Aceite
 
-- [ ] Grupos podem ter permissões granulares associadas
-- [ ] Usuários herdam permissões de todos os grupos aos quais pertencem
-- [ ] Validação combina permissões diretas + herdadas
-- [ ] Remoção de grupo revoga permissões herdadas
-- [ ] UI para associar permissões a grupos
-- [ ] Testes unitários e de integração
+- [x] Grupos podem ter permissões granulares associadas
+- [x] Usuários herdam permissões de todos os grupos aos quais pertencem
+- [x] Validação combina permissões diretas + herdadas
+- [x] Remoção de grupo revoga permissões herdadas
+- [x] UI para associar permissões a grupos
+- [x] Testes unitários e de integração
 
 ## 6. Impacto Técnico
 
@@ -84,7 +84,16 @@ Atualmente, grupos associam roles e setores a usuários, mas não herdam permiss
 
 ## 9. Dependências
 
-- `groups.service` (modificação para agregar permissões)
-- `roles.guard` (modificação para combinar permissões)
-- Tabela `group_permissions` (migration pendente)
-- UI de associação em grupos (modificação pendente)
+- ~~`groups.service` (modificação para agregar permissões)~~ — concluído
+- ~~`roles.guard` (modificação para combinar permissões)~~ — concluído (novo `PermissionsGuard`)
+- ~~Tabela `group_permissions` (migration pendente)~~ — concluído (migration 009)
+- ~~UI de associação em grupos (modificação pendente)~~ — concluído
+
+## 10. Notas de Implementação
+
+- **`EffectivePermissionsService`:** Nova service que calcula permissões efetivas buscando grupos ativos via `groupIds`, agregando `permissionIds` de cada grupo e filtrando apenas permissões ativas.
+- **`PermissionsGuard`:** Novo guard com decorator `@RequirePermissions()`. Admin bypassa. Verifica permissões efetivas via `EffectivePermissionsService.hasPermission()`.
+- **`GroupsRepository`:** `permissionIds` adicionado ao tipo e inputs. Persistido em memória (Map) e Supabase (tabela `api_group_permissions`).
+- **Migration 009:** Tabela `api_group_permissions` com PK composta e RLS.
+- **Frontend:** Modal de criação de grupos inclui checkbox selector de permissões. Tabela exibe contagem de permissões.
+- **OR lógico:** Permissão mais permissiva prevalece.

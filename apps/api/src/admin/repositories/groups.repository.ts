@@ -10,6 +10,7 @@ export type UserGroup = {
   description?: string;
   roles: UserRole[];
   sectors: SectorCode[];
+  permissionIds: string[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -20,10 +21,12 @@ export type CreateGroupInput = {
   description?: string;
   roles: UserRole[];
   sectors: SectorCode[];
+  permissionIds?: string[];
 };
 
 export type UpdateGroupInput = Partial<CreateGroupInput> & {
   isActive?: boolean;
+  permissionIds?: string[];
 };
 
 @Injectable()
@@ -64,6 +67,7 @@ export class GroupsRepository {
       description: input.description?.trim(),
       roles: input.roles,
       sectors: input.sectors,
+      permissionIds: input.permissionIds ?? [],
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -94,6 +98,7 @@ export class GroupsRepository {
       ...input,
       name: input.name?.trim() ?? current.name,
       description: input.description?.trim() ?? current.description,
+      permissionIds: input.permissionIds ?? current.permissionIds,
       updatedAt: new Date(),
     };
 
@@ -119,6 +124,7 @@ export class GroupsRepository {
         description: 'Grupo completo para demonstracao local.',
         roles: ['admin'],
         sectors: ['diretoria', 'financeiro', 'comercial', 'operacoes'],
+        permissionIds: [],
         isActive: true,
         createdAt: now,
         updatedAt: now,
@@ -129,6 +135,7 @@ export class GroupsRepository {
         description: 'Acesso de leitura ao setor financeiro.',
         roles: ['viewer'],
         sectors: ['financeiro'],
+        permissionIds: [],
         isActive: true,
         createdAt: now,
         updatedAt: now,
@@ -139,6 +146,7 @@ export class GroupsRepository {
         description: 'Acesso de leitura ao setor comercial.',
         roles: ['viewer'],
         sectors: ['comercial'],
+        permissionIds: [],
         isActive: true,
         createdAt: now,
         updatedAt: now,
@@ -152,5 +160,8 @@ export class GroupsRepository {
 }
 
 function isDemoMode(configService: ConfigService): boolean {
-  return configService.get<string>('APP_MODE') === 'demo' || configService.get<string>('DATA_MODE') === 'mock';
+  return (
+    configService.get<string>('APP_MODE') === 'demo' ||
+    configService.get<string>('DATA_MODE') === 'mock'
+  );
 }

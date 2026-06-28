@@ -61,4 +61,31 @@ describe('AdminGroupsService', () => {
 
     await expect(service.delete(group.id)).resolves.toEqual({ success: true });
   });
+
+  it('deve criar grupo com permissionIds', async () => {
+    const group = await service.create({
+      name: 'Financeiro Readers',
+      roles: ['viewer'],
+      sectors: ['financeiro'],
+      permissionIds: ['perm-1', 'perm-2'],
+    });
+
+    expect(group.permissionIds).toEqual(['perm-1', 'perm-2']);
+  });
+
+  it('deve atualizar permissionIds do grupo', async () => {
+    const group = await service.create({
+      name: 'Financeiro',
+      roles: ['viewer'],
+      sectors: ['financeiro'],
+    });
+
+    expect(group.permissionIds).toEqual([]);
+
+    const updated = await service.update(group.id, {
+      permissionIds: ['perm-1'],
+    });
+
+    expect(updated.permissionIds).toEqual(['perm-1']);
+  });
 });

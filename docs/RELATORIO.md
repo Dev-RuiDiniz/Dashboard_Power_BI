@@ -364,3 +364,54 @@ Implementação do timeout por inatividade (30min configurável) e UI admin para
 
 1. Considerar persistência da blacklist em Redis para ambientes multi-instância
 2. Revalidar aderência completa das 18 telas e 6 módulos
+
+---
+
+## 2026-06-28 — Registro do Dia (Sessão 5) — DT-003 Herança de Permissões
+
+### 1. Resumo
+
+Implementação da herança de permissões granulares via grupos: usuários herdam permissões dos grupos aos quais pertencem, com cálculo de permissões efetivas, novo guard baseado em permissões e UI admin para associar permissões a grupos.
+
+### 2. Tarefas Executadas
+
+- [x] Migration 009: tabela `api_group_permissions` (group_id, permission_id, PK composta, RLS)
+- [x] `permissionIds` adicionado ao tipo `UserGroup`, `CreateGroupInput`, `UpdateGroupInput`
+- [x] `GroupsRepository` persiste `permissionIds` (memória + Supabase)
+- [x] DTOs `CreateGroupDto` e `UpdateGroupDto` aceitam `permissionIds`
+- [x] `EffectivePermissionsService` — cálculo de permissões efetivas (união de grupos ativos, filtra permissões inativas)
+- [x] `PermissionsGuard` + decorator `@RequirePermissions()` — guard com admin bypass
+- [x] Frontend: modal de criação de grupos com checkbox selector de permissões
+- [x] Frontend: tabela de grupos exibe contagem de permissões
+
+### 3. Arquivos Criados
+
+- `supabase/migrations/20260628220000_009_add_group_permissions.sql`
+- `apps/api/src/permissions/effective-permissions.service.ts`
+- `apps/api/src/permissions/effective-permissions.service.spec.ts`
+- `apps/api/src/auth/decorators/permissions.decorator.ts`
+- `apps/api/src/auth/guards/permissions.guard.ts`
+- `apps/api/src/auth/guards/permissions.guard.spec.ts`
+
+### 4. Arquivos Modificados
+
+- `apps/api/src/admin/repositories/groups.repository.ts` — `permissionIds` no tipo, create, update, seed
+- `apps/api/src/admin/groups/dto/create-group.dto.ts` — campo `permissionIds`
+- `apps/api/src/admin/groups/dto/update-group.dto.ts` — campo `permissionIds`
+- `apps/api/src/admin/groups/admin-groups.service.spec.ts` — testes com `permissionIds`
+- `apps/api/src/permissions/permissions.module.ts` — registra e exporta `EffectivePermissionsService` + `PermissionsGuard`
+- `apps/web/src/components/admin/admin-groups.tsx` — UI de permissões no modal e tabela
+- `docs/specs/permissions/SPEC-DT-003-heranca-grupos.md` — status Concluído
+- `docs/ROADMAP.md` — DT-003 CONCLUÍDO
+- `docs/RELATORIO.md` — esta seção
+
+### 5. Testes Executados
+
+- Backend: 20 testes passando (effective-permissions: 7, permissions.guard: 5, groups: 8)
+- Web typecheck: passou
+
+### 6. Próximos Passos
+
+1. Aplicar `@RequirePermissions()` em rotas específicas (ex: reports, exports)
+2. Considerar cache de permissões efetivas (DT-004)
+3. Revalidar aderência completa das 18 telas e 6 módulos

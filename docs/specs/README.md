@@ -33,7 +33,7 @@ Toda funcionalidade — existente ou pendente — deve ter uma spec corresponden
 | [SPEC-permissions-modulo](permissions/SPEC-permissions-modulo.md)       | Módulo Permissions (geral)                | Parcial   |
 | [SPEC-T13-gestao-usuarios](permissions/SPEC-T13-gestao-usuarios.md)     | T13 — Gestão de usuários                  | Concluído |
 | [SPEC-T14-gestao-permissoes](permissions/SPEC-T14-gestao-permissoes.md) | T14 — Gestão de permissões                | Concluído |
-| [SPEC-DT-003-heranca-grupos](permissions/SPEC-DT-003-heranca-grupos.md) | DT-003 — Herança de permissões via grupos | Pendente  |
+| [SPEC-DT-003-heranca-grupos](permissions/SPEC-DT-003-heranca-grupos.md) | DT-003 — Herança de permissões via grupos | Concluído |
 
 ### SQL Server
 

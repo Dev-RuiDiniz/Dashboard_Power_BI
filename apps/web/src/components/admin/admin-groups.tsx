@@ -26,7 +26,7 @@ import {
   TableRow,
   TableEmpty,
 } from '@/components/ui';
-import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/admin-api';
+import { apiGet, apiPost, apiDelete } from '@/lib/admin-api';
 
 type AdminGroup = {
   id: string;
@@ -34,6 +34,16 @@ type AdminGroup = {
   description?: string;
   roles: string[];
   sectors: string[];
+  permissionIds: string[];
+  isActive: boolean;
+};
+
+type AdminPermission = {
+  id: string;
+  code: string;
+  name: string;
+  resource: string;
+  action: string;
   isActive: boolean;
 };
 
@@ -45,6 +55,7 @@ export function AdminGroups() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [permissions, setPermissions] = useState<AdminPermission[]>([]);
 
   const loadGroups = useCallback(async () => {
     setIsLoading(true);
@@ -59,9 +70,19 @@ export function AdminGroups() {
     }
   }, []);
 
+  const loadPermissions = useCallback(async () => {
+    try {
+      const response = await apiGet<AdminPermission[]>('/permissions');
+      setPermissions(response.filter((p) => p.isActive));
+    } catch {
+      setPermissions([]);
+    }
+  }, []);
+
   useEffect(() => {
     void loadGroups();
-  }, [loadGroups]);
+    void loadPermissions();
+  }, [loadGroups, loadPermissions]);
 
   const filteredGroups =
     search.trim().length > 0
@@ -152,13 +173,14 @@ export function AdminGroups() {
                 <TableHead>Descrição</TableHead>
                 <TableHead>Roles</TableHead>
                 <TableHead>Setores</TableHead>
+                <TableHead>Permissões</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredGroups.length === 0 ? (
-                <TableEmpty colSpan={6}>Nenhum grupo encontrado.</TableEmpty>
+                <TableEmpty colSpan={7}>Nenhum grupo encontrado.</TableEmpty>
               ) : (
                 filteredGroups.map((group) => (
                   <TableRow key={group.id}>
@@ -187,6 +209,16 @@ export function AdminGroups() {
                           </Badge>
                         ))}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {group.permissionIds.length > 0 ? (
+                        <Badge className="border border-purple-200 bg-purple-50 text-purple-700">
+                          {group.permissionIds.length} permissão
+                          {group.permissionIds.length > 1 ? 'ões' : ''}
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-slate-400">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant={group.isActive ? 'success' : 'danger'}>
@@ -223,6 +255,7 @@ export function AdminGroups() {
 
       {showCreateForm && (
         <CreateGroupModal
+          permissions={permissions}
           onClose={() => setShowCreateForm(false)}
           onCreated={() => {
             setShowCreateForm(false);
@@ -234,9 +267,18 @@ export function AdminGroups() {
   );
 }
 
-function CreateGroupModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function CreateGroupModal({
+  permissions,
+  onClose,
+  onCreated,
+}: {
+  permissions: AdminPermission[];
+  onClose: () => void;
+  onCreated: () => void;
+}) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -256,6 +298,7 @@ function CreateGroupModal({ onClose, onCreated }: { onClose: () => void; onCreat
         description: description.trim() || undefined,
         roles: ['visualizador'],
         sectors: [],
+        permissionIds: selectedPermissionIds,
       });
       onCreated();
     } catch (err) {
@@ -292,6 +335,32 @@ function CreateGroupModal({ onClose, onCreated }: { onClose: () => void; onCreat
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
+            {permissions.length > 0 && (
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-slate-700">Permissões</legend>
+                <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-slate-200 p-2">
+                  {permissions.map((perm) => (
+                    <label key={perm.id} className="flex items-center gap-2 text-sm text-slate-600">
+                      <input
+                        type="checkbox"
+                        checked={selectedPermissionIds.includes(perm.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedPermissionIds([...selectedPermissionIds, perm.id]);
+                          } else {
+                            setSelectedPermissionIds(
+                              selectedPermissionIds.filter((id) => id !== perm.id),
+                            );
+                          }
+                        }}
+                      />
+                      <span className="font-mono text-xs">{perm.code}</span>
+                      <span className="text-slate-400">— {perm.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
             {error && (
               <p className="text-xs font-medium text-danger" role="alert">
                 {error}

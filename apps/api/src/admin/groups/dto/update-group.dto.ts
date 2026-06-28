@@ -34,4 +34,10 @@ export class UpdateGroupDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ type: [String], description: 'IDs de permissões associadas ao grupo.' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  permissionIds?: string[];
 }

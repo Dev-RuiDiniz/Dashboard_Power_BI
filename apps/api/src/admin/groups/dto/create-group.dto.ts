@@ -28,4 +28,10 @@ export class CreateGroupDto {
   @ArrayNotEmpty()
   @IsIn(sectors, { each: true })
   sectors!: SectorCode[];
+
+  @ApiPropertyOptional({ type: [String], description: 'IDs de permissões associadas ao grupo.' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  permissionIds?: string[];
 }
