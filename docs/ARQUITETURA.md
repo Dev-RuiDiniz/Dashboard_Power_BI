@@ -127,7 +127,7 @@ A API NestJS é a fonte oficial de todos os fluxos autenticados. O frontend não
 - **Principais arquivos:** `apps/api/src/auth/*`, `apps/web/src/components/auth/*`, `apps/web/src/lib/auth/session.ts`
 - **Funcionalidades:** Login com JWT + refresh token, reset de senha com token temporário, `GET /auth/me`, `PATCH /auth/me/password`, 2FA/TOTP (setup, verify, disable, login), rate limiting de tentativas, CSRF middleware
 - **Dependências:** `bcrypt`, `otplib`, `@supabase/supabase-js`
-- **Status:** Parcial — 2FA/TOTP implementado mas hardening final pendente
+- **Status:** Parcial — 2FA/TOTP implementado e opcional; hardening final pendente (2FA obrigatório para admins, blacklist de tokens)
 
 ### Admin Users
 
@@ -156,7 +156,7 @@ A API NestJS é a fonte oficial de todos os fluxos autenticados. O frontend não
 - **Principais arquivos:** `apps/api/src/reports/*`, `apps/web/src/components/reports/*`, `apps/web/src/components/admin/admin-reports.tsx`
 - **Funcionalidades:** Catálogo por setor com busca, visualização inline com parâmetros, filtros avançados, CRUD admin de definições, validação de fonte SQL, favoritos, exportação (PDF/XLSX/CSV/JSON) com pipeline, fila, histórico e download autenticado
 - **Dependências:** `apps/api/src/sql-server/*` (acesso ao SQL Server)
-- **Status:** Parcial — BullMQ/Redis não implementados, storage S3 pendente
+- **Status:** Parcial — BullMQ/Redis implementados com fallback em memória; storage S3 pendente
 
 ### Dashboard
 
@@ -212,7 +212,7 @@ A API NestJS é a fonte oficial de todos os fluxos autenticados. O frontend não
 | Recuperação de senha         | Auth          | Confirmado | `apps/api/src/auth/services/password-reset.service.ts`                        |
 | Perfil do usuário            | Auth          | Confirmado | `apps/api/src/auth/auth.controller.ts` — `GET /auth/me`                       |
 | Alteração de senha           | Auth          | Confirmado | `apps/api/src/auth/auth.controller.ts` — `PATCH /auth/me/password`            |
-| 2FA/TOTP                     | Auth          | Confirmado | `apps/api/src/auth/*` — setup, verify, disable, login                         |
+| 2FA/TOTP                     | Auth          | Confirmado | `apps/api/src/auth/services/totp.service.ts` — setup, verify, disable, login  |
 | Rate limiting no login       | Auth          | Confirmado | `apps/api/src/auth/services/login-attempts.service.ts`                        |
 | CSRF middleware              | Auth          | Confirmado | `apps/api/src/common/middleware/csrf.middleware.ts`                           |
 | Headers de segurança         | Auth          | Confirmado | CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy           |
@@ -247,21 +247,21 @@ A API NestJS é a fonte oficial de todos os fluxos autenticados. O frontend não
 
 ## 7. Funcionalidades Pendentes ou A Confirmar
 
-| Funcionalidade                          | Motivo da pendência             | Próxima ação                                               |
-| --------------------------------------- | ------------------------------- | ---------------------------------------------------------- |
-| Drill-down multi-dimensão               | Apenas sector implementado      | Adicionar dimensões de tempo, produto, região              |
-| Editor visual completo                  | Apenas reordenação implementada | Redimensionamento, paleta de widgets, canvas livre         |
-| BullMQ + Redis                          | Não instalados; fila em memória | Avaliar necessidade vs fila atual                          |
-| Prisma ORM                              | Não implementado                | Avaliar se será adotado ou se Supabase direto é suficiente |
-| Cache de queries SQL Server             | Não implementado                | Implementar cache com TTL configurável                     |
-| Cron de refresh                         | Não implementado                | Agendar refresh de relatórios e KPIs                       |
-| Monitoramento de queries                | Não implementado                | Logs estruturados de tempo de execução                     |
-| Storage S3 para exports                 | Não implementado                | Avaliar necessidade de storage externo                     |
-| Herança de permissões via grupos        | Não implementada                | Usuário herda permissões dos grupos                        |
-| Guard combinado JWT + role + permission | Apenas JWT + role               | Adicionar validação de permissão granular no guard         |
-| Blacklist de tokens revogados           | Não implementado                | Estratégia de invalidação em massa                         |
-| Hardening final de sessão               | Parcial                         | Estratégia final de invalidação e timeout                  |
-| Testes E2E (Playwright)                 | Não configurados                | Priorizar fluxos críticos: login, relatório, exportação    |
+| Funcionalidade                          | Motivo da pendência                   | Próxima ação                                               |
+| --------------------------------------- | ------------------------------------- | ---------------------------------------------------------- |
+| Drill-down multi-dimensão               | Apenas sector implementado            | Adicionar dimensões de tempo, produto, região              |
+| Editor visual completo                  | Apenas reordenação implementada       | Redimensionamento, paleta de widgets, canvas livre         |
+| BullMQ + Redis                          | Implementados com fallback em memória | Storage S3 pendente                                        |
+| Prisma ORM                              | Não implementado                      | Avaliar se será adotado ou se Supabase direto é suficiente |
+| Cache de queries SQL Server             | Não implementado                      | Implementar cache com TTL configurável                     |
+| Cron de refresh                         | Não implementado                      | Agendar refresh de relatórios e KPIs                       |
+| Monitoramento de queries                | Não implementado                      | Logs estruturados de tempo de execução                     |
+| Storage S3 para exports                 | Não implementado                      | Avaliar necessidade de storage externo                     |
+| Herança de permissões via grupos        | Não implementada                      | Usuário herda permissões dos grupos                        |
+| Guard combinado JWT + role + permission | Apenas JWT + role                     | Adicionar validação de permissão granular no guard         |
+| Blacklist de tokens revogados           | Não implementado                      | Estratégia de invalidação em massa                         |
+| Hardening final de sessão               | Parcial                               | Estratégia final de invalidação e timeout                  |
+| Testes E2E (Playwright)                 | Não configurados                      | Priorizar fluxos críticos: login, relatório, exportação    |
 
 ---
 
@@ -428,7 +428,7 @@ Swagger:      http://localhost:3001/docs
 ## 12. Pontos de Atenção Técnica
 
 - **Débitos técnicos:**
-  - BullMQ/Redis não implementados (fila em memória)
+  - Storage S3 para exports pendente (BullMQ/Redis já implementados com fallback em memória)
   - Prisma não adotado (acesso direto ao Supabase)
   - Cache de queries SQL Server ausente
   - Testes E2E (Playwright) não configurados
@@ -448,11 +448,11 @@ Swagger:      http://localhost:3001/docs
   - `PlatformModule` concentra dashboard, dashboards, exports, notifications e settings
 
 - **Riscos de escala:**
-  - Fila em memória não suporta múltiplas instâncias da API
+  - BullMQ + Redis implementados, mas fallback em memória não suporta múltiplas instâncias
   - Sem cache de queries, cada execução de relatório hita o SQL Server
 
 - **Riscos de segurança:**
-  - 2FA opcional (não obrigatório para admins)
+  - 2FA opcional (não obrigatório para admins — pendente DT-001)
   - Sem blacklist de tokens revogados
   - Sem estratégia de invalidação em massa de sessões
 

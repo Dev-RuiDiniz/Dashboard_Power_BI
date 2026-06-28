@@ -48,7 +48,7 @@ Documentos detalhados por categoria:
 | -------------------- | :-------: | :-----: | :------: | :---: |
 | **Telas**            |    11     |    5    |    2     |  18   |
 | **Módulos**          |     0     |    6    |    0     |   6   |
-| **Tarefas Técnicas** |     6     |    1    |    5     |  12   |
+| **Tarefas Técnicas** |     8     |    1    |    3     |  12   |
 
 ---
 
@@ -114,7 +114,7 @@ Documentos detalhados por categoria:
 | T16b    | Tarefa         | Editor visual drag-and-drop completo           | Alta       | EM DESENVOLVIMENTO |
 | T07b    | Tarefa         | Drill-down multi-dimensão                      | Média      | PENDENTE           |
 | T08b    | Tarefa         | Widgets editáveis e dashboard padrão por setor | Média      | PENDENTE           |
-| T09b    | Tarefa         | Pipeline BullMQ + Redis para exports           | Média      | PENDENTE           |
+| T09b    | Tarefa         | Pipeline BullMQ + Redis para exports           | Média      | CONCLUÍDO          |
 | T12b    | Tarefa         | Dashboard admin com gráficos de tendência      | Baixa      | PENDENTE           |
 | DT-001  | Débito técnico | 2FA obrigatório para admins                    | Alta       | PENDENTE           |
 | DT-002  | Débito técnico | Hardening final de sessão                      | Alta       | PENDENTE           |
@@ -137,7 +137,7 @@ Documentos detalhados por categoria:
 | T06 | Filtros avançados         | Sim         | Sim          | Sim          | Sim         |
 | T07 | Dashboard interativo      | Sim         | Sim          | Sim          | Sim         |
 | T08 | Dashboards personalizados | Sim         | Sim          | Parcial      | Sim         |
-| T09 | Exportação PDF/Excel      | Sim         | Sim          | Parcial      | Sim         |
+| T09 | Exportação PDF/Excel      | Sim         | Sim          | Sim          | Sim         |
 | T10 | Meu perfil                | Sim         | Sim          | Sim          | Sim         |
 | T11 | Notificações              | Sim         | Sim          | Sim          | Sim         |
 | T12 | Dashboard administrativo  | Sim         | Sim          | Sim          | Sim         |

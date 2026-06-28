@@ -53,7 +53,7 @@ Entregáveis Concluídos:
 ✅ apps/web/src/components/auth/login-form.tsx — UI de login
 
 Débitos / Pendente:
-📋 2FA/TOTP — otplib instalado, falta endpoints de ativação/verificação e UI
+📋 2FA obrigatório para admins (DT-001 — 2FA/TOTP opcional já implementado)
 📋 Blacklist de tokens revogados
 📋 Auditoria de eventos de auth (parcial — login já logado via audit)
 📋 Hardening final de sessão (stratégia de invalidação em massa)
@@ -191,10 +191,7 @@ Entregáveis Concluídos:
 ✅ supabase/migrations/20260607183000_006_api_favorite_reports.sql — favoritos
 
 Débitos / Pendente:
-📋 Pipeline de export com BullMQ e fila
-📋 Worker de processamento assíncrono
-📋 Polling de status de job
-📋 Storage S3 ou equivalente para arquivos
+📋 Storage S3 ou equivalente para arquivos (BullMQ + Redis já implementados com fallback em memória)
 📋 Ampliar favoritos (mais funcionalidades)
 📋 Preview de parâmetros com tipos na tela admin
 ```

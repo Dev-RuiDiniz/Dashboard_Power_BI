@@ -245,4 +245,4 @@ Os fluxos de dashboard, notificações, exportações e settings agora passam pe
 - A Web agora persiste a sessão em `sessionStorage`, migra sessões legadas do `localStorage` e tenta um refresh automático único em respostas `401`.
 - Headers de segurança ativos: CSP, HSTS (produção), X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy.
 - Proteção CSRF implementada via middleware customizado com token em cookie + header `x-csrf-token`.
-- 2FA/TOTP ainda não implementado (dependência `otplib` instalada, pendente endpoints e UI).
+- 2FA/TOTP implementado e opcional (setup, verify, disable, login); obrigatório para admins pendente (DT-001).

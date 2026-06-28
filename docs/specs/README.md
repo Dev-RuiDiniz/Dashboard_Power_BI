@@ -51,7 +51,7 @@ Toda funcionalidade — existente ou pendente — deve ter uma spec corresponden
 | [SPEC-T06-filtros](reports/SPEC-T06-filtros.md)           | T06 — Filtros avançados            | Concluído |
 | [SPEC-T09-exportacao](reports/SPEC-T09-exportacao.md)     | T09 — Exportação PDF/Excel         | Parcial   |
 | [SPEC-T15-gestao-admin](reports/SPEC-T15-gestao-admin.md) | T15 — Gestão de relatórios (admin) | Concluído |
-| [SPEC-T09b-bullmq](reports/SPEC-T09b-bullmq.md)           | T09b — Pipeline BullMQ + Redis     | Pendente  |
+| [SPEC-T09b-bullmq](reports/SPEC-T09b-bullmq.md)           | T09b — Pipeline BullMQ + Redis     | Concluído |
 
 ### BI
 

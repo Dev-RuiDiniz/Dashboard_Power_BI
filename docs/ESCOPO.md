@@ -82,7 +82,7 @@ O escopo original (PDF V1) prevê 18 telas e 6 módulos. O estado real do runtim
 - [x] Exportação para PDF, Excel, CSV e JSON
 - [x] Relatórios favoritos por usuário
 - [x] Gestão administrativa de relatórios (CRUD, parâmetros, validação de fonte)
-- [ ] Pipeline de export com BullMQ e fila
+- [x] Pipeline de export com BullMQ e fila (com fallback em memória)
 - [ ] Storage S3 ou equivalente para arquivos
 
 ### Módulo BI

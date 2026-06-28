@@ -132,6 +132,7 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 | 2026-06-05 | Recharts para gráficos                                  | Biblioteca React para charts interativos            | Componentes em `components/charts/` | Ativa  |
 | 2026-06-05 | React Query para data fetching                          | Cache, sync e refetch automático                    | `@tanstack/react-query` no layout   | Ativa  |
 | 2026-06-05 | 2FA/TOTP com otplib                                     | Segurança de autenticação                           | Setup, verify, disable, login TOTP  | Ativa  |
+| 2026-06-11 | BullMQ + Redis para pipeline de exports                 | Fila assíncrona com fallback em memória             | Queue + Worker com ioredis          | Ativa  |
 | 2026-06-10 | @dnd-kit/sortable para editor visual                    | Drag-and-drop acessível e modular                   | Reordenação de widgets              | Ativa  |
 | 2026-06-28 | Consolidação de governança na raiz                      | Fontes canônicas únicas de documentação             | 7 arquivos de governança na raiz    | Ativa  |
 
@@ -151,18 +152,18 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 
 ## 6. Pendências Atuais
 
-| Pendência                                                  | Área           | Prioridade | Próxima ação                                  |
-| ---------------------------------------------------------- | -------------- | ---------- | --------------------------------------------- |
-| Editor visual completo (redimensionamento, paleta, canvas) | BI             | Alta       | Especificar T16b com SDD                      |
-| Drill-down multi-dimensão                                  | BI             | Média      | Adicionar dimensões de tempo, produto, região |
-| 2FA obrigatório para admins                                | Segurança      | Alta       | Implementar regra no guard de admin           |
-| Hardening final de sessão                                  | Segurança      | Alta       | Blacklist de tokens + invalidação em massa    |
-| Herança de permissões via grupos                           | Permissões     | Média      | Implementar agregação de permissões           |
-| Cache de queries SQL Server                                | SQL Server     | Média      | Implementar cache com TTL                     |
-| BullMQ + Redis para exports                                | Exports        | Média      | Avaliar vs fila em memória atual              |
-| Testes E2E (Playwright)                                    | Qualidade      | Média      | Configurar Playwright para fluxos críticos    |
-| Política de retenção de logs (LGPD)                        | Segurança/LGPD | Alta       | Definir retenção e job de limpeza             |
-| Storage S3 para exports                                    | Exports        | Baixa      | Avaliar necessidade de storage externo        |
+| Pendência                                                  | Área           | Prioridade | Próxima ação                                          |
+| ---------------------------------------------------------- | -------------- | ---------- | ----------------------------------------------------- |
+| Editor visual completo (redimensionamento, paleta, canvas) | BI             | Alta       | Especificar T16b com SDD                              |
+| Drill-down multi-dimensão                                  | BI             | Média      | Adicionar dimensões de tempo, produto, região         |
+| 2FA obrigatório para admins                                | Segurança      | Alta       | 2FA/TOTP opcional já implementado; forçar para admins |
+| Hardening final de sessão                                  | Segurança      | Alta       | Blacklist de tokens + invalidação em massa            |
+| Herança de permissões via grupos                           | Permissões     | Média      | Implementar agregação de permissões                   |
+| Cache de queries SQL Server                                | SQL Server     | Média      | Implementar cache com TTL                             |
+| BullMQ + Redis para exports                                | Exports        | Concluído  | Implementado com fallback em memória                  |
+| Testes E2E (Playwright)                                    | Qualidade      | Média      | Configurar Playwright para fluxos críticos            |
+| Política de retenção de logs (LGPD)                        | Segurança/LGPD | Alta       | Definir retenção e job de limpeza                     |
+| Storage S3 para exports                                    | Exports        | Baixa      | Avaliar necessidade de storage externo                |
 
 ---
 
@@ -176,14 +177,14 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 
 ## 8. Riscos Técnicos
 
-| Risco                                                    | Impacto | Mitigação                                 |
-| -------------------------------------------------------- | ------- | ----------------------------------------- |
-| Fallback em memória perde dados ao reiniciar             | Alto    | Garantir Supabase configurado em produção |
-| Fila em memória não suporta múltiplas instâncias         | Médio   | Implementar BullMQ + Redis                |
-| `pnpm typecheck` falha sem artefatos de build do Next.js | Baixo   | Rodar `pnpm build` antes do typecheck     |
-| LGPD não tratada explicitamente                          | Alto    | Definir política de retenção e exclusão   |
-| 2FA opcional para admins                                 | Médio   | Tornar obrigatório na Fase 4              |
-| Sem testes E2E                                           | Médio   | Implementar Playwright                    |
+| Risco                                                    | Impacto | Mitigação                                    |
+| -------------------------------------------------------- | ------- | -------------------------------------------- |
+| Fallback em memória perde dados ao reiniciar             | Alto    | Garantir Supabase configurado em produção    |
+| Fila em memória não suporta múltiplas instâncias         | Baixo   | BullMQ + Redis já implementados com fallback |
+| `pnpm typecheck` falha sem artefatos de build do Next.js | Baixo   | Rodar `pnpm build` antes do typecheck        |
+| LGPD não tratada explicitamente                          | Alto    | Definir política de retenção e exclusão      |
+| 2FA opcional para admins                                 | Médio   | Forçar 2FA para admins (DT-001)              |
+| Sem testes E2E                                           | Médio   | Implementar Playwright                       |
 
 ---
 

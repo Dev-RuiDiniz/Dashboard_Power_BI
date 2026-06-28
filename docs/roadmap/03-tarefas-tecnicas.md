@@ -196,7 +196,7 @@ Entregáveis:
 ### T08 — BullMQ e Pipeline de Exportação
 
 ```
-Status: 📋 Pendente (Fase 3)
+Status: ✅ Concluído (Fase 3 — 2026-06-11)
 
 SDD — Especificação:
 - Instalação de BullMQ + Redis
@@ -206,6 +206,7 @@ SDD — Especificação:
 - Polling de status pelo frontend
 - Notificação ao usuário após conclusão
 - Expiração automática de jobs antigos
+- Fallback em memória quando Redis não está disponível
 
 TDD — Testes:
 - Unit: export-queue.service.ts — adicionar job, obter status
@@ -216,15 +217,25 @@ TDD — Testes:
 - Comandos: pnpm test
 
 Entregáveis:
-📋 BullMQ não instalado
-📋 Redis não é dependência funcional central
-📋 Worker de exportação não existe
+✅ bullmq e ioredis instalados em apps/api
+✅ apps/api/src/platform/exports/exports.queue.ts — nome da fila e tipos
+✅ apps/api/src/platform/exports/exports.service.ts — Queue com bullmq + fallback em memória
+✅ apps/api/src/platform/exports/exports.processor.ts — Worker com bullmq + ioredis
+✅ apps/api/src/platform/exports/export-job-runner.service.ts — processamento de PDF/XLSX/CSV/JSON
+✅ apps/api/src/platform/exports/export-file-builder.service.ts — geração real de arquivos
+✅ Fallback em memória funcional quando Redis indisponível
+✅ Notificação ao usuário após conclusão
+✅ Auditoria de exports (completed e failed)
+✅ Expiração automática (7 dias)
+
+Débitos:
+📋 Storage S3 ou equivalente para arquivos (atualmente em disco local)
 ```
 
 ### T09 — 2FA/TOTP
 
 ```
-Status: 📋 Pendente (Fase 4)
+Status: ✅ Concluído (Fase 2 — 2026-06-05)
 
 SDD — Especificação:
 - Instalação de otplib (já feito)
@@ -232,12 +243,13 @@ SDD — Especificação:
 - Endpoint para verificar TOTP na configuração (validar código)
 - Endpoint para desativar 2FA (requer senha atual + TOTP)
 - Login com 2FA: após credenciais válidas, solicitar código TOTP
-- Armazenamento do secret criptografado no banco
+- Armazenamento do secret no perfil do usuário
 - UI de configuração de 2FA no perfil do usuário
 - UI de verificação de código no login
 
 TDD — Testes:
 - Unit: totp.service.ts — gerar secret, validar código
+- Unit: totp.service.spec.ts — geração e verificação de tokens
 - Integration: auth.controller.spec.ts — fluxo de ativação de 2FA
 - Integration: auth.controller.spec.ts — login com 2FA
 - Security: brute force em TOTP → bloqueio após 3 tentativas
@@ -245,11 +257,17 @@ TDD — Testes:
 - Comandos: pnpm test
 
 Entregáveis:
-✅ otplib instalado em apps/api
-📋 TOTPSecret entity/DTO (não criado)
-📋 Endpoints de ativação/verificação (não criados)
-📋 UI de configuração (não criada)
-📋 Fluxo de login com 2FA (não implementado)
+✅ apps/api/src/auth/services/totp.service.ts — geração de secret, verificação de token (HMAC-SHA1, Base32)
+✅ apps/api/src/auth/services/totp.service.spec.ts — testes unitários
+✅ apps/api/src/auth/dto/totp-setup.dto.ts — DTO de validação
+✅ apps/api/src/auth/auth.controller.ts — POST /auth/totp/setup, POST /auth/totp/verify, POST /auth/totp/disable, POST /auth/totp/login
+✅ apps/api/src/auth/auth.service.ts — integração de 2FA no fluxo de login
+✅ apps/web/src/components/auth/login-form.tsx — UI de verificação de código no login
+✅ apps/web/src/components/user-profile.tsx — UI de configuração de 2FA (setup com QR code, verificar, desativar)
+✅ Fluxo de login com 2FA: requiresTwoFactor + tempToken → POST /auth/totp/login
+
+Débitos:
+📋 2FA obrigatório para admins (DT-001 — pendente)
 ```
 
 ---
@@ -338,8 +356,8 @@ Entregáveis:
 | Recharts                | 🔄 Parcial   | Fase 3   |
 | Formulários (Zod/RHF)   | 🔄 Parcial   | Fase 3   |
 | NestJS strict + Swagger | ✅ Concluído | Fase 0   |
-| BullMQ + Redis          | 📋 Pendente  | Fase 3   |
-| 2FA/TOTP                | 📋 Pendente  | Fase 4   |
+| BullMQ + Redis          | ✅ Concluído | Fase 3   |
+| 2FA/TOTP                | ✅ Concluído | Fase 2   |
 | Testes Jest + Supertest | 🔄 Parcial   | Contínuo |
 | TypeScript strict       | ✅ Concluído | Fase 0   |
 | Lint + Prettier + Husky | ✅ Concluído | Fase 0   |

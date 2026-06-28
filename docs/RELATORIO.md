@@ -24,7 +24,91 @@ Cada entrada deve conter:
 
 ---
 
-## 2026-06-28 — Registro do Dia
+## 2026-06-28 — Registro do Dia (Sessão 2)
+
+### 1. Resumo
+
+Auditoria completa do projeto confrontando documentação com runtime real. Encontradas duas divergências críticas onde a documentação marcava como "pendente" funcionalidades já implementadas no código: BullMQ + Redis (exports) e 2FA/TOTP (auth). Corrigidos 11 arquivos de documentação para refletir o estado real.
+
+### 2. Tarefas Executadas
+
+- [x] Auditoria completa do projeto (leitura de toda documentação canônica + verificação de runtime)
+- [x] Correção de divergência: BullMQ + Redis marcado como pendente mas já implementado
+  - `exports.service.ts` e `exports.processor.ts` usam `bullmq` (Queue + Worker) com `ioredis` e fallback em memória
+  - Atualizado status de "Pendente" para "Concluído" em todos os documentos relevantes
+- [x] Correção de divergência: 2FA/TOTP marcado como pendente mas já implementado
+  - `totp.service.ts` tem geração de secret, verificação de token (HMAC-SHA1, Base32) e endpoints no controller
+  - UI de login e perfil já suportam 2FA (setup, verify, disable, login TOTP)
+  - Atualizado status de "Pendente" para "Concluído" em todos os documentos relevantes
+
+### 3. Arquivos Criados ou Modificados
+
+| Arquivo                               | Ação       | Descrição                                                                                                                              |
+| ------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/roadmap/03-tarefas-tecnicas.md` | Modificado | T08 BullMQ e T09 2FA/TOTP marcados como Concluído; tabela de resumo atualizada                                                         |
+| `docs/roadmap/02-modulos.md`          | Modificado | Débitos de AUTH e REPORTS corrigidos                                                                                                   |
+| `docs/roadmap/01-telas.md`            | Modificado | Débitos de T09 (BullMQ) corrigidos                                                                                                     |
+| `docs/ROADMAP.md`                     | Modificado | T09b marcado como CONCLUÍDO no backlog; T09 Exportação de Parcial para Sim na matriz SDD/TDD; progresso de tarefas técnicas atualizado |
+| `docs/ARQUITETURA.md`                 | Modificado | Seções 5 (módulos), 7 (pendentes), 12 (débitos e riscos) corrigidas                                                                    |
+| `docs/CONTEXTO.md`                    | Modificado | Pendências, riscos e decisões técnicas atualizados                                                                                     |
+| `docs/ESCOPO.md`                      | Modificado | BullMQ marcado como implementado no módulo Reports                                                                                     |
+| `docs/ANALISE_ESCOPO_V1.md`           | Modificado | 2FA de "ausente" para "implementado"; BullMQ adicionado ao módulo REPORTS                                                              |
+| `README.md`                           | Modificado | Linha sobre 2FA/TOTP corrigida de "não implementado" para "implementado e opcional"                                                    |
+| `docs/specs/README.md`                | Modificado | Status da SPEC-T09b de Pendente para Concluído                                                                                         |
+| `docs/RELATORIO.md`                   | Modificado | Esta entrada adicionada                                                                                                                |
+
+### 4. Testes
+
+| Comando            | Resultado     | Observações                |
+| ------------------ | ------------- | -------------------------- |
+| `pnpm verify:docs` | Não executado | Será executado após commit |
+| `pnpm typecheck`   | Não executado | Não há mudança de código   |
+| `pnpm test`        | Não executado | Não há mudança de código   |
+| `pnpm build`       | Não executado | Não há mudança de código   |
+
+### 5. Documentação Atualizada
+
+- `docs/roadmap/03-tarefas-tecnicas.md` — T08 e T09 marcados como Concluído
+- `docs/roadmap/02-modulos.md` — Débitos de AUTH e REPORTS corrigidos
+- `docs/roadmap/01-telas.md` — Débitos de T09 corrigidos
+- `docs/ROADMAP.md` — Backlog e matriz SDD/TDD atualizados
+- `docs/ARQUITETURA.md` — Módulos, pendentes e débitos corrigidos
+- `docs/CONTEXTO.md` — Pendências, riscos e decisões atualizados
+- `docs/ESCOPO.md` — Módulo Reports atualizado
+- `docs/ANALISE_ESCOPO_V1.md` — Matriz de módulos e pontos por módulo corrigidos
+- `README.md` — Seção de segurança corrigida
+- `docs/specs/README.md` — Status da SPEC-T09b atualizado
+
+### 6. Bugs Encontrados e Correções
+
+| Bug                                                  | Causa                                                | Correção                                        | Status    |
+| ---------------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------- | --------- |
+| BullMQ + Redis marcado como pendente na documentação | Implementação não foi refletida na docs após entrega | Status atualizado para Concluído em 11 arquivos | Resolvido |
+| 2FA/TOTP marcado como pendente na documentação       | Implementação não foi refletida na docs após entrega | Status atualizado para Concluído em 11 arquivos | Resolvido |
+
+### 7. Decisões Tomadas
+
+| Decisão                                  | Motivo                                           | Impacto                  |
+| ---------------------------------------- | ------------------------------------------------ | ------------------------ |
+| Corrigir divergências docs vs runtime    | Documentação deve refletir estado real do código | 11 arquivos atualizados  |
+| Manter 2FA como opcional na documentação | 2FA obrigatório para admins é DT-001 separado    | Pendência DT-001 mantida |
+
+### 8. Bloqueios
+
+| Bloqueio | Impacto | Próxima ação |
+| -------- | ------- | ------------ |
+| Nenhum   | —       | —            |
+
+### 9. Próximos Passos
+
+1. Commit e push das correções
+2. Iniciar Fase 3: Editor visual drag-and-drop completo (T16b)
+3. Implementar 2FA obrigatório para admins (DT-001)
+4. Implementar hardening final de sessão (DT-002)
+
+---
+
+## 2026-06-28 — Registro do Dia (Sessão 1)
 
 ### 1. Resumo
 

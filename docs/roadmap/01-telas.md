@@ -253,9 +253,7 @@ Entregáveis:
 - apps/api/src/platform/exports/*
 
 Débitos:
-- Pipeline backend com BullMQ não implementado
-- Worker de fila e polling de job pendente
-- Storage S3 ou equivalente pendente
+- Storage S3 ou equivalente para arquivos pendente (BullMQ + Redis já implementados com fallback em memória)
 ```
 
 ---
