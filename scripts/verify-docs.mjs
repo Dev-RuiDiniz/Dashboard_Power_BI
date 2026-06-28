@@ -21,6 +21,7 @@ const requiredFiles = [
   'docs/decisions/ADR-0004-nextjs-web.md',
   'docs/decisions/ADR-0005-design-system-base.md',
   'docs/decisions/ADR-0006-docker-compose-dev.md',
+  'docs/specs/README.md',
 ];
 
 const missingFiles = requiredFiles.filter((file) => !existsSync(resolve(root, file)));
