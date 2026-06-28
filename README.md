@@ -203,6 +203,7 @@ A referência de variáveis está em `infra/env/.env.example` e `infra/env/.env.
 - `docs/web.md`: visão da aplicação web
 - `docs/decisions/`: decisões arquiteturais curtas
 - `docs/roadmap/`: roadmap detalhado por telas, módulos e tarefas
+- `docs/specs/`: especificações SDD (Specification-Driven Development) por módulo
 
 ## Troubleshooting
 

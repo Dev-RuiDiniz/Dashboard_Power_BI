@@ -101,6 +101,7 @@ Leia primeiro:
 - `docs/ANALISE_ESCOPO_V1.md`
 - `docs/api.md`
 - `docs/web.md`
+- `docs/specs/` — especificacoes SDD por modulo
 
 ## Modulos reais do sistema
 
