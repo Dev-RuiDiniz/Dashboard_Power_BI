@@ -277,7 +277,43 @@ Correção da falha alta F-A01 (Audit Controller: `getById` Usa `@Query` em Vez 
 
 ### 4. Próximos Passos
 
-- F-A02: Adicionar TwoFactorGuard em SettingsController, PermissionsController e AuditController
+- F-A03: Dashboards Controller — inputs sem validação DTO
+- Demais falhas altas e médias conforme ROADMAP_FALHAS.md
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 8)
+
+### 1. Resumo
+
+Correção da falha alta F-A02 (TwoFactorGuard Inconsistente Entre Controllers Admin). `SettingsController`, `PermissionsController` e `AuditController` não usavam `TwoFactorGuard`, permitindo que admins sem 2FA acessassem settings, permissions e audit logs.
+
+### 2. Tarefas Executadas
+
+- [x] Adicionar `TwoFactorGuard` no `AuditController` (import + `@UseGuards`)
+- [x] Adicionar `TwoFactorGuard` no `SettingsController` (import + `@UseGuards`)
+- [x] Adicionar `TwoFactorGuard` no `PermissionsController` (import + `@UseGuards`)
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
+
+### 3. Arquivos Modificados
+
+| Arquivo                                                 | Ação       | Descrição                                   |
+| ------------------------------------------------------- | ---------- | ------------------------------------------- |
+| `apps/api/src/audit/audit.controller.ts`                | Modificado | `TwoFactorGuard` adicionado ao `@UseGuards` |
+| `apps/api/src/platform/settings/settings.controller.ts` | Modificado | `TwoFactorGuard` adicionado ao `@UseGuards` |
+| `apps/api/src/permissions/permissions.controller.ts`    | Modificado | `TwoFactorGuard` adicionado ao `@UseGuards` |
+| `ROADMAP_FALHAS.md`                                     | Modificado | F-A02 marcado como ✅ Concluído             |
+| `docs/CONTEXTO.md`                                      | Modificado | Decisão técnica F-A02 adicionada            |
+| `docs/RELATORIO.md`                                     | Modificado | Esta sessão adicionada                      |
+
+### 4. Decisões Técnicas
+
+- **Guard em nível de controller**: O `TwoFactorGuard` foi adicionado no decorator `@UseGuards` da classe, garantindo que todas as rotas do controller exijam 2FA para admins.
+- **Consistência com controllers existentes**: `AdminUsersController`, `AdminGroupsController` e `ReportDefinitionsAdminController` já usavam o guard. Agora todos os controllers admin seguem o mesmo padrão.
+
+### 5. Próximos Passos
+
+- F-A03: Dashboards Controller — inputs sem validação DTO
 - Demais falhas altas e médias conforme ROADMAP_FALHAS.md
 
 ---

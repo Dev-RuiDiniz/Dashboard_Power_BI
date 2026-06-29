@@ -98,7 +98,7 @@
 ### F-A02 — `TwoFactorGuard` Inconsistente Entre Controllers Admin
 
 - **Severidade:** 🟠 ALTO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/platform/settings/settings.controller.ts`
   - `apps/api/src/permissions/permissions.controller.ts`

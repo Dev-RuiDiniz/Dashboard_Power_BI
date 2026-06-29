@@ -5,13 +5,14 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { TwoFactorGuard } from '../../auth/guards/two-factor.guard';
 import { AuthenticatedRequestUser } from '../../auth/types/auth.types';
 import { SettingsService } from './settings.service';
 
 @ApiTags('settings')
 @ApiBearerAuth()
 @Controller('admin/settings')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TwoFactorGuard)
 @Roles('admin')
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
