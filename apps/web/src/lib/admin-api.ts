@@ -5,6 +5,7 @@ import {
   type AuthSession,
 } from '@/lib/auth/session';
 import { refreshSession } from '@/lib/auth/api';
+import { getCsrfHeader } from '@/lib/csrf';
 
 const DEFAULT_API_URL = 'http://localhost:3001';
 
@@ -45,13 +46,18 @@ async function executeWithAuth(
   sessionOverride?: AuthSession | null,
 ) {
   const session = sessionOverride ?? (typeof window !== 'undefined' ? getAuthSession() : null);
+  const method = (init.method ?? 'GET').toUpperCase();
+  const isStateChanging = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method);
+
   const response = await fetch(`${getApiUrl()}${path}`, {
     ...init,
     headers: {
       ...getAuthHeaders(session),
+      ...(isStateChanging ? getCsrfHeader() : {}),
       ...(init.headers ?? {}),
     },
     cache: 'no-store',
+    credentials: 'include',
   });
 
   if (response.status === 401 && allowRefresh && session?.refreshToken) {

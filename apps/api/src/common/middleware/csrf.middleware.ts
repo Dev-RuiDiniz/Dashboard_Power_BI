@@ -2,11 +2,9 @@ import { Injectable, NestMiddleware, ForbiddenException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { randomBytes } from 'crypto';
 
-declare global {
-  namespace Express {
-    interface Request {
-      csrfToken?: string;
-    }
+declare module 'express' {
+  interface Request {
+    csrfToken?: string;
   }
 }
 
@@ -25,9 +23,9 @@ export class CsrfMiddleware implements NestMiddleware {
       if (!token) {
         token = this.generateToken();
         res.cookie(this.cookieName, token, {
-          httpOnly: true,
+          httpOnly: false,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
+          sameSite: 'lax',
           maxAge: 3600000, // 1 hour
         });
       }

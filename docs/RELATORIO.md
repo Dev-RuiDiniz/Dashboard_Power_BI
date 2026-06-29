@@ -73,38 +73,75 @@ Auditoria completa do projeto confrontando documentação com runtime real. Enco
 - `docs/roadmap/01-telas.md` — Débitos de T09 corrigidos
 - `docs/ROADMAP.md` — Backlog e matriz SDD/TDD atualizados
 - `docs/ARQUITETURA.md` — Módulos, pendentes e débitos corrigidos
-- `docs/CONTEXTO.md` — Pendências, riscos e decisões atualizados
-- `docs/ESCOPO.md` — Módulo Reports atualizado
-- `docs/ANALISE_ESCOPO_V1.md` — Matriz de módulos e pontos por módulo corrigidos
-- `README.md` — Seção de segurança corrigida
-- `docs/specs/README.md` — Status da SPEC-T09b atualizado
 
-### 6. Bugs Encontrados e Correções
+---
 
-| Bug                                                  | Causa                                                | Correção                                        | Status    |
-| ---------------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------- | --------- |
-| BullMQ + Redis marcado como pendente na documentação | Implementação não foi refletida na docs após entrega | Status atualizado para Concluído em 11 arquivos | Resolvido |
-| 2FA/TOTP marcado como pendente na documentação       | Implementação não foi refletida na docs após entrega | Status atualizado para Concluído em 11 arquivos | Resolvido |
+## 2026-06-28 — Registro do Dia (Sessão 3)
 
-### 7. Decisões Tomadas
+### 1. Resumo
 
-| Decisão                                  | Motivo                                           | Impacto                  |
-| ---------------------------------------- | ------------------------------------------------ | ------------------------ |
-| Corrigir divergências docs vs runtime    | Documentação deve refletir estado real do código | 11 arquivos atualizados  |
-| Manter 2FA como opcional na documentação | 2FA obrigatório para admins é DT-001 separado    | Pendência DT-001 mantida |
+Correção da falha crítica F-C01 (CSRF Middleware Completamente Quebrado) identificada na auditoria. O middleware CSRF estava registrado globalmente mas era completamente inoperante devido a três falhas combinadas: ausência de `cookie-parser`, CORS sem `credentials: true`, e frontend não enviando o header `x-csrf-token`. Também resolveu F-M03 (auth/refresh não excluído do CSRF).
 
-### 8. Bloqueios
+### 2. Tarefas Executadas
 
-| Bloqueio | Impacto | Próxima ação |
-| -------- | ------- | ------------ |
-| Nenhum   | —       | —            |
+- [x] Instalar `cookie-parser` e `@types/cookie-parser` no backend
+- [x] Configurar `main.ts`: `cookieParser()`, `credentials: true` no CORS, origins configuráveis via `CORS_ORIGINS`
+- [x] Excluir `auth/refresh`, `auth/totp/*`, `auth/logout`, `auth/sessions/revoke-all` do CSRF em `common.module.ts`
+- [x] Ajustar `csrf.middleware.ts`: `httpOnly: false` (frontend lê cookie via JS) + `sameSite: 'lax'`
+- [x] Criar `apps/web/src/lib/csrf.ts` — utilitário para ler cookie `csrf-token` e expor `getCsrfHeader()`
+- [x] Injetar header `x-csrf-token` no `admin-api.ts` em requisições POST/PATCH/PUT/DELETE
+- [x] Injetar `credentials: 'include'` e parâmetro `includeCsrf` no `auth/api.ts`
+- [x] Escrever testes unitários do middleware CSRF (12 cenários)
+- [x] Atualizar `.env.example` com `CORS_ORIGINS`
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/ARQUITETURA.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
 
-### 9. Próximos Passos
+### 3. Arquivos Criados ou Modificados
 
-1. Commit e push das correções
-2. Iniciar Fase 3: Editor visual drag-and-drop completo (T16b)
-3. Implementar 2FA obrigatório para admins (DT-001)
-4. Implementar hardening final de sessão (DT-002)
+| Arquivo                                                  | Ação       | Descrição                                                                          |
+| -------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------- |
+| `apps/api/package.json`                                  | Modificado | Adicionado `cookie-parser` e `@types/cookie-parser`                                |
+| `apps/api/src/main.ts`                                   | Modificado | `cookieParser()`, CORS com `credentials: true` e origins via `CORS_ORIGINS`        |
+| `apps/api/src/common/common.module.ts`                   | Modificado | Excluído auth/refresh, auth/totp/\*, auth/logout, auth/sessions/revoke-all do CSRF |
+| `apps/api/src/common/middleware/csrf.middleware.ts`      | Modificado | `httpOnly: false` + `sameSite: 'lax'`                                              |
+| `apps/api/src/common/middleware/csrf.middleware.spec.ts` | Criado     | 12 testes unitários (GET seta cookie, POST valida header, mismatch, etc.)          |
+| `apps/web/src/lib/csrf.ts`                               | Criado     | Utilitário `getCsrfToken()` e `getCsrfHeader()`                                    |
+| `apps/web/src/lib/admin-api.ts`                          | Modificado | Header `x-csrf-token` em POST/PATCH/PUT/DELETE + `credentials: 'include'`          |
+| `apps/web/src/lib/auth/api.ts`                           | Modificado | Parâmetro `includeCsrf` + `credentials: 'include'`                                 |
+| `infra/env/.env.example`                                 | Modificado | Adicionado `CORS_ORIGINS`                                                          |
+| `ROADMAP_FALHAS.md`                                      | Modificado | F-C01 e F-M03 marcados como Concluído                                              |
+| `docs/ARQUITETURA.md`                                    | Modificado | Seção CSRF atualizada com double-submit pattern                                    |
+| `docs/CONTEXTO.md`                                       | Modificado | Decisão técnica de correção do CSRF adicionada                                     |
+| `docs/RELATORIO.md`                                      | Modificado | Esta entrada adicionada                                                            |
+
+### 4. Testes
+
+| Comando                                           | Resultado | Observações                 |
+| ------------------------------------------------- | --------- | --------------------------- |
+| `pnpm --filter @dashboard-power-bi/api test`      | Pendente  | Será executado na validação |
+| `pnpm --filter @dashboard-power-bi/api typecheck` | Pendente  | Será executado na validação |
+| `pnpm --filter @dashboard-power-bi/api build`     | Pendente  | Será executado na validação |
+| `pnpm --filter @dashboard-power-bi/web typecheck` | Pendente  | Será executado na validação |
+| `pnpm --filter @dashboard-power-bi/web build`     | Pendente  | Será executado na validação |
+
+### 5. Documentação Atualizada
+
+- `ROADMAP_FALHAS.md` — F-C01 e F-M03 marcados como ✅ Concluído
+- `docs/ARQUITETURA.md` — Seção 10 (Segurança) atualizada com detalhes do CSRF double-submit pattern
+- `docs/CONTEXTO.md` — Decisão técnica de correção do CSRF registrada
+- `docs/RELATORIO.md` — Esta sessão adicionada
+
+### 6. Decisões Técnicas
+
+- **Cookie `httpOnly: false`**: Necessário para que o frontend leia o token CSRF via `document.cookie`. O token CSRF é um valor aleatório sem valor sensível; a proteção é o double-submit pattern (cookie vs header).
+- **`sameSite: 'lax'`**: Permite envio do cookie em navegação cross-origin (frontend na porta 3000, API na porta 3001).
+- **Rotas de auth excluídas do CSRF**: Todas as rotas em `auth/api.ts` usam tokens (JWT/refresh) e não cookies de sessão, então CSRF não se aplica. O frontend não consegue ler o cookie CSRF antes do login.
+- **`credentials: 'include'` no frontend**: Necessário para que o browser envie cookies cross-origin (ports diferentes).
+
+### 7. Próximos Passos
+
+- F-C02: Corrigir refresh token para todos os usuários (não apenas demo)
+- F-C03: Sanitizar path traversal no download de exports
+- F-C04: Corrigir timing attack no JWT
 
 ---
 

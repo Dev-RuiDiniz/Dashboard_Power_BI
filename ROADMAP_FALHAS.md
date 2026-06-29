@@ -22,7 +22,7 @@
 ### F-C01 — CSRF Middleware Completamente Quebrado
 
 - **Severidade:** 🔴 CRÍTICO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-28)
 - **Arquivos:**
   - `apps/api/src/common/middleware/csrf.middleware.ts`
   - `apps/api/src/common/common.module.ts`
@@ -213,7 +213,7 @@
 ### F-M03 — `auth/refresh` Não Excluído do CSRF
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-28)
 - **Arquivos:**
   - `apps/api/src/common/common.module.ts` (linhas 10-16)
 - **Descrição:**

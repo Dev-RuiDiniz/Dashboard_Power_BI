@@ -1,4 +1,5 @@
 import { AuthClientError } from './errors';
+import { getCsrfHeader } from '@/lib/csrf';
 
 export type LoginResponse = {
   accessToken: string;
@@ -69,6 +70,7 @@ async function post<T>(
   path: string,
   payload: Record<string, unknown>,
   extraHeaders?: Record<string, string>,
+  includeCsrf = false,
 ): Promise<T> {
   try {
     const response = await fetch(`${getApiUrl()}${path}`, {
@@ -76,8 +78,10 @@ async function post<T>(
       headers: {
         'Content-Type': 'application/json',
         ...extraHeaders,
+        ...(includeCsrf ? getCsrfHeader() : {}),
       },
       body: JSON.stringify(payload),
+      credentials: 'include',
     });
 
     return parseJsonResponse<T>(response);

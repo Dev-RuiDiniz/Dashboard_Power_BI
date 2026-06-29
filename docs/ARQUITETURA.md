@@ -348,7 +348,9 @@ A API NestJS é a fonte oficial de todos os fluxos autenticados. O frontend não
 
 - `JwtAuthGuard` em todas as rotas autenticadas
 - `RolesGuard` para rotas administrativas
-- Middleware CSRF: token em cookie + header `x-csrf-token`
+- Middleware CSRF: double-submit pattern (cookie `csrf-token` com `httpOnly: false` + `sameSite: 'lax'` + header `x-csrf-token` no frontend)
+- CORS com `credentials: true` e origins configuráveis via `CORS_ORIGINS`
+- Rotas de auth (login, refresh, logout, TOTP, forgot/reset password) excluídas do CSRF
 - Sessão web em `sessionStorage` (não `localStorage`)
 
 ### Headers de segurança ativos
