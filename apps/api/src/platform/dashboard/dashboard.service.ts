@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
+import { SectorCode } from '../../auth/types/auth.types';
 import { DatabaseProviderService } from '../../sql-server/database-provider.service';
 import { SqlQueryService } from '../../sql-server/sql-query.service';
 
@@ -170,6 +171,28 @@ const BUSINESS_AREA_LABEL: Record<BusinessArea, string> = {
   algodoeira: 'Algodoeira',
 };
 
+const SECTOR_TO_BUSINESS_AREA: Record<string, BusinessArea> = {
+  operacoes: 'producao',
+  comercial: 'comercial',
+  financeiro: 'algodoeira',
+};
+
+function shouldSeeAllSectors(sectors: SectorCode[]): boolean {
+  return sectors.length === 0 || sectors.includes('diretoria');
+}
+
+function filterKpisBySectors(kpis: DashboardKpi[], sectors: SectorCode[]): DashboardKpi[] {
+  if (shouldSeeAllSectors(sectors)) {
+    return kpis;
+  }
+
+  const allowedAreas = new Set<BusinessArea>(
+    sectors.map((s) => SECTOR_TO_BUSINESS_AREA[s]).filter(Boolean),
+  );
+
+  return kpis.filter((kpi) => allowedAreas.has(kpi.businessArea));
+}
+
 @Injectable()
 export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
@@ -180,14 +203,17 @@ export class DashboardService {
     private readonly databaseProviderService: DatabaseProviderService,
   ) {}
 
-  async getHome(): Promise<DashboardHomeResponse> {
-    const kpis = await this.listKpis();
+  async getHome(sectors: SectorCode[] = []): Promise<DashboardHomeResponse> {
+    const kpis = await this.listKpis(sectors);
 
     return buildDashboardHome(kpis);
   }
 
-  async getKpiDrilldown(kpiId: string): Promise<DashboardDrilldownResponse> {
-    const kpis = await this.listKpis();
+  async getKpiDrilldown(
+    kpiId: string,
+    sectors: SectorCode[] = [],
+  ): Promise<DashboardDrilldownResponse> {
+    const kpis = await this.listKpis(sectors);
     const kpi = kpis.find((item) => item.id === kpiId);
 
     if (!kpi) {
@@ -213,10 +239,10 @@ export class DashboardService {
     };
   }
 
-  async listKpis(): Promise<DashboardKpi[]> {
+  async listKpis(sectors: SectorCode[] = []): Promise<DashboardKpi[]> {
     const dataset = await this.loadDataset();
 
-    return KPI_DEFINITIONS.map((definition) => {
+    const allKpis = KPI_DEFINITIONS.map((definition) => {
       const value = round(definition.getValue(dataset));
       const previousValue = round(definition.getPreviousValue(dataset, value));
 
@@ -230,6 +256,8 @@ export class DashboardService {
         unit: definition.unit,
       };
     });
+
+    return filterKpisBySectors(allKpis, sectors);
   }
 
   async listSectors(): Promise<DashboardSector[]> {
@@ -242,8 +270,8 @@ export class DashboardService {
     );
   }
 
-  async getKpiHistory(kpiId: string): Promise<KpiHistoryResponse> {
-    const kpis = await this.listKpis();
+  async getKpiHistory(kpiId: string, sectors: SectorCode[] = []): Promise<KpiHistoryResponse> {
+    const kpis = await this.listKpis(sectors);
     const kpi = kpis.find((item) => item.id === kpiId);
 
     if (!kpi) {

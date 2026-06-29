@@ -173,7 +173,7 @@
 ### F-A08 — Dashboard Controller Não Filtra por Setor do Usuário
 
 - **Severidade:** 🟠 ALTO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/platform/dashboard/dashboard.controller.ts`
 - **Descrição:**

@@ -428,8 +428,46 @@ Correção das falhas altas F-A06 (Memory Mode: getFilePathForUser Retorna URL e
 
 ### 5. Próximos Passos
 
-- F-A08: Dashboard Controller não filtra por setor do usuário
-- Demais falhas altas e médias conforme ROADMAP_FALHAS.md
+- Demais falhas médias e baixas conforme ROADMAP_FALHAS.md
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 12)
+
+### 1. Resumo
+
+Correção da falha alta F-A08 (Dashboard Controller Não Filtra por Setor do Usuário). Todos os endpoints do `DashboardController` agora recebem `@CurrentUser()` e filtram KPIs, drilldowns e histórico por `user.sectors`.
+
+### 2. Tarefas Executadas
+
+- [x] Adicionar `@CurrentUser()` em todos os endpoints do `DashboardController` (exceto `listSectors`)
+- [x] Passar `user.sectors` para `getHome()`, `listKpis()`, `getKpiDrilldown()`, `getKpiHistory()`
+- [x] Criar mapeamento `SECTOR_TO_BUSINESS_AREA`: `operacoes` → `producao`, `comercial` → `comercial`, `financeiro` → `algodoeira`
+- [x] Criar `filterKpisBySectors()` — usuários com `diretoria` ou sectors vazio veem tudo
+- [x] Adicionar 5 testes unitários para o filtro por setores
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
+
+### 3. Arquivos Modificados
+
+| Arquivo                                                     | Ação       | Descrição                                                                    |
+| ----------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
+| `apps/api/src/platform/dashboard/dashboard.controller.ts`   | Modificado | `@CurrentUser()` injetado; `user.sectors` passado ao service                 |
+| `apps/api/src/platform/dashboard/dashboard.service.ts`      | Modificado | Métodos aceitam `sectors`; `filterKpisBySectors` + `SECTOR_TO_BUSINESS_AREA` |
+| `apps/api/src/platform/dashboard/dashboard.service.spec.ts` | Modificado | 5 novos testes para filtro por setores                                       |
+| `ROADMAP_FALHAS.md`                                         | Modificado | F-A08 marcado como ✅ Concluído                                              |
+| `docs/CONTEXTO.md`                                          | Modificado | Decisão técnica F-A08 adicionada                                             |
+| `docs/RELATORIO.md`                                         | Modificado | Esta sessão adicionada                                                       |
+
+### 4. Decisões Técnicas
+
+- **Mapeamento `SectorCode` → `BusinessArea`**: Os setores do usuário (`financeiro`, `comercial`, `operacoes`, `diretoria`) não mapeiam 1:1 para as business areas dos KPIs (`producao`, `comercial`, `algodoeira`). O mapeamento escolhido: `operacoes` → `producao`, `comercial` → `comercial`, `financeiro` → `algodoeira`. Esta suposição deve ser validada com a regra de negócio.
+- **`diretoria` vê tudo**: Usuários com `diretoria` em seus setores ou array vazio veem todos os KPIs, garantindo acesso total para administradores.
+- **`listSectors` sem filtro**: O endpoint `GET /dashboard/sectors` lista todos os setores disponíveis independentemente do usuário, pois serve como catálogo de referência.
+- **Parâmetros com default `[]`**: Os métodos do service aceitam `sectors: SectorCode[] = []` para manter compatibilidade com callers que não passam setores (ex: testes existentes).
+
+### 5. Próximos Passos
+
+- Demais falhas médias e baixas conforme ROADMAP_FALHAS.md
 
 ---
 

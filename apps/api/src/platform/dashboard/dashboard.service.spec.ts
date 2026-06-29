@@ -1,4 +1,6 @@
+import { NotFoundException } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
+import { SectorCode } from '../../auth/types/auth.types';
 
 describe('DashboardService', () => {
   it('monta payload consolidado para a home de BI', async () => {
@@ -99,6 +101,52 @@ describe('DashboardService', () => {
           delta: expect.any(Number),
         }),
       ]),
+    );
+  });
+
+  it('filtra KPIs por setor do usuario (comercial apenas)', async () => {
+    const service = new DashboardService({} as never, {} as never);
+    const sectors: SectorCode[] = ['comercial'];
+
+    const kpis = await service.listKpis(sectors);
+
+    expect(kpis.length).toBeGreaterThan(0);
+    expect(kpis.every((kpi) => kpi.businessArea === 'comercial')).toBe(true);
+  });
+
+  it('filtra KPIs por setor do usuario (operacoes -> producao)', async () => {
+    const service = new DashboardService({} as never, {} as never);
+    const sectors: SectorCode[] = ['operacoes'];
+
+    const kpis = await service.listKpis(sectors);
+
+    expect(kpis.length).toBeGreaterThan(0);
+    expect(kpis.every((kpi) => kpi.businessArea === 'producao')).toBe(true);
+  });
+
+  it('retorna todos os KPIs para usuario com setor diretoria', async () => {
+    const service = new DashboardService({} as never, {} as never);
+    const sectors: SectorCode[] = ['diretoria'];
+
+    const kpis = await service.listKpis(sectors);
+
+    expect(kpis).toHaveLength(12);
+  });
+
+  it('retorna todos os KPIs quando sectors e vazio', async () => {
+    const service = new DashboardService({} as never, {} as never);
+
+    const kpis = await service.listKpis([]);
+
+    expect(kpis).toHaveLength(12);
+  });
+
+  it('lancar NotFoundException para KPI fora do setor do usuario', async () => {
+    const service = new DashboardService({} as never, {} as never);
+    const sectors: SectorCode[] = ['comercial'];
+
+    await expect(service.getKpiDrilldown('producao-plantio-area', sectors)).rejects.toThrow(
+      NotFoundException,
     );
   });
 });

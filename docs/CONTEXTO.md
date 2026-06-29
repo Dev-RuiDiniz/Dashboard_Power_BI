@@ -146,6 +146,7 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 | 2026-06-29 | DTO com whitelist de keys no settings (F-A05)                | Prevenir modificação de settings sensíveis          | `UpdateSettingDto` com `@IsIn(ALLOWED_SETTING_KEYS)` e `@IsObject()` no value                                             | Ativa  |
 | 2026-06-29 | Correção do memory mode em exports (F-A06)                   | Download funcionar em modo desenvolvimento          | `ensureMockFile()` gera arquivo mock no storageDir com conteúdo válido por extensão                                       | Ativa  |
 | 2026-06-29 | CORS via env var (F-A07)                                     | Frontend acessar API em produção                    | `CORS_ORIGINS` env var com fallback para localhost (já implementado na sessão F-C01)                                      | Ativa  |
+| 2026-06-29 | Filtro por setor no dashboard controller (F-A08)             | Isolamento de dados por setor                       | `@CurrentUser()` injetado; `filterKpisBySectors` mapeia `SectorCode` → `BusinessArea`; `diretoria` e vazio veem tudo      | Ativa  |
 
 ---
 
