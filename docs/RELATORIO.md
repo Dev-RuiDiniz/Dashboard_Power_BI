@@ -394,7 +394,41 @@ Correção da falha alta F-A05 (Settings Controller: Body Sem DTO nem Whitelist 
 
 ### 5. Próximos Passos
 
-- F-A06: Memory Mode — getFilePathForUser retorna URL em vez de path
+- F-A08: Dashboard Controller não filtra por setor do usuário
+- Demais falhas altas e médias conforme ROADMAP_FALHAS.md
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 11)
+
+### 1. Resumo
+
+Correção das falhas altas F-A06 (Memory Mode: getFilePathForUser Retorna URL em Vez de Path) e F-A07 (CORS Hardcoded para localhost — já estava corrigido na sessão F-C01).
+
+### 2. Tarefas Executadas
+
+- [x] Adicionar `ensureMockFile()` que gera arquivo mock no `storageDir` com conteúdo válido por extensão (csv, json, pdf, excel)
+- [x] Substituir retorno `job.file_url` por `this.ensureMockFile(fileName)` em memory mode
+- [x] F-A07: Confirmar que `main.ts` já lê `CORS_ORIGINS` do env var (corrigido na sessão F-C01)
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
+
+### 3. Arquivos Modificados
+
+| Arquivo                                            | Ação       | Descrição                                                                  |
+| -------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
+| `apps/api/src/platform/exports/exports.service.ts` | Modificado | `ensureMockFile()` + `buildMockContent()`; memory mode retorna path válido |
+| `ROADMAP_FALHAS.md`                                | Modificado | F-A06 e F-A07 marcados como ✅ Concluído                                   |
+| `docs/CONTEXTO.md`                                 | Modificado | Decisões técnicas F-A06 e F-A07 adicionadas                                |
+| `docs/RELATORIO.md`                                | Modificado | Esta sessão adicionada                                                     |
+
+### 4. Decisões Técnicas
+
+- **Arquivo mock no storageDir**: Em vez de retornar uma URL relativa, o método `ensureMockFile()` cria um arquivo físico no `EXPORT_STORAGE_DIR` com conteúdo apropriado para a extensão. Isso permite que `createReadStream()` funcione corretamente em modo desenvolvimento.
+- **F-A07 já corrigido**: A correção do CORS via `CORS_ORIGINS` env var foi implementada na sessão F-C01. Apenas marcada como concluída no roadmap.
+
+### 5. Próximos Passos
+
+- F-A08: Dashboard Controller não filtra por setor do usuário
 - Demais falhas altas e médias conforme ROADMAP_FALHAS.md
 
 ---

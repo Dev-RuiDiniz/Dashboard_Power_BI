@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 import { randomUUID } from 'node:crypto';
-import { resolve, relative } from 'node:path';
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { resolve, relative, dirname, join } from 'node:path';
 
 import { AuthenticatedRequestUser } from '../../auth/types/auth.types';
 import { ReportsApiService } from '../../reports/reports-api.service';
@@ -206,7 +207,7 @@ export class ExportsService {
       if (new Date(job.expires_at) < new Date()) {
         throw new NotFoundException('Arquivo expirado.');
       }
-      return job.file_url ?? '/mock-export';
+      return this.ensureMockFile(fileName);
     }
 
     const { data, error } = await this.supabaseService
@@ -263,6 +264,38 @@ export class ExportsService {
       this.queue = new Queue(EXPORTS_QUEUE_NAME, { connection: this.connection as never });
     } catch {
       this.queue = null;
+    }
+  }
+
+  private ensureMockFile(fileName: string): string {
+    const storageDir = resolve(
+      this.configService.get<string>('EXPORT_STORAGE_DIR', './storage/exports'),
+    );
+    const filePath = join(storageDir, fileName);
+
+    if (!existsSync(filePath)) {
+      mkdirSync(dirname(filePath), { recursive: true });
+      const ext = fileName.split('.').pop()?.toLowerCase();
+      const content = this.buildMockContent(ext ?? 'csv');
+      writeFileSync(filePath, content, 'utf8');
+    }
+
+    return filePath;
+  }
+
+  private buildMockContent(ext: string): string {
+    switch (ext) {
+      case 'json':
+        return JSON.stringify({
+          message: 'Mock export file',
+          generatedAt: new Date().toISOString(),
+        });
+      case 'csv':
+        return 'id,nome,valor\n1,Mock,100\n2,Mock,200\n';
+      case 'pdf':
+        return '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\nxref\n0 3\n0000000000 65535 f \ntrailer\n<< /Size 3 /Root 1 0 R >>\nstartxref\n0\n%%EOF';
+      default:
+        return 'Mock export file';
     }
   }
 }

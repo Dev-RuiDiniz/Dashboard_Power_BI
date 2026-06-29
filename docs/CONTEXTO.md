@@ -144,6 +144,8 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 | 2026-06-29 | DTOs com class-validator no dashboards controller (F-A03)    | Validar payload dos endpoints de dashboards         | 5 DTOs criados: `CreateDashboardDto`, `UpdateDashboardDto`, `CreateWidgetDto`, `UpdateWidgetDto`, `BatchUpdateWidgetsDto` | Ativa  |
 | 2026-06-29 | Alinhar contrato batch update widgets (F-A04)                | Batch update funcionar entre frontend e backend     | Backend agora aceita `{ items: [...] }` via `BatchUpdateWidgetsDto`                                                       | Ativa  |
 | 2026-06-29 | DTO com whitelist de keys no settings (F-A05)                | Prevenir modificação de settings sensíveis          | `UpdateSettingDto` com `@IsIn(ALLOWED_SETTING_KEYS)` e `@IsObject()` no value                                             | Ativa  |
+| 2026-06-29 | Correção do memory mode em exports (F-A06)                   | Download funcionar em modo desenvolvimento          | `ensureMockFile()` gera arquivo mock no storageDir com conteúdo válido por extensão                                       | Ativa  |
+| 2026-06-29 | CORS via env var (F-A07)                                     | Frontend acessar API em produção                    | `CORS_ORIGINS` env var com fallback para localhost (já implementado na sessão F-C01)                                      | Ativa  |
 
 ---
 

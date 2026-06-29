@@ -149,7 +149,7 @@
 ### F-A06 — Memory Mode: `getFilePathForUser` Retorna URL em Vez de Path
 
 - **Severidade:** 🟠 ALTO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/platform/exports/exports.service.ts` (linha 180)
 - **Descrição:**
@@ -161,7 +161,7 @@
 ### F-A07 — CORS Hardcoded para localhost
 
 - **Severidade:** 🟠 ALTO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/main.ts` (linhas 9-11)
 - **Descrição:**
