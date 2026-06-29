@@ -176,7 +176,43 @@ Correção da falha crítica F-C02 (Refresh Token Só Funciona para o Usuário D
 
 ### 5. Próximos Passos
 
-- F-C03: Sanitizar path traversal no download de exports
+- F-C04: Corrigir timing attack no JWT
+
+---
+
+## 2026-06-28 — Registro do Dia (Sessão 5)
+
+### 1. Resumo
+
+Correção da falha crítica F-C03 (Path Traversal no Download de Exports). O endpoint `GET /exports/files/:fileName` recebia `fileName` sem sanitização e o `file_path` do banco era passado diretamente para `createReadStream()`, permitindo leitura arbitrária de arquivos do servidor.
+
+### 2. Tarefas Executadas
+
+- [x] Adicionar validação de `fileName` com regex UUID + extensão permitida (`pdf|excel|csv|json`)
+- [x] Rejeitar `fileName` contendo `..`, `/` ou `\`
+- [x] Adicionar `resolveSafeFilePath()` que usa `path.resolve()` + `relative()` para verificar se o path está dentro do `storageDir`
+- [x] Aplicar validação no fluxo Supabase (onde `file_path` vem do banco)
+- [x] Adicionar 9 testes unitários cobrindo path traversal, caracteres maliciosos, extensões inválidas e path fora do storageDir
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
+
+### 3. Arquivos Criados ou Modificados
+
+| Arquivo                                                 | Ação       | Descrição                                                                        |
+| ------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------- |
+| `apps/api/src/platform/exports/exports.service.ts`      | Modificado | `validateFileName()`, `resolveSafeFilePath()`, validação no `getFilePathForUser` |
+| `apps/api/src/platform/exports/exports.service.spec.ts` | Modificado | 9 testes de validação de fileName e path traversal                               |
+| `ROADMAP_FALHAS.md`                                     | Modificado | F-C03 marcado como ✅ Concluído                                                  |
+| `docs/CONTEXTO.md`                                      | Modificado | Decisão técnica de correção do path traversal adicionada                         |
+| `docs/RELATORIO.md`                                     | Modificado | Esta sessão adicionada                                                           |
+
+### 4. Decisões Técnicas
+
+- **Regex UUID + extensão**: Garante que o `fileName` seja sempre um UUID válido com extensão permitida, bloqueando nomes arbitrários.
+- **`path.resolve()` + `relative()`**: Mesmo que o `file_path` no banco seja manipulado, o path resolvido é comparado contra o `storageDir`. Se o path relativo começar com `..` ou contiver `..`, é rejeitado.
+- **Validação no service (não no controller)**: A validação fica na camada de serviço, garantindo que qualquer chamada a `getFilePathForUser` seja protegida.
+
+### 5. Próximos Passos
+
 - F-C04: Corrigir timing attack no JWT
 
 ---

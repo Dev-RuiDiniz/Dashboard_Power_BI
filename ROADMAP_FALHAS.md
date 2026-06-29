@@ -55,7 +55,7 @@
 ### F-C03 — Path Traversal no Download de Exports
 
 - **Severidade:** 🔴 CRÍTICO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-28)
 - **Arquivos:**
   - `apps/api/src/platform/exports/exports.service.ts` (linhas 170-204)
   - `apps/api/src/platform/exports/exports.controller.ts` (linhas 32-43)

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 import { randomUUID } from 'node:crypto';
+import { resolve, relative } from 'node:path';
 
 import { AuthenticatedRequestUser } from '../../auth/types/auth.types';
 import { ReportsApiService } from '../../reports/reports-api.service';
@@ -30,9 +31,35 @@ export type CreateExportInput = {
 
 @Injectable()
 export class ExportsService {
+  private static readonly SAFE_FILE_NAME = /^[a-f0-9-]{36}\.(pdf|excel|csv|json)$/i;
   private queue: Queue | null = null;
   private connection: IORedis | null = null;
   private memoryExports = new Map<string, ExportJobRecord[]>();
+
+  private validateFileName(fileName: string): void {
+    if (
+      !ExportsService.SAFE_FILE_NAME.test(fileName) ||
+      fileName.includes('..') ||
+      fileName.includes('/') ||
+      fileName.includes('\\')
+    ) {
+      throw new BadRequestException('Nome de arquivo inválido.');
+    }
+  }
+
+  private resolveSafeFilePath(filePath: string): string {
+    const storageDir = resolve(
+      this.configService.get<string>('EXPORT_STORAGE_DIR', './storage/exports'),
+    );
+    const resolvedPath = resolve(filePath);
+    const relativePath = relative(storageDir, resolvedPath);
+
+    if (relativePath.startsWith('..') || relativePath.includes('..') || relativePath === '') {
+      throw new BadRequestException('Caminho de arquivo inválido.');
+    }
+
+    return resolvedPath;
+  }
 
   constructor(
     private readonly configService: ConfigService,
@@ -168,6 +195,8 @@ export class ExportsService {
   }
 
   async getFilePathForUser(userId: string, fileName: string): Promise<string> {
+    this.validateFileName(fileName);
+
     if (this.useMemory()) {
       const jobs = this.getUserExports(userId);
       const job = jobs.find((j) => j.file_url?.includes(fileName));
@@ -200,7 +229,7 @@ export class ExportsService {
       throw new NotFoundException('Arquivo expirado.');
     }
 
-    return data.file_path;
+    return this.resolveSafeFilePath(data.file_path);
   }
 
   async deleteExpiredExports(cutoffDate: Date): Promise<number> {
