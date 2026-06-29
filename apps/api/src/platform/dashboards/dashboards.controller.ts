@@ -4,14 +4,12 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AuthenticatedRequestUser } from '../../auth/types/auth.types';
-import {
-  CreateDashboardInput,
-  CreateWidgetInput,
-  DashboardsService,
-  UpdateDashboardInput,
-  UpdateWidgetInput,
-  BatchUpdateWidgetInput,
-} from './dashboards.service';
+import { DashboardsService } from './dashboards.service';
+import { CreateDashboardDto } from './dto/create-dashboard.dto';
+import { UpdateDashboardDto } from './dto/update-dashboard.dto';
+import { CreateWidgetDto } from './dto/create-widget.dto';
+import { UpdateWidgetDto } from './dto/update-widget.dto';
+import { BatchUpdateWidgetsDto } from './dto/batch-update-widgets.dto';
 import { ReorderWidgetsDto } from './dto/reorder-widgets.dto';
 
 @ApiTags('dashboards')
@@ -29,7 +27,7 @@ export class DashboardsController {
 
   @Post()
   @ApiOkResponse({ description: 'Cria um dashboard personalizado.' })
-  create(@CurrentUser() user: AuthenticatedRequestUser, @Body() body: CreateDashboardInput) {
+  create(@CurrentUser() user: AuthenticatedRequestUser, @Body() body: CreateDashboardDto) {
     return this.dashboardsService.createForUser(user.sub, body);
   }
 
@@ -44,7 +42,7 @@ export class DashboardsController {
   update(
     @CurrentUser() user: AuthenticatedRequestUser,
     @Param('id') id: string,
-    @Body() body: UpdateDashboardInput,
+    @Body() body: UpdateDashboardDto,
   ) {
     return this.dashboardsService.updateForUser(user.sub, id, body);
   }
@@ -60,7 +58,7 @@ export class DashboardsController {
   addWidget(
     @CurrentUser() user: AuthenticatedRequestUser,
     @Param('id') id: string,
-    @Body() body: CreateWidgetInput,
+    @Body() body: CreateWidgetDto,
   ) {
     return this.dashboardsService.addWidget(user.sub, id, body);
   }
@@ -71,7 +69,7 @@ export class DashboardsController {
     @CurrentUser() user: AuthenticatedRequestUser,
     @Param('id') id: string,
     @Param('widgetId') widgetId: string,
-    @Body() body: UpdateWidgetInput,
+    @Body() body: UpdateWidgetDto,
   ) {
     return this.dashboardsService.updateWidget(user.sub, id, widgetId, body);
   }
@@ -91,9 +89,9 @@ export class DashboardsController {
   batchUpdateWidgets(
     @CurrentUser() user: AuthenticatedRequestUser,
     @Param('id') id: string,
-    @Body() body: BatchUpdateWidgetInput[],
+    @Body() body: BatchUpdateWidgetsDto,
   ) {
-    return this.dashboardsService.batchUpdateWidgets(user.sub, id, body);
+    return this.dashboardsService.batchUpdateWidgets(user.sub, id, body.items);
   }
 
   @Delete(':id/widgets/:widgetId')

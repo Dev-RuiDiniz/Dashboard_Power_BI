@@ -112,7 +112,7 @@
 ### F-A03 — Dashboards Controller: Inputs Sem Validação DTO
 
 - **Severidade:** 🟠 ALTO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/platform/dashboards/dashboards.controller.ts`
 - **Descrição:**
@@ -124,7 +124,7 @@
 ### F-A04 — Batch Update Widgets: Contrato Frontend ≠ Backend
 
 - **Severidade:** 🟠 ALTO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/platform/dashboards/dashboards.controller.ts` (linhas 89-96)
   - `apps/web/src/lib/platform-api.ts` (linha 260)

@@ -313,7 +313,51 @@ Correção da falha alta F-A02 (TwoFactorGuard Inconsistente Entre Controllers A
 
 ### 5. Próximos Passos
 
-- F-A03: Dashboards Controller — inputs sem validação DTO
+- F-A05: Settings Controller — body sem DTO nem whitelist de keys
+- Demais falhas altas e médias conforme ROADMAP_FALHAS.md
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 9)
+
+### 1. Resumo
+
+Correção das falhas altas F-A03 (Dashboards Controller: Inputs Sem Validação DTO) e F-A04 (Batch Update Widgets: Contrato Frontend ≠ Backend). Criados 5 DTOs com `class-validator` para validar todos os endpoints de dashboards. O contrato de batch update foi alinhado — backend agora aceita `{ items: [...] }` via `BatchUpdateWidgetsDto`, compatível com o frontend.
+
+### 2. Tarefas Executadas
+
+- [x] Criar `CreateDashboardDto` com validação de name, description, isDefault, layout
+- [x] Criar `UpdateDashboardDto` com campos opcionais validados
+- [x] Criar `CreateWidgetDto` com validação de widgetType (enum), title, position (nested)
+- [x] Criar `UpdateWidgetDto` com campos opcionais validados
+- [x] Criar `BatchUpdateWidgetsDto` com `{ items: [...] }` e validação nested de cada item
+- [x] Atualizar `DashboardsController` para usar os DTOs em todos os endpoints
+- [x] Alinhar contrato: backend aceita `{ items: [...] }` (compatível com frontend que já envia `{ items }`)
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
+
+### 3. Arquivos Criados ou Modificados
+
+| Arquivo                                                            | Ação       | Descrição                                                          |
+| ------------------------------------------------------------------ | ---------- | ------------------------------------------------------------------ |
+| `apps/api/src/platform/dashboards/dto/create-dashboard.dto.ts`     | Criado     | DTO com class-validator para criar dashboard                       |
+| `apps/api/src/platform/dashboards/dto/update-dashboard.dto.ts`     | Criado     | DTO com campos opcionais validados                                 |
+| `apps/api/src/platform/dashboards/dto/create-widget.dto.ts`        | Criado     | DTO com enum de widgetType, position nested                        |
+| `apps/api/src/platform/dashboards/dto/update-widget.dto.ts`        | Criado     | DTO com campos opcionais validados                                 |
+| `apps/api/src/platform/dashboards/dto/batch-update-widgets.dto.ts` | Criado     | DTO com `{ items: [...] }` e validação nested                      |
+| `apps/api/src/platform/dashboards/dashboards.controller.ts`        | Modificado | Todos os endpoints usam DTOs; batch aceita `BatchUpdateWidgetsDto` |
+| `ROADMAP_FALHAS.md`                                                | Modificado | F-A03 e F-A04 marcados como ✅ Concluído                           |
+| `docs/CONTEXTO.md`                                                 | Modificado | Decisões técnicas F-A03 e F-A04 adicionadas                        |
+| `docs/RELATORIO.md`                                                | Modificado | Esta sessão adicionada                                             |
+
+### 4. Decisões Técnicas
+
+- **Backend aceita `{ items: [...] }` em vez de array direto**: O frontend já envia `{ items }`, então o backend foi alinhado para aceitar esse formato via `BatchUpdateWidgetsDto`. Isso evita mudar o frontend e padroniza com o padrão já usado no `ReorderWidgetsDto`.
+- **`class-transformer` para validação nested**: Usado `@ValidateNested()` + `@Type()` para validar objetos aninhados como `position` e itens do array de batch update.
+- **Tipos TypeScript mantidos no service**: Os tipos `CreateDashboardInput`, `UpdateDashboardInput`, etc. permanecem no `dashboards.service.ts` como contratos internos. Os DTOs são a camada de validação na borda do controller.
+
+### 5. Próximos Passos
+
+- F-A05: Settings Controller — body sem DTO nem whitelist de keys
 - Demais falhas altas e médias conforme ROADMAP_FALHAS.md
 
 ---
