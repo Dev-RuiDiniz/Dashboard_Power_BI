@@ -70,7 +70,7 @@
 ### F-C04 — JWT Customizado Vulnerável a Timing Attack
 
 - **Severidade:** 🔴 CRÍTICO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-28)
 - **Arquivos:**
   - `apps/api/src/auth/services/token.service.ts` (linha 45)
 - **Descrição:**

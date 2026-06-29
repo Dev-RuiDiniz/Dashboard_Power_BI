@@ -138,6 +138,7 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 | 2026-06-28 | Correção do CSRF middleware (F-C01)                       | Desbloquear operações state-changing na API         | cookie-parser, CORS credentials, header x-csrf-token no frontend, exclusões de rotas auth | Ativa  |
 | 2026-06-28 | Correção do refresh token para todos os usuários (F-C02)  | Desbloquear renovação de sessão para não-demos      | `findAllActive()` no repositório, remoção de `getUsersWithActiveSessions`                 | Ativa  |
 | 2026-06-28 | Correção do path traversal no download de exports (F-C03) | Prevenir leitura arbitrária de arquivos do servidor | Validação de fileName (regex UUID+ext), `path.resolve()` + `relative()` contra storageDir | Ativa  |
+| 2026-06-28 | Correção do timing attack no JWT (F-C04)                  | Prevenir forja de tokens via análise de tempo       | `crypto.timingSafeEqual` na comparação de assinatura JWT                                  | Ativa  |
 
 ---
 

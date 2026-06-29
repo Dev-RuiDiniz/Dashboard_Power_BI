@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHmac, randomUUID } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import { AuthTokenPayload, TotpPendingPayload } from '../types/auth.types';
 
@@ -42,7 +42,7 @@ export class TokenService {
 
     const expectedSignature = this.createSignature(`${encodedHeader}.${encodedPayload}`);
 
-    if (signature !== expectedSignature) {
+    if (!this.safeEqual(signature, expectedSignature)) {
       throw new UnauthorizedException('Token inválido.');
     }
 
@@ -80,7 +80,7 @@ export class TokenService {
 
     const expectedSignature = this.createSignature(`${encodedHeader}.${encodedPayload}`);
 
-    if (signature !== expectedSignature) {
+    if (!this.safeEqual(signature, expectedSignature)) {
       throw new UnauthorizedException('Token inválido.');
     }
 
@@ -126,5 +126,16 @@ export class TokenService {
 
   private base64UrlDecode(value: string): string {
     return Buffer.from(value, 'base64url').toString('utf8');
+  }
+
+  private safeEqual(a: string, b: string): boolean {
+    const bufferA = Buffer.from(a);
+    const bufferB = Buffer.from(b);
+
+    if (bufferA.length !== bufferB.length) {
+      return false;
+    }
+
+    return timingSafeEqual(bufferA, bufferB);
   }
 }

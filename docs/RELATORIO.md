@@ -213,7 +213,44 @@ Correção da falha crítica F-C03 (Path Traversal no Download de Exports). O en
 
 ### 5. Próximos Passos
 
-- F-C04: Corrigir timing attack no JWT
+- F-A01: Corrigir Audit Controller getById (usar @Param em vez de @Query)
+- Demais falhas altas e médias conforme ROADMAP_FALHAS.md
+
+---
+
+## 2026-06-28 — Registro do Dia (Sessão 6)
+
+### 1. Resumo
+
+Correção da falha crítica F-C04 (JWT Customizado Vulnerável a Timing Attack). A comparação de assinatura JWT usava `!==` (non-constant-time), permitindo ataques de timing side-channel para forjar tokens.
+
+### 2. Tarefas Executadas
+
+- [x] Importar `timingSafeEqual` de `node:crypto` no `token.service.ts`
+- [x] Criar método `safeEqual()` que compara dois strings usando `timingSafeEqual` com verificação de length
+- [x] Substituir `!==` por `safeEqual()` em `verifyAccessToken` e `verifyTotpPendingToken`
+- [x] Adicionar 4 testes: token tampered, token malformado, token TOTP válido, token TOTP com assinatura inválida
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
+
+### 3. Arquivos Modificados
+
+| Arquivo                                            | Ação       | Descrição                                                                           |
+| -------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------- |
+| `apps/api/src/auth/services/token.service.ts`      | Modificado | `timingSafeEqual` + `safeEqual()` em `verifyAccessToken` e `verifyTotpPendingToken` |
+| `apps/api/src/auth/services/token.service.spec.ts` | Modificado | 4 testes novos (tampered, malformado, TOTP válido, TOTP inválido)                   |
+| `ROADMAP_FALHAS.md`                                | Modificado | F-C04 marcado como ✅ Concluído                                                     |
+| `docs/CONTEXTO.md`                                 | Modificado | Decisão técnica F-C04 adicionada                                                    |
+| `docs/RELATORIO.md`                                | Modificado | Esta sessão adicionada                                                              |
+
+### 4. Decisões Técnicas
+
+- **`timingSafeEqual` em vez de `jsonwebtoken`**: Mantida a implementação custom de JWT (já funcional e testada), apenas corrigindo a comparação de assinatura para constant-time. Migração para `jsonwebtoken` pode ser avaliada no futuro se necessário.
+- **Verificação de length antes de `timingSafeEqual`**: A função `timingSafeEqual` lança erro se os buffers tiverem tamanhos diferentes, então a verificação de length é feita antes e retorna `false` imediatamente.
+
+### 5. Próximos Passos
+
+- F-A01: Corrigir Audit Controller getById (usar @Param em vez de @Query)
+- Demais falhas altas e médias conforme ROADMAP_FALHAS.md
 
 ---
 
