@@ -1,10 +1,5 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiTags, ApiQuery } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -53,7 +48,7 @@ export class AuditController {
   @Get(':id')
   @ApiOperation({ summary: 'Busca log de auditoria por ID' })
   @ApiOkResponse({ description: 'Log retornado com sucesso.' })
-  async getById(@Query('id') id: string) {
+  async getById(@Param('id') id: string) {
     return this.auditService.getById(id);
   }
 }

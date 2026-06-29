@@ -249,7 +249,35 @@ Correção da falha crítica F-C04 (JWT Customizado Vulnerável a Timing Attack)
 
 ### 5. Próximos Passos
 
-- F-A01: Corrigir Audit Controller getById (usar @Param em vez de @Query)
+- F-A02: Adicionar TwoFactorGuard em SettingsController, PermissionsController e AuditController
+- Demais falhas altas e médias conforme ROADMAP_FALHAS.md
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 7)
+
+### 1. Resumo
+
+Correção da falha alta F-A01 (Audit Controller: `getById` Usa `@Query` em Vez de `@Param`). A rota `@Get(':id')` lia o parâmetro de `@Query('id')` em vez de `@Param('id')`, fazendo com que `GET /admin/audit/abc123` não funcionasse.
+
+### 2. Tarefas Executadas
+
+- [x] Trocar `@Query('id')` por `@Param('id')` no método `getById` do `AuditController`
+- [x] Adicionar `Param` aos imports de `@nestjs/common`
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
+
+### 3. Arquivos Modificados
+
+| Arquivo                                  | Ação       | Descrição                                           |
+| ---------------------------------------- | ---------- | --------------------------------------------------- |
+| `apps/api/src/audit/audit.controller.ts` | Modificado | `@Query('id')` → `@Param('id')` + import de `Param` |
+| `ROADMAP_FALHAS.md`                      | Modificado | F-A01 marcado como ✅ Concluído                     |
+| `docs/CONTEXTO.md`                       | Modificado | Decisão técnica F-A01 adicionada                    |
+| `docs/RELATORIO.md`                      | Modificado | Esta sessão adicionada                              |
+
+### 4. Próximos Passos
+
+- F-A02: Adicionar TwoFactorGuard em SettingsController, PermissionsController e AuditController
 - Demais falhas altas e médias conforme ROADMAP_FALHAS.md
 
 ---

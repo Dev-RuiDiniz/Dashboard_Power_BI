@@ -86,7 +86,7 @@
 ### F-A01 — Audit Controller: `getById` Usa `@Query` em Vez de `@Param`
 
 - **Severidade:** 🟠 ALTO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/audit/audit.controller.ts` (linha 56)
 - **Descrição:**
