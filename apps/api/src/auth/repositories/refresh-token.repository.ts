@@ -67,6 +67,28 @@ export class RefreshTokenRepository {
     );
   }
 
+  async findAllActive(): Promise<RefreshSession[]> {
+    if (this.useSupabase()) {
+      const { data, error } = await this.supabaseService!.getClient()
+        .from('refresh_tokens')
+        .select('*')
+        .is('revoked_at', null)
+        .gt('expires_at', new Date().toISOString());
+
+      if (error) {
+        throw error;
+      }
+
+      return (data as RefreshTokenRow[]).map((row) => this.rowToSession(row));
+    }
+
+    const now = new Date();
+
+    return Array.from(this.sessions.values()).filter(
+      (session) => session.revokedAt === null && session.expiresAt.getTime() > now.getTime(),
+    );
+  }
+
   async updateLastUsedAt(sessionId: string, date: Date): Promise<void> {
     if (this.useSupabase()) {
       const { error } = await this.supabaseService!.getClient()

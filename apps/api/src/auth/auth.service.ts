@@ -321,9 +321,9 @@ export class AuthService {
   }
 
   private async findValidRefreshSession(refreshToken: string): Promise<RefreshSession> {
-    const users = await this.getUsersWithActiveSessions();
+    const sessions = await this.refreshTokenRepository.findAllActive();
 
-    for (const session of users) {
+    for (const session of sessions) {
       const matches = await bcrypt.compare(refreshToken, session.refreshTokenHash);
 
       if (matches) {
@@ -332,17 +332,6 @@ export class AuthService {
     }
 
     throw new UnauthorizedException('Refresh token inválido.');
-  }
-
-  private async getUsersWithActiveSessions(): Promise<RefreshSession[]> {
-    const demoUserEmail = this.configService.get<string>('AUTH_DEMO_USER_EMAIL');
-    const demoUser = demoUserEmail ? await this.usersRepository.findByEmail(demoUserEmail) : null;
-
-    if (!demoUser) {
-      return [];
-    }
-
-    return this.refreshTokenRepository.findActiveByUserId(demoUser.id);
   }
 
   private async hashRefreshToken(refreshToken: string): Promise<string> {

@@ -139,7 +139,43 @@ Correção da falha crítica F-C01 (CSRF Middleware Completamente Quebrado) iden
 
 ### 7. Próximos Passos
 
-- F-C02: Corrigir refresh token para todos os usuários (não apenas demo)
+- F-C03: Sanitizar path traversal no download de exports
+- F-C04: Corrigir timing attack no JWT
+
+---
+
+## 2026-06-28 — Registro do Dia (Sessão 4)
+
+### 1. Resumo
+
+Correção da falha crítica F-C02 (Refresh Token Só Funciona para o Usuário Demo). O método `findValidRefreshSession` buscava sessões apenas do usuário configurado em `AUTH_DEMO_USER_EMAIL`, impedindo que qualquer outro usuário renovasse seu token de acesso após 15 minutos.
+
+### 2. Tarefas Executadas
+
+- [x] Adicionar método `findAllActive()` no `RefreshTokenRepository` — retorna todas as sessões ativas de todos os usuários
+- [x] Refatorar `findValidRefreshSession` no `AuthService` para usar `findAllActive()` em vez de `getUsersWithActiveSessions()`
+- [x] Remover método `getUsersWithActiveSessions()` que filtrava por `AUTH_DEMO_USER_EMAIL`
+- [x] Adicionar teste de refresh para usuário não-demo (viewer.financeiro@example.com)
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
+
+### 3. Arquivos Criados ou Modificados
+
+| Arquivo                                                      | Ação       | Descrição                                                                              |
+| ------------------------------------------------------------ | ---------- | -------------------------------------------------------------------------------------- |
+| `apps/api/src/auth/repositories/refresh-token.repository.ts` | Modificado | Adicionado método `findAllActive()`                                                    |
+| `apps/api/src/auth/auth.service.ts`                          | Modificado | `findValidRefreshSession` usa `findAllActive()`; removido `getUsersWithActiveSessions` |
+| `apps/api/src/auth/auth.service.spec.ts`                     | Modificado | Adicionado teste de refresh para usuário não-demo                                      |
+| `ROADMAP_FALHAS.md`                                          | Modificado | F-C02 marcado como ✅ Concluído                                                        |
+| `docs/CONTEXTO.md`                                           | Modificado | Decisão técnica de correção do refresh token adicionada                                |
+| `docs/RELATORIO.md`                                          | Modificado | Esta sessão adicionada                                                                 |
+
+### 4. Decisões Técnicas
+
+- **`findAllActive()` em vez de query por hash**: O bcrypt não permite lookup reverso do hash. A abordagem de iterar sobre todas as sessões ativas comparando com bcrypt é a mesma já usada, apenas sem o filtro artificial de usuário demo.
+- **Risco de performance**: Em produção com milhares de sessões ativas, o loop O(n) com bcrypt.compare pode ser lento. Mitigação futura: indexar por hash parcial ou usar lookup direto.
+
+### 5. Próximos Passos
+
 - F-C03: Sanitizar path traversal no download de exports
 - F-C04: Corrigir timing attack no JWT
 

@@ -201,6 +201,19 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
+  it('deve permitir refresh para usuário não-demo (viewer)', async () => {
+    const tokens = getTokens(
+      await authService.login('viewer.financeiro@example.com', 'Admin123!', '127.0.0.1'),
+    );
+
+    expect(tokens.refreshToken).toEqual(expect.any(String));
+
+    const rotatedTokens = await authService.refresh(tokens.refreshToken);
+
+    expect(rotatedTokens.accessToken).toEqual(expect.any(String));
+    expect(rotatedTokens.refreshToken).not.toBe(tokens.refreshToken);
+  });
+
   it('deve retornar o usuario autenticado sem expor password hash', async () => {
     await expect(authService.getCurrentUser('demo-admin')).resolves.toMatchObject({
       id: 'demo-admin',

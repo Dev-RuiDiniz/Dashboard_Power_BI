@@ -43,7 +43,7 @@
 ### F-C02 — Refresh Token Só Funciona para o Usuário Demo
 
 - **Severidade:** 🔴 CRÍTICO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-28)
 - **Arquivos:**
   - `apps/api/src/auth/auth.service.ts` (linhas 337-346)
 - **Descrição:**
