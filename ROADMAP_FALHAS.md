@@ -137,7 +137,7 @@
 ### F-A05 — Settings Controller: Body Sem DTO nem Whitelist de Keys
 
 - **Severidade:** 🟠 ALTO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/platform/settings/settings.controller.ts` (linhas 27-39)
 - **Descrição:**

@@ -8,6 +8,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { TwoFactorGuard } from '../../auth/guards/two-factor.guard';
 import { AuthenticatedRequestUser } from '../../auth/types/auth.types';
 import { SettingsService } from './settings.service';
+import { UpdateSettingDto } from './dto/update-setting.dto';
 
 @ApiTags('settings')
 @ApiBearerAuth()
@@ -28,7 +29,7 @@ export class SettingsController {
   update(
     @CurrentUser() user: AuthenticatedRequestUser,
     @Param('key') key: string,
-    @Body('value') value: unknown,
+    @Body() dto: UpdateSettingDto,
   ) {
     return this.settingsService.updateSetting(
       {
@@ -36,7 +37,7 @@ export class SettingsController {
         userEmail: user.email,
       },
       key,
-      value,
+      dto.value,
     );
   }
 }

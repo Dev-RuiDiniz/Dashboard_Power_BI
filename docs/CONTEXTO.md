@@ -143,6 +143,7 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 | 2026-06-29 | TwoFactorGuard inconsistente entre controllers admin (F-A02) | Padronizar exigência de 2FA em todas rotas admin    | `TwoFactorGuard` adicionado em `SettingsController`, `PermissionsController` e `AuditController`                          | Ativa  |
 | 2026-06-29 | DTOs com class-validator no dashboards controller (F-A03)    | Validar payload dos endpoints de dashboards         | 5 DTOs criados: `CreateDashboardDto`, `UpdateDashboardDto`, `CreateWidgetDto`, `UpdateWidgetDto`, `BatchUpdateWidgetsDto` | Ativa  |
 | 2026-06-29 | Alinhar contrato batch update widgets (F-A04)                | Batch update funcionar entre frontend e backend     | Backend agora aceita `{ items: [...] }` via `BatchUpdateWidgetsDto`                                                       | Ativa  |
+| 2026-06-29 | DTO com whitelist de keys no settings (F-A05)                | Prevenir modificação de settings sensíveis          | `UpdateSettingDto` com `@IsIn(ALLOWED_SETTING_KEYS)` e `@IsObject()` no value                                             | Ativa  |
 
 ---
 

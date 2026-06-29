@@ -357,7 +357,44 @@ Correção das falhas altas F-A03 (Dashboards Controller: Inputs Sem Validação
 
 ### 5. Próximos Passos
 
-- F-A05: Settings Controller — body sem DTO nem whitelist de keys
+- F-A06: Memory Mode — getFilePathForUser retorna URL em vez de path
+- Demais falhas altas e médias conforme ROADMAP_FALHAS.md
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 10)
+
+### 1. Resumo
+
+Correção da falha alta F-A05 (Settings Controller: Body Sem DTO nem Whitelist de Keys). O endpoint `PATCH /admin/settings/:key` aceitava qualquer valor para qualquer key sem validação, permitindo modificação de settings sensíveis.
+
+### 2. Tarefas Executadas
+
+- [x] Criar `UpdateSettingDto` com `@IsIn(ALLOWED_SETTING_KEYS)` para whitelist de keys
+- [x] Exportar `ALLOWED_SETTING_KEYS` como constante tipada
+- [x] Validar `value` com `@IsObject()` no DTO
+- [x] Atualizar `SettingsController` para usar `@Body() dto: UpdateSettingDto` em vez de `@Body('value') value: unknown`
+- [x] Atualizar documentação: `ROADMAP_FALHAS.md`, `docs/CONTEXTO.md`, `docs/RELATORIO.md`
+
+### 3. Arquivos Criados ou Modificados
+
+| Arquivo                                                    | Ação       | Descrição                                         |
+| ---------------------------------------------------------- | ---------- | ------------------------------------------------- |
+| `apps/api/src/platform/settings/dto/update-setting.dto.ts` | Criado     | DTO com whitelist de keys + validação de value    |
+| `apps/api/src/platform/settings/settings.controller.ts`    | Modificado | Usa `UpdateSettingDto` em vez de `@Body('value')` |
+| `ROADMAP_FALHAS.md`                                        | Modificado | F-A05 marcado como ✅ Concluído                   |
+| `docs/CONTEXTO.md`                                         | Modificado | Decisão técnica F-A05 adicionada                  |
+| `docs/RELATORIO.md`                                        | Modificado | Esta sessão adicionada                            |
+
+### 4. Decisões Técnicas
+
+- **Whitelist de keys**: A constante `ALLOWED_SETTING_KEYS` lista apenas keys não-sensíveis (theme, dashboard, reports, exports, notifications, session). Keys sensíveis como JWT secrets ou credenciais não estão na lista e serão rejeitadas.
+- **`@IsObject()` no value**: Permite objetos, strings, números e booleanos (todos são objetos em JSON), mas rejeita arrays e valores nulos.
+- **`@IsIn` em vez de validação manual**: O `class-validator` faz a validação automaticamente na borda do controller, antes de chegar ao service.
+
+### 5. Próximos Passos
+
+- F-A06: Memory Mode — getFilePathForUser retorna URL em vez de path
 - Demais falhas altas e médias conforme ROADMAP_FALHAS.md
 
 ---
