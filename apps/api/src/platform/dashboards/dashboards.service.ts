@@ -17,13 +17,15 @@ type DashboardRow = {
 type DashboardWidgetRow = {
   id: string;
   dashboard_id: string;
-  widget_type: 'chart' | 'kpi' | 'table';
+  widget_type: 'chart' | 'kpi' | 'table' | 'text' | 'iframe';
   title: string;
   chart_type: string | null;
   report_id: string | null;
   kpi_id: string | null;
   display_order: number | null;
   config: Record<string, unknown> | null;
+  content: string | null;
+  url: string | null;
   position_x: number | null;
   position_y: number | null;
   width: number | null;
@@ -34,13 +36,15 @@ type DashboardWidgetRow = {
 export type DashboardWidget = {
   id: string;
   dashboardId: string;
-  widgetType: 'chart' | 'kpi' | 'table';
+  widgetType: 'chart' | 'kpi' | 'table' | 'text' | 'iframe';
   title: string;
   chartType: string | null;
   reportId: string | null;
   kpiId: string | null;
   displayOrder: number;
   config: Record<string, unknown>;
+  content: string | null;
+  url: string | null;
   position: {
     x: number;
     y: number;
@@ -69,12 +73,14 @@ export type CreateDashboardInput = {
 };
 
 export type CreateWidgetInput = {
-  widgetType: 'chart' | 'kpi' | 'table';
+  widgetType: 'chart' | 'kpi' | 'table' | 'text' | 'iframe';
   title: string;
   chartType?: string | null;
   reportId?: string | null;
   kpiId?: string | null;
   config?: Record<string, unknown>;
+  content?: string | null;
+  url?: string | null;
   position?: { x: number; y: number; width: number; height: number };
   displayOrder?: number;
 };
@@ -82,6 +88,18 @@ export type CreateWidgetInput = {
 export type UpdateDashboardInput = Partial<CreateDashboardInput>;
 
 export type UpdateWidgetInput = Partial<CreateWidgetInput>;
+
+export type BatchUpdateWidgetInput = {
+  widgetId: string;
+  position?: { x: number; y: number; width: number; height: number };
+  displayOrder?: number;
+  title?: string;
+  chartType?: string | null;
+  kpiId?: string | null;
+  config?: Record<string, unknown>;
+  content?: string | null;
+  url?: string | null;
+};
 
 @Injectable()
 export class DashboardsService {
@@ -305,6 +323,8 @@ export class DashboardsService {
       kpi_id: input.kpiId ?? null,
       display_order: (dashboard.widgets.length + 1) * 10,
       config: input.config ?? {},
+      content: input.content ?? null,
+      url: input.url ?? null,
       position_x: input.position?.x ?? 0,
       position_y: input.position?.y ?? 0,
       width: input.position?.width ?? 1,
@@ -331,6 +351,8 @@ export class DashboardsService {
         kpi_id: input.kpiId ?? null,
         display_order: (dashboard.widgets.length + 1) * 10,
         config: input.config ?? {},
+        content: input.content ?? null,
+        url: input.url ?? null,
         position_x: input.position?.x ?? 0,
         position_y: input.position?.y ?? 0,
         width: input.position?.width ?? 1,
@@ -369,6 +391,8 @@ export class DashboardsService {
         report_id: input.reportId !== undefined ? input.reportId : widgets[index]!.report_id,
         kpi_id: input.kpiId !== undefined ? input.kpiId : widgets[index]!.kpi_id,
         config: input.config !== undefined ? input.config : widgets[index]!.config,
+        content: input.content !== undefined ? input.content : widgets[index]!.content,
+        url: input.url !== undefined ? input.url : widgets[index]!.url,
         position_x: input.position?.x ?? widgets[index]!.position_x,
         position_y: input.position?.y ?? widgets[index]!.position_y,
         width: input.position?.width ?? widgets[index]!.width,
@@ -391,6 +415,8 @@ export class DashboardsService {
         ...(input.reportId !== undefined ? { report_id: input.reportId } : {}),
         ...(input.kpiId !== undefined ? { kpi_id: input.kpiId } : {}),
         ...(input.config !== undefined ? { config: input.config } : {}),
+        ...(input.content !== undefined ? { content: input.content } : {}),
+        ...(input.url !== undefined ? { url: input.url } : {}),
         ...(input.position !== undefined
           ? {
               position_x: input.position.x,
@@ -423,6 +449,18 @@ export class DashboardsService {
       await this.updateWidget(userId, dashboardId, item.widgetId, {
         displayOrder: item.displayOrder,
       });
+    }
+    return this.getByIdForUser(userId, dashboardId);
+  }
+
+  async batchUpdateWidgets(
+    userId: string,
+    dashboardId: string,
+    items: BatchUpdateWidgetInput[],
+  ): Promise<UserDashboard> {
+    await this.getByIdForUser(userId, dashboardId);
+    for (const item of items) {
+      await this.updateWidget(userId, dashboardId, item.widgetId, item);
     }
     return this.getByIdForUser(userId, dashboardId);
   }
@@ -540,6 +578,8 @@ export class DashboardsService {
       kpiId: row.kpi_id,
       displayOrder: row.display_order ?? 0,
       config: row.config ?? {},
+      content: row.content ?? null,
+      url: row.url ?? null,
       position: {
         x: row.position_x ?? 0,
         y: row.position_y ?? 0,

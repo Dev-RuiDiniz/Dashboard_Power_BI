@@ -1,12 +1,15 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { DashboardDetail } from './dashboard-detail';
 import {
+  addDashboardWidget,
+  batchUpdateDashboardWidgets,
   fetchDashboardKpis,
   fetchKpiHistory,
   getDashboardById,
   removeDashboardWidget,
+  updateDashboardWidget,
 } from '@/lib/platform-api';
 
 jest.mock('next/navigation', () => ({
@@ -14,11 +17,26 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('@/lib/platform-api', () => ({
+  addDashboardWidget: jest.fn(),
+  batchUpdateDashboardWidgets: jest.fn(),
   fetchDashboardKpis: jest.fn(),
   fetchKpiHistory: jest.fn(),
   getDashboardById: jest.fn(),
   removeDashboardWidget: jest.fn(),
   reorderDashboardWidgets: jest.fn(),
+  updateDashboardWidget: jest.fn(),
+}));
+
+jest.mock('react-grid-layout', () => ({
+  Responsive: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="grid-layout">{children}</div>
+  ),
+  useContainerWidth: () => ({
+    width: 800,
+    containerRef: { current: null },
+    mounted: true,
+  }),
+  WidthProvider: (Comp: React.ComponentType) => Comp,
 }));
 
 jest.mock('recharts', () => {
@@ -49,6 +67,8 @@ describe('DashboardDetail', () => {
         kpiId: 'kpi-1',
         displayOrder: 1,
         config: {},
+        content: null,
+        url: null,
         position: { x: 0, y: 0, width: 6, height: 4 },
         createdAt: '2026-06-01T00:00:00.000Z',
       },
@@ -62,6 +82,8 @@ describe('DashboardDetail', () => {
         kpiId: 'kpi-1',
         displayOrder: 2,
         config: {},
+        content: null,
+        url: null,
         position: { x: 6, y: 0, width: 6, height: 4 },
         createdAt: '2026-06-01T00:00:00.000Z',
       },
@@ -98,6 +120,9 @@ describe('DashboardDetail', () => {
     (fetchDashboardKpis as jest.Mock).mockResolvedValue(mockKpis);
     (fetchKpiHistory as jest.Mock).mockResolvedValue(mockHistory);
     (removeDashboardWidget as jest.Mock).mockResolvedValue({ removed: true });
+    (addDashboardWidget as jest.Mock).mockResolvedValue({ id: 'widget-new' });
+    (batchUpdateDashboardWidgets as jest.Mock).mockResolvedValue(mockDashboard);
+    (updateDashboardWidget as jest.Mock).mockResolvedValue({ id: 'widget-1' });
   });
 
   it('renderiza nome do dashboard e widgets', async () => {
@@ -119,13 +144,16 @@ describe('DashboardDetail', () => {
     });
   });
 
-  it('remove widget ao clicar no botao de remover', async () => {
+  it('remove widget no modo edicao ao clicar no botao de remover', async () => {
     const user = userEvent.setup();
     const onBack = jest.fn();
 
     render(<DashboardDetail dashboardId="dash-1" onBack={onBack} />);
 
     await screen.findByText('Executivo');
+
+    const editButton = screen.getByText('Editar layout');
+    await user.click(editButton);
 
     const removeButtons = screen.getAllByLabelText('Remover widget');
     await user.click(removeButtons[0]!);
@@ -144,5 +172,77 @@ describe('DashboardDetail', () => {
     render(<DashboardDetail dashboardId="dash-1" />);
 
     expect(await screen.findByText('Nenhum widget configurado')).toBeInTheDocument();
+  });
+
+  it('entra no modo edicao e mostra paleta de widgets', async () => {
+    const user = userEvent.setup();
+
+    render(<DashboardDetail dashboardId="dash-1" />);
+
+    await screen.findByText('Executivo');
+
+    const editButton = screen.getByText('Editar layout');
+    await user.click(editButton);
+
+    expect(screen.getByText('Paleta de Widgets')).toBeInTheDocument();
+    expect(screen.getByText('KPI')).toBeInTheDocument();
+    expect(screen.getByText('Gráfico')).toBeInTheDocument();
+  });
+
+  it('adiciona widget ao clicar na paleta', async () => {
+    const user = userEvent.setup();
+
+    render(<DashboardDetail dashboardId="dash-1" />);
+
+    await screen.findByText('Executivo');
+
+    await user.click(screen.getByText('Editar layout'));
+    await user.click(screen.getByLabelText('Adicionar widget KPI'));
+
+    await waitFor(() => {
+      expect(addDashboardWidget).toHaveBeenCalledWith(
+        'dash-1',
+        expect.objectContaining({ widgetType: 'kpi' }),
+      );
+    });
+  });
+
+  it('salva layout ao concluir edicao', async () => {
+    const user = userEvent.setup();
+
+    render(<DashboardDetail dashboardId="dash-1" />);
+
+    await screen.findByText('Executivo');
+
+    await user.click(screen.getByText('Editar layout'));
+
+    const concludeButton = screen.getByText('Concluir');
+    await user.click(concludeButton);
+
+    await waitFor(() => {
+      expect(batchUpdateDashboardWidgets).toHaveBeenCalledWith(
+        'dash-1',
+        expect.arrayContaining([
+          expect.objectContaining({ widgetId: 'widget-1' }),
+          expect.objectContaining({ widgetId: 'widget-2' }),
+        ]),
+      );
+    });
+  });
+
+  it('abre painel de configuracao ao clicar em configurar widget', async () => {
+    const user = userEvent.setup();
+
+    render(<DashboardDetail dashboardId="dash-1" />);
+
+    await screen.findByText('Executivo');
+
+    await user.click(screen.getByText('Editar layout'));
+
+    const configButtons = screen.getAllByLabelText('Configurar widget');
+    await user.click(configButtons[0]!);
+
+    expect(screen.getByText('Configurar widget')).toBeInTheDocument();
+    expect(screen.getByText('Salvar')).toBeInTheDocument();
   });
 });

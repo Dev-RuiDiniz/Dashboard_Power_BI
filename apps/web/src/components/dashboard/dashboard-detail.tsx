@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Check,
   Loader2,
-  Plus,
   Pencil,
   Settings,
   TriangleAlert,
@@ -13,28 +12,24 @@ import {
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import {
-  DndContext,
-  PointerSensor,
-  TouchSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
+import type { Layout } from 'react-grid-layout';
+
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import {
+  addDashboardWidget,
+  batchUpdateDashboardWidgets,
   fetchDashboardKpis,
   fetchKpiHistory,
   getDashboardById,
   removeDashboardWidget,
-  reorderDashboardWidgets,
+  updateDashboardWidget,
   type KpiHistoryResponse,
   type UserDashboard,
 } from '@/lib/platform-api';
 
-import { SortableWidgetCard } from './sortable-widget-card';
-import { WidgetCard } from './widget-card';
+import { DashboardCanvas } from './dashboard-canvas';
+import { WidgetPalette, type PaletteWidgetType } from './widget-palette';
+import { WidgetConfigPanel } from './widget-config-panel';
 
 type KpiItem = {
   id: string;
@@ -65,8 +60,11 @@ export function DashboardDetail({
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [isSavingLayout, setIsSavingLayout] = useState(false);
   const [editWidgets, setEditWidgets] = useState<UserDashboard['widgets']>([]);
+  const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
+  const [configWidget, setConfigWidget] = useState<UserDashboard['widgets'][number] | null>(null);
+  const [layoutChanged, setLayoutChanged] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     setIsLoading(true);
@@ -115,42 +113,125 @@ export function DashboardDetail({
   async function handleRemoveWidget(widgetId: string) {
     try {
       await removeDashboardWidget(dashboardId, widgetId);
+      setConfigWidget(null);
+      setSelectedWidgetId(null);
       await loadDashboard();
     } catch {
       setErrorMessage('Nao foi possivel remover o widget.');
     }
   }
 
-  async function handleSaveOrder() {
+  async function handleSaveLayout() {
     if (!dashboard) return;
-    setIsSavingOrder(true);
+    setIsSavingLayout(true);
     setErrorMessage(null);
     try {
       const items = editWidgets.map((w, index) => ({
         widgetId: w.id,
         displayOrder: (index + 1) * 10,
+        position: w.position,
       }));
-      await reorderDashboardWidgets(dashboardId, items);
+      await batchUpdateDashboardWidgets(dashboardId, items);
       setIsEditing(false);
+      setSelectedWidgetId(null);
+      setLayoutChanged(false);
       await loadDashboard();
     } catch {
-      setErrorMessage('Nao foi possivel salvar a ordem dos widgets.');
+      setErrorMessage('Nao foi possivel salvar o layout dos widgets.');
     } finally {
-      setIsSavingOrder(false);
+      setIsSavingLayout(false);
     }
   }
 
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor));
+  function handleLayoutChange(layout: Layout) {
+    setEditWidgets((prev) =>
+      prev.map((w) => {
+        const item = layout.find((l) => l.i === w.id);
+        if (!item) return w;
+        return {
+          ...w,
+          position: {
+            x: item.x,
+            y: item.y,
+            width: item.w,
+            height: item.h,
+          },
+        };
+      }),
+    );
+    setLayoutChanged(true);
+  }
 
-  function handleDragEnd(event: import('@dnd-kit/core').DragEndEvent) {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setEditWidgets((items) => {
-        const oldIndex = items.findIndex((w) => w.id === active.id);
-        const newIndex = items.findIndex((w) => w.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
+  async function handleAddWidgetFromPalette(
+    type: PaletteWidgetType,
+    config?: Record<string, unknown>,
+  ) {
+    try {
+      const defaultTitles: Record<PaletteWidgetType, string> = {
+        kpi: 'Novo KPI',
+        chart: 'Novo Gráfico',
+        table: 'Nova Tabela',
+        text: 'Novo Texto',
+        iframe: 'Novo Iframe',
+      };
+      const defaultSizes: Record<PaletteWidgetType, { width: number; height: number }> = {
+        kpi: { width: 3, height: 2 },
+        chart: { width: 6, height: 4 },
+        table: { width: 6, height: 4 },
+        text: { width: 6, height: 3 },
+        iframe: { width: 6, height: 4 },
+      };
+      const size = defaultSizes[type];
+      const maxY = editWidgets.reduce(
+        (max, w) => Math.max(max, w.position.y + w.position.height),
+        0,
+      );
+      await addDashboardWidget(dashboardId, {
+        widgetType: type,
+        title: defaultTitles[type],
+        chartType: type === 'chart' ? ((config?.chartType as string) ?? 'bar') : null,
+        kpiId: null,
+        config: config ?? {},
+        content: type === 'text' ? ((config?.content as string) ?? '') : null,
+        url: type === 'iframe' ? ((config?.url as string) ?? '') : null,
+        position: { x: 0, y: maxY, width: size.width, height: size.height },
       });
+      await loadDashboard();
+    } catch {
+      setErrorMessage('Nao foi possivel adicionar o widget.');
     }
+  }
+
+  async function handleSaveWidgetConfig(
+    widgetId: string,
+    config: Partial<{
+      title: string;
+      chartType: string | null;
+      kpiId: string | null;
+      content: string;
+      url: string;
+    }>,
+  ) {
+    try {
+      const updateInput: Parameters<typeof updateDashboardWidget>[2] = {};
+      if (config.title !== undefined) updateInput.title = config.title;
+      if (config.chartType !== undefined) updateInput.chartType = config.chartType;
+      if (config.kpiId !== undefined) updateInput.kpiId = config.kpiId;
+      if (config.content !== undefined) updateInput.content = config.content;
+      if (config.url !== undefined) updateInput.url = config.url;
+      await updateDashboardWidget(dashboardId, widgetId, updateInput);
+      setConfigWidget(null);
+      await loadDashboard();
+    } catch {
+      setErrorMessage('Nao foi possivel salvar a configuração do widget.');
+    }
+  }
+
+  function handleConfigureWidget(widgetId: string) {
+    const widget =
+      editWidgets.find((w) => w.id === widgetId) ??
+      dashboard?.widgets.find((w) => w.id === widgetId);
+    if (widget) setConfigWidget(widget);
   }
 
   if (isLoading) {
@@ -211,26 +292,30 @@ export function DashboardDetail({
             )}
             {onAddWidget && (
               <Button onClick={() => onAddWidget(dashboardId)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar widget
+                <Settings className="mr-2 h-4 w-4" />
+                Gerenciar
               </Button>
             )}
             <Button
               variant={isEditing ? 'default' : 'outline'}
               onClick={() => {
                 if (isEditing) {
-                  void handleSaveOrder();
+                  void handleSaveLayout();
                 } else {
                   setEditWidgets(dashboard.widgets);
                   setIsEditing(true);
                 }
               }}
-              disabled={isSavingOrder}
+              disabled={isSavingLayout}
             >
               {isEditing ? (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  {isSavingOrder ? 'Salvando...' : 'Concluir'}
+                  {isSavingLayout
+                    ? 'Salvando...'
+                    : layoutChanged
+                      ? 'Salvar alterações'
+                      : 'Concluir'}
                 </>
               ) : (
                 <>
@@ -243,44 +328,55 @@ export function DashboardDetail({
         </div>
       </div>
 
-      {dashboard.widgets.length === 0 ? (
+      {isEditing && (
+        <div className="flex gap-4">
+          <div className="w-64 flex-shrink-0">
+            <WidgetPalette onAddWidget={handleAddWidgetFromPalette} />
+          </div>
+          <div className="flex-1">
+            <DashboardCanvas
+              widgets={editWidgets}
+              kpiMap={kpiMap}
+              kpiHistoryMap={kpiHistoryMap}
+              isEditing
+              selectedWidgetId={selectedWidgetId}
+              onSelectWidget={setSelectedWidgetId}
+              onRemoveWidget={(id) => void handleRemoveWidget(id)}
+              onConfigureWidget={handleConfigureWidget}
+              onLayoutChange={handleLayoutChange}
+            />
+          </div>
+        </div>
+      )}
+
+      {!isEditing && dashboard.widgets.length === 0 && (
         <Card className="border-dashed text-center">
           <CardHeader>
             <LayoutDashboard className="mx-auto h-8 w-8 text-slate-400" aria-hidden="true" />
             <CardTitle>Nenhum widget configurado</CardTitle>
             <CardDescription>
-              Clique em "Adicionar widget" para criar o primeiro widget deste dashboard.
+              Clique em "Editar layout" para adicionar widgets ao dashboard.
             </CardDescription>
           </CardHeader>
         </Card>
-      ) : isEditing ? (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={editWidgets.map((w) => w.id)} strategy={rectSortingStrategy}>
-            <div className="grid gap-4 md:grid-cols-2">
-              {editWidgets.map((widget) => (
-                <SortableWidgetCard
-                  key={widget.id}
-                  widget={widget}
-                  kpiMap={kpiMap}
-                  kpiHistoryMap={kpiHistoryMap}
-                  onRemove={() => void handleRemoveWidget(widget.id)}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {dashboard.widgets.map((widget) => (
-            <WidgetCard
-              key={widget.id}
-              widget={widget}
-              kpiMap={kpiMap}
-              kpiHistoryMap={kpiHistoryMap}
-              onRemove={() => void handleRemoveWidget(widget.id)}
-            />
-          ))}
-        </div>
+      )}
+
+      {!isEditing && dashboard.widgets.length > 0 && (
+        <DashboardCanvas
+          widgets={dashboard.widgets}
+          kpiMap={kpiMap}
+          kpiHistoryMap={kpiHistoryMap}
+        />
+      )}
+
+      {isEditing && configWidget && (
+        <WidgetConfigPanel
+          widget={configWidget}
+          kpis={kpis.map((k) => ({ id: k.id, title: k.title, sector: k.sector }))}
+          onClose={() => setConfigWidget(null)}
+          onSave={handleSaveWidgetConfig}
+          onRemove={(id) => void handleRemoveWidget(id)}
+        />
       )}
     </section>
   );

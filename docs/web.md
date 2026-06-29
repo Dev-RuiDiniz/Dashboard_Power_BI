@@ -45,7 +45,7 @@ A sessão do frontend agora fica em `sessionStorage`, remove a dependência oper
 - widgets de dashboard: KPI, Gráfico (bar, line, pie, area) e Tabela (placeholder);
 - modal de adicionar widget com seleção de tipo, KPI e tipo de gráfico;
 - fallback em memória para dashboards quando Supabase não configurado;
-- modo de edição de layout no detalhe do dashboard: botão "Editar layout" ativa drag-and-drop via `@dnd-kit/sortable` para reordenar widgets, botão "Concluir" persiste a nova ordem via `PATCH /dashboards/:id/widgets/reorder`;
+- editor visual de dashboards: botão "Editar layout" ativa modo de edição com paleta de widgets (KPI, Gráfico, Tabela, Texto, Iframe), grid responsivo de 12 colunas com drag-and-drop e redimensionamento via `react-grid-layout`, painel lateral de configuração inline (título, KPI, tipo de gráfico, conteúdo, URL), e persistência em lote via `PATCH /dashboards/:id/widgets/batch`;
 - hub administrativo (`/app/admin`) com KPIs operacionais reais: total de usuários, ativos, grupos, exportações e tabela de atividade recente dos logs de auditoria;
 - gestão de relatórios admin (`/app/admin/reports`) com CRUD completo, edição de definições, gerenciamento de parâmetros (nome, tipo, obrigatório), seleção de fonte SQL (view ou stored_procedure) e teste de conexão antes de salvar;
 - login com suporte a 2FA/TOTP: quando ativado, o fluxo exibe input de código de 6 dígitos após credenciais válidas (`/login`);

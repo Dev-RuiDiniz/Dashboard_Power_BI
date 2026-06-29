@@ -75,13 +75,15 @@ export type UserDashboard = {
   widgets: Array<{
     id: string;
     dashboardId: string;
-    widgetType: 'chart' | 'kpi' | 'table';
+    widgetType: 'chart' | 'kpi' | 'table' | 'text' | 'iframe';
     title: string;
     chartType: string | null;
     reportId: string | null;
     kpiId: string | null;
     displayOrder: number;
     config: Record<string, unknown>;
+    content: string | null;
+    url: string | null;
     position: {
       x: number;
       y: number;
@@ -192,12 +194,14 @@ export async function deleteDashboard(id: string): Promise<{ deleted: true }> {
 export async function addDashboardWidget(
   dashboardId: string,
   input: {
-    widgetType: 'chart' | 'kpi' | 'table';
+    widgetType: 'chart' | 'kpi' | 'table' | 'text' | 'iframe';
     title: string;
     chartType?: string | null;
     reportId?: string | null;
     kpiId?: string | null;
     config?: Record<string, unknown>;
+    content?: string | null;
+    url?: string | null;
     position?: { x: number; y: number; width: number; height: number };
   },
 ): Promise<UserDashboard['widgets'][number]> {
@@ -208,12 +212,14 @@ export async function updateDashboardWidget(
   dashboardId: string,
   widgetId: string,
   input: Partial<{
-    widgetType: 'chart' | 'kpi' | 'table';
+    widgetType: 'chart' | 'kpi' | 'table' | 'text' | 'iframe';
     title: string;
     chartType: string | null;
     reportId: string | null;
     kpiId: string | null;
     config: Record<string, unknown>;
+    content: string | null;
+    url: string | null;
     position: { x: number; y: number; width: number; height: number };
   }>,
 ): Promise<UserDashboard['widgets'][number]> {
@@ -235,6 +241,23 @@ export async function reorderDashboardWidgets(
   items: { widgetId: string; displayOrder: number }[],
 ): Promise<UserDashboard> {
   return apiPatch<UserDashboard>(`/dashboards/${dashboardId}/widgets/reorder`, { items });
+}
+
+export async function batchUpdateDashboardWidgets(
+  dashboardId: string,
+  items: Array<{
+    widgetId: string;
+    position?: { x: number; y: number; width: number; height: number };
+    displayOrder?: number;
+    title?: string;
+    chartType?: string | null;
+    kpiId?: string | null;
+    config?: Record<string, unknown>;
+    content?: string | null;
+    url?: string | null;
+  }>,
+): Promise<UserDashboard> {
+  return apiPatch<UserDashboard>(`/dashboards/${dashboardId}/widgets/batch`, { items });
 }
 
 export async function fetchFavoriteReports(): Promise<PaginatedReports['items']> {

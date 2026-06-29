@@ -10,6 +10,7 @@ import {
   DashboardsService,
   UpdateDashboardInput,
   UpdateWidgetInput,
+  BatchUpdateWidgetInput,
 } from './dashboards.service';
 import { ReorderWidgetsDto } from './dto/reorder-widgets.dto';
 
@@ -83,6 +84,16 @@ export class DashboardsController {
     @Body() body: ReorderWidgetsDto,
   ) {
     return this.dashboardsService.reorderWidgets(user.sub, id, body.items);
+  }
+
+  @Patch(':id/widgets/batch')
+  @ApiOkResponse({ description: 'Atualiza múltiplos widgets em lote (posição, config, etc).' })
+  batchUpdateWidgets(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+    @Body() body: BatchUpdateWidgetInput[],
+  ) {
+    return this.dashboardsService.batchUpdateWidgets(user.sub, id, body);
   }
 
   @Delete(':id/widgets/:widgetId')

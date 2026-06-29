@@ -144,7 +144,7 @@ Documentos detalhados por categoria:
 | T13 | Gestão de usuários        | Sim         | Sim          | Sim          | Sim         |
 | T14 | Gestão de permissões      | Sim         | Sim          | Sim          | Sim         |
 | T15 | Gestão de relatórios      | Sim         | Sim          | Sim          | Sim         |
-| T16 | Editor visual             | Sim         | Sim          | Parcial      | Sim         |
+| T16 | Editor visual             | Sim         | Sim          | Sim          | Sim         |
 | T17 | Auditoria                 | Sim         | Sim          | Sim          | Sim         |
 | T18 | Configurações do sistema  | Sim         | Sim          | Sim          | Sim         |
 
@@ -167,8 +167,8 @@ Uma tarefa só é considerada pronta quando:
 
 ## Notas e Próximos Passos
 
-1. **Próxima onda:** Fase 3 — BI avançado e dashboards personalizados
-2. **Prioridade imediata:** Editor visual drag-and-drop completo (T16b)
+1. **Próxima onda:** Fase 4 — Hardening de sessão, 2FA por role e segurança operacional
+2. **Concluído:** Editor visual drag-and-drop completo (T16b) — 2026-06-28
 3. **Débito técnico crítico:** Hardening final de sessão e 2FA por role (Fase 4)
 4. **Verificação antes de cada commit:** `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`
 

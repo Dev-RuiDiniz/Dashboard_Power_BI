@@ -587,3 +587,59 @@ Implementada política de retenção, anonimização e expurgo automático de da
 
 1. DT-005: Testes E2E (Playwright)
 2. Revalidar aderência completa das 18 telas e 6 módulos
+
+---
+
+## 2026-06-28 — T16b: Editor Visual de Dashboards
+
+### Resumo
+
+Implementado editor visual drag-and-drop completo para dashboards personalizados, substituindo o approach anterior baseado em `@dnd-kit/sortable` por um grid responsivo de 12 colunas com `react-grid-layout`, paleta de widgets, redimensionamento, preview em tempo real e configuração inline.
+
+### Tarefas executadas
+
+- Estendidos tipos de widget no backend e frontend para suportar `text` e `iframe` (além de `kpi`, `chart`, `table`)
+- Criada migração SQL para adicionar colunas `content` e `url` e valores ao enum `widget_type`
+- Implementado endpoint `PATCH /dashboards/:id/widgets/batch` para atualização em lote de widgets
+- Criados componentes: `WidgetPalette`, `ResizableWidgetCard`, `DashboardCanvas`, `WidgetConfigPanel`
+- Refatorado `DashboardDetail` para integrar todos os componentes do editor visual
+- Atualizadas funções API client (`addDashboardWidget`, `updateDashboardWidget`, `batchUpdateDashboardWidgets`) para suportar novos tipos e campos
+- `WidgetCard` estendido para renderizar widgets `text` e `iframe`
+- Testes criados para todos os novos componentes e atualizados para `DashboardDetail`
+
+### Arquivos criados
+
+- `apps/web/src/components/dashboard/widget-palette.tsx` + test
+- `apps/web/src/components/dashboard/resizable-widget-card.tsx` + test
+- `apps/web/src/components/dashboard/dashboard-canvas.tsx` + test
+- `apps/web/src/components/dashboard/widget-config-panel.tsx` + test
+- `supabase/migrations/20260628210000_004_widget_types_text_iframe.sql`
+
+### Arquivos modificados
+
+- `apps/api/src/platform/dashboards/dashboards.service.ts` — tipos, batchUpdateWidgets, addWidget/updateWidget
+- `apps/api/src/platform/dashboards/dashboards.controller.ts` — endpoint batch
+- `apps/web/src/lib/platform-api.ts` — tipos e funções API
+- `apps/web/src/components/dashboard/widget-card.tsx` — render text/iframe
+- `apps/web/src/components/dashboard/dashboard-detail.tsx` — refactor completo
+- `apps/web/src/components/dashboard/dashboard-detail.test.tsx` — testes atualizados
+- `docs/api.md`, `docs/web.md`, `docs/ROADMAP.md` — documentação atualizada
+
+### Testes executados
+
+- Typecheck web: OK
+- 31 testes passando nos componentes de dashboard (8 dashboard-detail, 8 dashboard-canvas, 5 widget-config-panel, 4 widget-palette, 8 resizable-widget-card, etc.)
+- 7 suites pre-existentes falhando (admin-settings, notifications, exports, etc.) — Supabase não configurado no ambiente de teste, não relacionado a esta tarefa
+
+### Débitos técnicos remanescentes
+
+- Widget do tipo `table` ainda é placeholder (não conecta a relatório ainda)
+- Widget do tipo `iframe` não tem validação de URL segura (sandbox attribute configurado, mas sem whitelist)
+- `react-grid-layout` v2 API difere da v1 — pode haver quebras em futuras atualizações
+- Drag handle do `react-grid-layout` usa classe `.drag-handle` mas `ResizableWidgetCard` não expõe essa classe ainda
+
+### Próximos passos recomendados
+
+1. Conectar widget `table` a relatórios reais
+2. Adicionar whitelist de URLs para widgets `iframe`
+3. Fase 4: Hardening de sessão e 2FA por role

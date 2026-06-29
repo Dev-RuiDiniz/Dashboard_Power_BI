@@ -208,5 +208,77 @@ export function WidgetCard({
     );
   }
 
+  if (widget.widgetType === 'text') {
+    const textContent = (widget.config as { content?: string }).content ?? widget.content ?? '';
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            {dragHandle}
+            <CardTitle className="text-base">{widget.title}</CardTitle>
+          </div>
+          {onRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+              aria-label="Remover widget"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {textContent ? (
+            <p className="whitespace-pre-wrap text-sm text-slate-700">{textContent}</p>
+          ) : (
+            <p className="text-sm text-slate-500">
+              Sem conteúdo. Configure o widget para adicionar texto.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (widget.widgetType === 'iframe') {
+    const iframeUrl = (widget.config as { url?: string }).url ?? widget.url ?? '';
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            {dragHandle}
+            <CardTitle className="text-base">{widget.title}</CardTitle>
+          </div>
+          {onRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+              aria-label="Remover widget"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {iframeUrl ? (
+            <iframe
+              src={iframeUrl}
+              title={widget.title}
+              className="h-64 w-full rounded-lg border border-slate-200"
+              sandbox="allow-scripts allow-same-origin"
+              loading="lazy"
+            />
+          ) : (
+            <p className="text-sm text-slate-500">
+              Sem URL configurada. Configure o widget para incorporar uma página.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   return null;
 }

@@ -29,6 +29,7 @@
 - `PATCH /dashboards/:id/widgets/:widgetId` — atualiza widget
 - `DELETE /dashboards/:id/widgets/:widgetId` — remove widget
 - `PATCH /dashboards/:id/widgets/reorder` — reordena widgets do dashboard (batch)
+- `PATCH /dashboards/:id/widgets/batch` — atualização em lote de widgets (posição, título, chartType, kpiId, config, content, url)
 - `GET /admin/dashboard` — métricas operacionais do painel administrativo
 - `POST /admin/reports/validate` — valida se fonte SQL (view ou stored_procedure) existe e é acessível
 - `POST /admin/cache/invalidate` — invalida todas as entradas do cache de queries (admin apenas)
