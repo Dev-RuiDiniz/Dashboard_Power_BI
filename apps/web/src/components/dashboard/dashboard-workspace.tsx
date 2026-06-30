@@ -1,6 +1,16 @@
 'use client';
 
-import { Eye, LayoutDashboard, Loader2, Pencil, Star, Trash2, TriangleAlert } from 'lucide-react';
+import {
+  Eye,
+  LayoutDashboard,
+  Loader2,
+  Pencil,
+  Sparkles,
+  Star,
+  Trash2,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -41,6 +51,7 @@ export function DashboardWorkspace() {
   const [editDescription, setEditDescription] = useState('');
   const [editIsDefault, setEditIsDefault] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [seededMessage, setSeededMessage] = useState<string | null>(null);
 
   const loadWorkspace = useCallback(async () => {
     setIsLoading(true);
@@ -50,8 +61,13 @@ export function DashboardWorkspace() {
         fetchDashboards(),
         fetchFavoriteReports(),
       ]);
-      setDashboards(dashboardResponse);
+      setDashboards(dashboardResponse.dashboards);
       setFavorites(favoriteResponse);
+      if (dashboardResponse.seededViaApi) {
+        setSeededMessage(
+          'Criamos um dashboard padrão para você começar. Você pode personalizá-lo a qualquer momento.',
+        );
+      }
     } catch {
       setErrorMessage('Nao foi possivel carregar a area de dashboards personalizados.');
     } finally {
@@ -162,6 +178,23 @@ export function DashboardWorkspace() {
             <TriangleAlert className="mx-auto h-8 w-8 text-amber-700" aria-hidden="true" />
             <CardTitle>{errorMessage}</CardTitle>
           </CardHeader>
+        </Card>
+      ) : null}
+
+      {seededMessage ? (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="flex items-start gap-3 py-4">
+            <Sparkles className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-700" aria-hidden="true" />
+            <p className="flex-1 text-sm text-blue-800">{seededMessage}</p>
+            <button
+              type="button"
+              onClick={() => setSeededMessage(null)}
+              className="rounded-lg p-1 text-blue-400 hover:bg-blue-100 hover:text-blue-700"
+              aria-label="Fechar aviso"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </CardContent>
         </Card>
       ) : null}
 

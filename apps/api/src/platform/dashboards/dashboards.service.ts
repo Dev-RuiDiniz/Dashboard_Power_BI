@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 
+import { SectorCode } from '../../auth/types/auth.types';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { getTemplateForSectors } from './dashboard-templates';
 
 type DashboardRow = {
   id: string;
@@ -130,6 +132,32 @@ export class DashboardsService {
     }
 
     return this.attachWidgets((data ?? []) as DashboardRow[]);
+  }
+
+  async ensureDefaultDashboardForUser(
+    userId: string,
+    sectors: SectorCode[],
+  ): Promise<UserDashboard> {
+    const template = getTemplateForSectors(sectors);
+
+    const dashboard = await this.createForUser(userId, {
+      name: template.name,
+      description: template.description,
+      isDefault: true,
+    });
+
+    for (const widget of template.widgets) {
+      await this.addWidget(userId, dashboard.id, {
+        widgetType: widget.widgetType,
+        title: widget.title,
+        kpiId: widget.kpiId,
+        chartType: widget.chartType,
+        position: widget.position,
+        displayOrder: widget.displayOrder,
+      });
+    }
+
+    return this.getByIdForUser(userId, dashboard.id);
   }
 
   async createForUser(userId: string, input: CreateDashboardInput): Promise<UserDashboard> {

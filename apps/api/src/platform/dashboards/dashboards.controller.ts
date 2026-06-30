@@ -21,8 +21,18 @@ export class DashboardsController {
 
   @Get()
   @ApiOkResponse({ description: 'Lista dashboards personalizados do usuario autenticado.' })
-  list(@CurrentUser() user: AuthenticatedRequestUser) {
-    return this.dashboardsService.listForUser(user.sub);
+  async list(@CurrentUser() user: AuthenticatedRequestUser) {
+    const dashboards = await this.dashboardsService.listForUser(user.sub);
+
+    if (dashboards.length === 0) {
+      const seeded = await this.dashboardsService.ensureDefaultDashboardForUser(
+        user.sub,
+        user.sectors,
+      );
+      return { dashboards: [seeded], seededViaApi: true };
+    }
+
+    return { dashboards, seededViaApi: false };
   }
 
   @Post()

@@ -159,8 +159,13 @@ export async function fetchKpiHistory(kpiId: string): Promise<KpiHistoryResponse
   return apiGet<KpiHistoryResponse>(`/dashboard/kpis/${kpiId}/history`);
 }
 
-export async function fetchDashboards(): Promise<UserDashboard[]> {
-  return apiGet<UserDashboard[]>('/dashboards');
+export type FetchDashboardsResponse = {
+  dashboards: UserDashboard[];
+  seededViaApi: boolean;
+};
+
+export async function fetchDashboards(): Promise<FetchDashboardsResponse> {
+  return apiGet<FetchDashboardsResponse>('/dashboards');
 }
 
 export async function getDashboardById(id: string): Promise<UserDashboard> {
