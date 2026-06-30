@@ -1,7 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import { PasswordResetTokenRepository } from '../repositories/password-reset-token.repository';
 import { RefreshTokenRepository } from '../repositories/refresh-token.repository';
@@ -90,7 +90,9 @@ export class PasswordResetService {
   private async findValidToken(rawToken: string) {
     const tokenHash = this.hashToken(rawToken);
     const activeTokens = await this.passwordResetTokenRepository.findAllActive();
-    const matchedToken = activeTokens.find((token) => token.tokenHash === tokenHash);
+    const matchedToken = activeTokens.find((token) =>
+      this.safeHashEqual(token.tokenHash, tokenHash),
+    );
 
     if (!matchedToken) {
       throw new BadRequestException('Token de recuperação inválido ou expirado.');
@@ -105,6 +107,17 @@ export class PasswordResetService {
 
   private hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private safeHashEqual(a: string, b: string): boolean {
+    const bufferA = Buffer.from(a);
+    const bufferB = Buffer.from(b);
+
+    if (bufferA.length !== bufferB.length) {
+      return false;
+    }
+
+    return timingSafeEqual(bufferA, bufferB);
   }
 
   private buildResetUrl(token: string): string {

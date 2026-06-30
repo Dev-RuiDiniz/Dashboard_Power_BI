@@ -360,7 +360,7 @@
 ### F-N03 — Password Reset Token: Comparação Non-Constant-Time
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/auth/services/password-reset.service.ts` (linha 93)
 - **Descrição:**
