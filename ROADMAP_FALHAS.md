@@ -332,6 +332,56 @@
 
 ---
 
+## 🔵 Novas Falhas Encontradas em Auditoria (2026-06-29)
+
+### F-N01 — `BCRYPT_SALT_ROUNDS` Default 10 em `password-reset.service.ts` e `admin-users.service.ts`
+
+- **Severidade:** 🟡 MÉDIO
+- **Status:** ✅ Concluído (2026-06-29)
+- **Arquivos:**
+  - `apps/api/src/auth/services/password-reset.service.ts` (linha 77)
+  - `apps/api/src/admin/users/admin-users.service.ts` (linha 194)
+- **Descrição:**
+  F-M04 corrigiu o default em `auth.service.ts` e `.env.example`, mas os mesmos defaults incorretos (10) permaneciam em `password-reset.service.ts` e `admin-users.service.ts`.
+- **Correção:**
+  Alterado default de 10 para 12 em ambos os arquivos.
+
+### F-N02 — Sem Security Headers (Helmet/X-Frame-Options/X-Content-Type-Options/HSTS/CSP)
+
+- **Severidade:** 🟠 ALTO
+- **Status:** Pendente
+- **Arquivos:**
+  - `apps/api/src/main.ts`
+- **Descrição:**
+  A API não configura nenhum security header HTTP. Sem `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security` ou `Content-Security-Policy`, a aplicação está vulnerável a clickjacking, MIME sniffing e ataques de injeção.
+- **Correção proposta:**
+  Instalar e configurar `helmet` ou setar headers manualmente em `configureApp()`.
+
+### F-N03 — Password Reset Token: Comparação Non-Constant-Time
+
+- **Severidade:** 🟡 MÉDIO
+- **Status:** Pendente
+- **Arquivos:**
+  - `apps/api/src/auth/services/password-reset.service.ts` (linha 93)
+- **Descrição:**
+  `findValidToken` compara `token.tokenHash === tokenHash` com `===` (non-constant-time). Embora sejam hashes SHA-256 (não o token raw), a comparação non-constant-time pode vazar informação sobre o hash armazenado via timing side-channel.
+- **Correção proposta:**
+  Usar `crypto.timingSafeEqual(Buffer.from(token.tokenHash), Buffer.from(tokenHash))` com verificação de length prévia.
+
+### F-N04 — `getClientIp` Confia em `x-forwarded-for` Sem `trust proxy`
+
+- **Severidade:** 🟡 MÉDIO
+- **Status:** Pendente
+- **Arquivos:**
+  - `apps/api/src/auth/auth.controller.ts` (linhas 197-209)
+  - `apps/api/src/main.ts`
+- **Descrição:**
+  `getClientIp` lê `x-forwarded-for` diretamente dos headers, mas o Express não está configurado com `app.set('trust proxy', ...)`. Isso significa que qualquer cliente pode spoofar o IP enviando um header `x-forwarded-for` arbitrário, bypassando o rate limiting por IP.
+- **Correção proposta:**
+  Configurar `app.set('trust proxy', 1)` (ou número de hops do reverse proxy) em `main.ts`, ou usar `request.ip` do Express que respeita a configuração de trust proxy.
+
+---
+
 ## Ordem Sugerida de Correção
 
 ### Sprint 1 — Desbloqueio (Críticos)
@@ -369,17 +419,24 @@
 22. **F-B02** — Limite de body size
 23. **F-B03** — Reorder widgets em paralelo
 
+### Sprint 5 — Novas Falhas (Auditoria 2026-06-29)
+
+24. **F-N02** — Security headers (Helmet)
+25. **F-N03** — Password reset token: timingSafeEqual
+26. **F-N04** — Trust proxy para getClientIp
+
 ---
 
 ## Métricas
 
 | Métrica                       | Valor                                                       |
 | ----------------------------- | ----------------------------------------------------------- |
-| Total de falhas               | 24                                                          |
+| Total de falhas               | 28                                                          |
 | Críticas                      | 4                                                           |
-| Altas                         | 8                                                           |
-| Médias                        | 9                                                           |
+| Altas                         | 9 (8 originais + F-N02)                                     |
+| Médias                        | 12 (9 originais + F-N01, F-N03, F-N04)                      |
 | Baixas                        | 3                                                           |
-| Bloqueiam produção            | 4 (C01, C02, C03, C04)                                      |
-| Funcionalidades quebradas     | 3 (CSRF global, refresh não-demo, batch update)             |
-| Vulnerabilidades de segurança | 3 (path traversal, timing attack, dashboard sem isolamento) |
+| Concluídas                    | 25 (todas as originais + F-N01)                             |
+| Pendentes                     | 3 (F-N02, F-N03, F-N04)                                     |
+| Bloqueiam produção            | 0 (todas as críticas corrigidas)                            |
+| Vulnerabilidades de segurança | 2 (security headers ausentes, IP spoofing no rate limiting) |

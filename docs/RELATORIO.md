@@ -92,8 +92,24 @@ Correção de 11 falhas de segurança e performance identificadas no ROADMAP_FAL
 
 ### 7. Débitos Técnicos Remanescentes
 
-- F-M03 (CSRF refresh exclusion) e itens críticos/altos do ROADMAP_FALHAS.md ainda pendentes.
+- F-N02 (security headers), F-N03 (password reset timingSafeEqual), F-N04 (trust proxy) — novas falhas encontradas em auditoria.
 - Redis não é testado em integração nos testes automatizados (apenas fallback em memória é testado).
+
+### 8. Auditoria de Verificação (2026-06-29)
+
+Verificação item por item de todas as 24 falhas originais do ROADMAP_FALHAS.md:
+
+- **F-C01 a F-C04:** Todas confirmadas como corrigidas no código.
+- **F-A01 a F-A08:** Todas confirmadas como corrigidas (guards, DTOs, CORS env, dashboard setor).
+- **F-M01 a F-M09:** Todas confirmadas como corrigidas.
+- **F-B01 a F-B03:** Todas confirmadas como corrigidas.
+
+Novas falhas encontradas:
+
+- **F-N01:** `BCRYPT_SALT_ROUNDS` default 10 em `password-reset.service.ts` e `admin-users.service.ts` — **corrigido**.
+- **F-N02:** Sem security headers (Helmet) — pendente.
+- **F-N03:** Password reset token comparação non-constant-time — pendente.
+- **F-N04:** `getClientIp` confia em `x-forwarded-for` sem `trust proxy` — pendente.
 
 ---
 

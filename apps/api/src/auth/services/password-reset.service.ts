@@ -74,7 +74,7 @@ export class PasswordResetService {
       throw new BadRequestException('Token de recuperação inválido ou expirado.');
     }
 
-    const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 10));
+    const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 12));
     const passwordHash = await bcrypt.hash(newPassword, saltRounds);
 
     await this.usersRepository.updatePasswordHash(user.id, passwordHash);
