@@ -11,6 +11,7 @@ import { SupabaseService } from '../../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ExportJobRunnerService } from './export-job-runner.service';
 import { EXPORTS_QUEUE_NAME, ExportJobPayload } from './exports.queue';
+import { ExportsService } from './exports.service';
 
 @Injectable()
 export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
@@ -24,6 +25,7 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
     private readonly notificationsService: NotificationsService,
     private readonly exportJobRunnerService: ExportJobRunnerService,
     private readonly auditService: AuditService,
+    private readonly exportsService: ExportsService,
   ) {}
 
   onModuleInit(): void {
@@ -127,6 +129,8 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido na exportação.';
+
+      await this.exportsService.markJobAsFailed(jobId, userId, message);
 
       if (this.supabaseService.isEnabled()) {
         await this.supabaseService

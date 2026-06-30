@@ -74,6 +74,22 @@ export class ExportsService {
     return !this.supabaseService.isEnabled();
   }
 
+  async markJobAsFailed(jobId: string, userId: string, errorMessage: string): Promise<void> {
+    if (this.useMemory()) {
+      const updated = this.getUserExports(userId).map((r) =>
+        r.id === jobId
+          ? {
+              ...r,
+              status: 'failed' as const,
+              error_message: errorMessage,
+              completed_at: new Date().toISOString(),
+            }
+          : r,
+      );
+      this.setUserExports(userId, updated);
+    }
+  }
+
   private getUserExports(userId: string): ExportJobRecord[] {
     return this.memoryExports.get(userId) ?? [];
   }
