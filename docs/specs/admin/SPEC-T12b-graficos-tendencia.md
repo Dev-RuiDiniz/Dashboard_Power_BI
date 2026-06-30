@@ -3,8 +3,8 @@
 **ID:** T12b
 **Módulo:** Admin
 **Fase:** Fase 4
-**Status:** Pendente
-**Atualizado em:** 2026-06-28
+**Status:** Em implementação
+**Atualizado em:** 2026-06-29
 
 ---
 
@@ -14,7 +14,7 @@ Adicionar gráficos de tendência ao dashboard administrativo: usuários novos, 
 
 ## 2. Contexto
 
-O dashboard admin atual (T12) exibe KPIs em cards (totais). Esta spec adiciona gráficos Recharts de tendência temporal, top relatórios e top setores. Requer tracking histórico de métricas (atualmente não implementado).
+O dashboard admin atual (T12) exibe KPIs em cards (totais) e tabela de atividade recente. Esta spec adiciona gráficos Recharts de tendência temporal, top relatórios e top setores. **Não requer sistema de tracking separado** — os dados já têm timestamps (`AuditLog.createdAt`, `ExportJobRecord.created_at`, `AuthUser.createdAt`) e podem ser agregados diretamente.
 
 ## 3. Regras de Negócio
 
@@ -44,25 +44,25 @@ O dashboard admin atual (T12) exibe KPIs em cards (totais). Esta spec adiciona g
 ## 5. Critérios de Aceite
 
 - [ ] Endpoint GET /admin/dashboard/trends
-- [ ] Gráfico de usuários novos por mês (line)
-- [ ] Gráfico de execuções por semana (bar)
-- [ ] Top 5 relatórios mais executados
-- [ ] Top 5 setores com mais atividade
+- [ ] Gráfico de usuários novos por mês (line/area)
+- [ ] Gráfico de atividade por semana (bar)
+- [ ] Gráfico de exports por semana (bar)
+- [ ] Top 5 relatórios mais executados (bar horizontal)
+- [ ] Top 5 setores com mais atividade (bar horizontal)
 - [ ] Estados: loading, erro, vazio
 - [ ] Responsivo
-- [ ] Tracking histórico de métricas
 
 ## 6. Impacto Técnico
 
-| Área           | Impacto                                                  |
-| -------------- | -------------------------------------------------------- |
-| Arquitetura    | Novo endpoint de trends, tracking histórico              |
-| Banco de dados | Tabela de métricas históricas ou agregação em audit_logs |
-| API            | GET /admin/dashboard/trends                              |
-| Frontend       | Gráficos Recharts no admin-dashboard.tsx                 |
-| Testes         | Unit (trends), Integration (endpoint)                    |
-| Infraestrutura | Nenhuma adicional                                        |
-| Segurança      | RolesGuard admin                                         |
+| Área           | Impacto                                                                    |
+| -------------- | -------------------------------------------------------------------------- |
+| Arquitetura    | Novo endpoint de trends, tracking histórico                                |
+| Banco de dados | Sem migrations — agrega de tabelas existentes (audit_logs, exports, users) |
+| API            | GET /admin/dashboard/trends                                                |
+| Frontend       | Gráficos Recharts no admin-dashboard.tsx                                   |
+| Testes         | Unit (trends), Integration (endpoint)                                      |
+| Infraestrutura | Nenhuma adicional                                                          |
+| Segurança      | RolesGuard admin                                                           |
 
 ## 7. Testes Necessários
 
@@ -76,12 +76,11 @@ O dashboard admin atual (T12) exibe KPIs em cards (totais). Esta spec adiciona g
 
 | Risco                    | Impacto         | Mitigação                   |
 | ------------------------ | --------------- | --------------------------- |
-| Sem tracking histórico   | Gráficos vazios | Implementar tracking antes  |
+| Sem dados suficientes    | Gráficos vazios | Estado vazio com mensagem   |
 | Performance em agregação | Dashboard lento | Agregação no backend, cache |
 
 ## 9. Dependências
 
 - T12 (dashboard admin) — concluído
-- Tracking histórico de métricas (pendente)
 - `recharts` (instalado)
-- Novo endpoint de trends (pendente)
+- Dados com timestamps já disponíveis em audit_logs, exports e users
