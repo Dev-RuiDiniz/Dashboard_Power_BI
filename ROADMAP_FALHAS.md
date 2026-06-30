@@ -189,7 +189,7 @@
 ### F-M01 — `downloadExportFile` Hardcoded localhost
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/web/src/lib/platform-api.ts` (linha 288)
 - **Descrição:**
@@ -201,7 +201,7 @@
 ### F-M02 — `reports-api.ts` Não Usa Auth Centralizado
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/web/src/lib/reports-api.ts`
 - **Descrição:**
@@ -225,7 +225,7 @@
 ### F-M04 — `BCRYPT_SALT_ROUNDS` Default = 10 (não 12)
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/api/src/auth/auth.service.ts` (linhas 349, 355)
   - `infra/env/.env.example` (linha 17)
@@ -237,7 +237,7 @@
 ### F-M05 — TOTP Encryption Salt Hardcoded
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/api/src/auth/services/totp-encryption.service.ts` (linha 7)
 - **Descrição:**
@@ -249,7 +249,7 @@
 ### F-M06 — Rate Limiting e Token Blacklist em Memória
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/api/src/auth/services/login-attempts.service.ts`
   - `apps/api/src/auth/services/totp-attempts.service.ts`
@@ -263,7 +263,7 @@
 ### F-M07 — Export Worker Não Atualiza Status em Falha
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/api/src/platform/exports/exports.processor.ts` (linhas 87-115)
 - **Descrição:**
@@ -274,7 +274,7 @@
 ### F-M08 — Export Download Sem Content-Type
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/api/src/platform/exports/exports.controller.ts` (linha 41)
 - **Descrição:**
@@ -285,7 +285,7 @@
 ### F-M09 — Swagger Exposto Sem Auth em Produção
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/api/src/main.ts` (linha 39)
 - **Descrição:**
@@ -300,7 +300,7 @@
 ### F-B01 — `UsersRepository.findById` O(n)
 
 - **Severidade:** 🟢 BAIXO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/api/src/auth/repositories/users.repository.ts` (linhas 47-49)
 - **Descrição:**
@@ -311,7 +311,7 @@
 ### F-B02 — Sem Limite de Tamanho de Body Explicito
 
 - **Severidade:** 🟢 BAIXO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/api/src/main.ts`
 - **Descrição:**
@@ -322,7 +322,7 @@
 ### F-B03 — `reorderWidgets` Faz N Requests Sequenciais
 
 - **Severidade:** 🟢 BAIXO
-- **Status:** Pendente
+- **Status:** Concluído
 - **Arquivos:**
   - `apps/api/src/platform/dashboards/dashboards.service.ts` (linhas 442-453)
 - **Descrição:**

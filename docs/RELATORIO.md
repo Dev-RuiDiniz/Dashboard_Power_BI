@@ -24,6 +24,79 @@ Cada entrada deve conter:
 
 ---
 
+## 2026-06-29 — Registro do Dia (Sessão 3)
+
+### 1. Resumo
+
+Correção de 11 falhas de segurança e performance identificadas no ROADMAP_FALHAS.md, abrangendo itens médios (F-M01 a F-M09) e baixos (F-B01 a F-B03). Todas as alterações foram validadas com testes existentes.
+
+### 2. Tarefas Executadas
+
+- **F-M01:** Corrigir `downloadExportFile` com `getApiUrl()` dinâmico em `platform-api.ts`.
+- **F-M02:** Refatorar `fetchReports` para usar `apiGet` centralizado em `reports-api.ts`.
+- **F-M04:** Alterar default `BCRYPT_SALT_ROUNDS` de 10 para 12 em `auth.service.ts` e `.env.example`.
+- **F-M05:** TOTP encryption salt via env var `TOTP_ENCRYPTION_SALT` em `totp-encryption.service.ts`.
+- **F-M06:** Migrar rate limiting e token blacklist para Redis com fallback em memória. Criado `RedisConnectionService` compartilhado. `LoginAttemptsService`, `TotpAttemptsService` e `TokenBlacklistService` agora usam Redis com TTL automático.
+- **F-M07:** Export worker atualiza status para `failed` em modo memória via `markJobAsFailed`.
+- **F-M08:** Content-Type mapeado por extensão no download de exports.
+- **F-M09:** Swagger desabilitado quando `NODE_ENV=production`.
+- **F-B01:** `UsersRepository.findById` agora O(1) com segundo Map indexado por ID.
+- **F-B02:** Limite de body size de 10mb em `main.ts`.
+- **F-B03:** `reorderWidgets` paralelizado com `Promise.all`.
+
+### 3. Arquivos Criados
+
+- `apps/api/src/common/redis-connection.service.ts` — serviço compartilhado de conexão Redis.
+
+### 4. Arquivos Modificados
+
+- `apps/web/src/lib/platform-api.ts`
+- `apps/web/src/lib/admin-api.ts`
+- `apps/web/src/lib/reports-api.ts`
+- `apps/web/src/lib/reports-api.test.ts`
+- `apps/web/src/components/reports/report-catalog-container.tsx`
+- `apps/web/src/components/reports/report-catalog-container.test.tsx`
+- `apps/api/src/auth/auth.service.ts`
+- `apps/api/src/auth/auth.service.spec.ts`
+- `apps/api/src/auth/auth.module.ts`
+- `apps/api/src/auth/services/totp-encryption.service.ts`
+- `apps/api/src/auth/services/login-attempts.service.ts`
+- `apps/api/src/auth/services/login-attempts.service.spec.ts`
+- `apps/api/src/auth/services/totp-attempts.service.ts`
+- `apps/api/src/auth/services/totp-attempts.service.spec.ts`
+- `apps/api/src/auth/services/token-blacklist.service.ts`
+- `apps/api/src/auth/services/token-blacklist.service.spec.ts`
+- `apps/api/src/auth/guards/jwt-auth.guard.ts`
+- `apps/api/src/auth/guards/jwt-auth.guard.spec.ts`
+- `apps/api/src/auth/repositories/users.repository.ts`
+- `apps/api/src/common/common.module.ts`
+- `apps/api/src/main.ts`
+- `apps/api/src/platform/exports/exports.controller.ts`
+- `apps/api/src/platform/exports/exports.processor.ts`
+- `apps/api/src/platform/exports/exports.service.ts`
+- `apps/api/src/platform/dashboards/dashboards.service.ts`
+- `infra/env/.env.example`
+- `ROADMAP_FALHAS.md`
+
+### 5. Testes Executados
+
+- `pnpm --filter @dashboard-power-bi/api exec jest` — todos os testes de auth, exports e dashboards passando (87+ testes).
+- `pnpm --filter @dashboard-power-bi/web exec jest` — testes de reports-api e report-catalog-container passando.
+
+### 6. Commits Realizados
+
+1. `fix: migrar rate limiting e token blacklist para Redis com fallback em memoria (F-M06)`
+2. `fix: export worker atualiza status para failed em modo memoria (F-M07)`
+3. `fix: content-type no download de exports e swagger desabilitado em producao (F-M08, F-M09)`
+4. `fix: lookup O(1) por id, body size limit e reorderWidgets paralelizado (F-B01, F-B02, F-B03)`
+
+### 7. Débitos Técnicos Remanescentes
+
+- F-M03 (CSRF refresh exclusion) e itens críticos/altos do ROADMAP_FALHAS.md ainda pendentes.
+- Redis não é testado em integração nos testes automatizados (apenas fallback em memória é testado).
+
+---
+
 ## 2026-06-28 — Registro do Dia (Sessão 2)
 
 ### 1. Resumo
