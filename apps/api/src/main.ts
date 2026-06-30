@@ -19,6 +19,10 @@ export function configureApp(app: INestApplication): void {
     .map((o) => o.trim())
     .filter(Boolean);
 
+  const trustProxy = configService.get<string>('TRUST_PROXY_HOPS', '0');
+  const httpAdapter = app.getHttpAdapter();
+  httpAdapter.getInstance().set('trust proxy', Number(trustProxy));
+
   app.use(helmet());
 
   app.enableCors({

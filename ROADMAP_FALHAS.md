@@ -371,7 +371,7 @@
 ### F-N04 — `getClientIp` Confia em `x-forwarded-for` Sem `trust proxy`
 
 - **Severidade:** 🟡 MÉDIO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/auth/auth.controller.ts` (linhas 197-209)
   - `apps/api/src/main.ts`
