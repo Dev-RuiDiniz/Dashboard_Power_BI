@@ -3,8 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { AreaChartWidget, BarChartWidget } from '@/components/charts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
-import { getAdminDashboard, type AdminDashboardMetrics } from '@/lib/admin-api';
+import {
+  getAdminDashboard,
+  getAdminDashboardTrends,
+  type AdminDashboardMetrics,
+  type AdminDashboardTrends,
+} from '@/lib/admin-api';
 import {
   Activity,
   FileDown,
@@ -39,8 +45,11 @@ const adminCards = [
 
 export default function AdminPage() {
   const [metrics, setMetrics] = useState<AdminDashboardMetrics | null>(null);
+  const [trends, setTrends] = useState<AdminDashboardTrends | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingTrends, setIsLoadingTrends] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [trendsError, setTrendsError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -56,6 +65,22 @@ export default function AdminPage() {
       }
     }
     void load();
+  }, []);
+
+  useEffect(() => {
+    async function loadTrends() {
+      setIsLoadingTrends(true);
+      setTrendsError(null);
+      try {
+        const data = await getAdminDashboardTrends();
+        setTrends(data);
+      } catch {
+        setTrendsError('Nao foi possivel carregar as tendencias.');
+      } finally {
+        setIsLoadingTrends(false);
+      }
+    }
+    void loadTrends();
   }, []);
 
   const kpiItems = metrics
@@ -138,6 +163,87 @@ export default function AdminPage() {
               </Card>
             ))}
       </div>
+
+      {/* Gráficos de tendência */}
+      {trendsError ? (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader className="flex flex-row items-center gap-3">
+            <TriangleAlert className="h-5 w-5 text-amber-700" />
+            <CardTitle className="text-base text-amber-800">{trendsError}</CardTitle>
+          </CardHeader>
+        </Card>
+      ) : isLoadingTrends ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-5 w-40 rounded bg-slate-200" />
+                <div className="h-4 w-56 rounded bg-slate-100" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-48 w-full rounded bg-slate-100" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : trends ? (
+        <div className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <AreaChartWidget
+              title="Usuários novos por mês"
+              description="Cadastro de novos usuários nos últimos 12 meses"
+              data={trends.usersByMonth}
+              xKey="month"
+              series={[{ dataKey: 'count', name: 'Novos usuários', color: '#1d4ed8' }]}
+            />
+            <BarChartWidget
+              title="Atividade por semana"
+              description="Eventos de auditoria nas últimas 8 semanas"
+              data={trends.activityByWeek}
+              xKey="week"
+              yKey="count"
+              color="#059669"
+            />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <BarChartWidget
+              title="Exports por semana"
+              description="Exportações geradas nas últimas 8 semanas"
+              data={trends.exportsByWeek}
+              xKey="week"
+              yKey="count"
+              color="#d97706"
+            />
+            <BarChartWidget
+              title="Top 5 relatórios"
+              description="Relatórios mais acessados"
+              data={trends.topReports}
+              xKey="reportId"
+              yKey="count"
+              color="#7c3aed"
+            />
+          </div>
+          {trends.topSectors.length > 0 ? (
+            <BarChartWidget
+              title="Top 5 setores com mais atividade"
+              description="Setores com maior número de eventos de auditoria"
+              data={trends.topSectors}
+              xKey="sector"
+              yKey="count"
+              color="#dc2626"
+            />
+          ) : null}
+          {trends.usersByMonth.every((m) => m.count === 0) &&
+          trends.activityByWeek.every((w) => w.count === 0) &&
+          trends.exportsByWeek.every((w) => w.count === 0) ? (
+            <Card className="border-slate-200 bg-slate-50">
+              <CardContent className="py-8 text-center">
+                <p className="text-sm text-slate-500">Dados insuficientes para tendência.</p>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader className="flex flex-row items-center gap-2">

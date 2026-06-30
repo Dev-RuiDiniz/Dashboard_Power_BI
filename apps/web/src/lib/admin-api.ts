@@ -151,6 +151,18 @@ export async function getAdminDashboard(): Promise<AdminDashboardMetrics> {
   return apiGet<AdminDashboardMetrics>('/admin/dashboard');
 }
 
+export type AdminDashboardTrends = {
+  usersByMonth: Array<{ month: string; count: number }>;
+  activityByWeek: Array<{ week: string; count: number }>;
+  exportsByWeek: Array<{ week: string; count: number }>;
+  topReports: Array<{ reportId: string; count: number }>;
+  topSectors: Array<{ sector: string; count: number }>;
+};
+
+export async function getAdminDashboardTrends(): Promise<AdminDashboardTrends> {
+  return apiGet<AdminDashboardTrends>('/admin/dashboard/trends');
+}
+
 export type RetentionConfig = {
   auditLogDays: number;
   refreshTokenDays: number;
