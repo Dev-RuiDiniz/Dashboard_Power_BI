@@ -3,8 +3,8 @@
 **ID:** T07b
 **Módulo:** BI
 **Fase:** Fase 3
-**Status:** Pendente
-**Atualizado em:** 2026-06-28
+**Status:** Em implementação
+**Atualizado em:** 2026-06-29
 
 ---
 
@@ -14,7 +14,7 @@ Expandir o drill-down do dashboard para suportar múltiplas dimensões de análi
 
 ## 2. Contexto
 
-Atualmente o drill-down funciona apenas por dimensão setor. Usuários precisam explorar dados por outras dimensões (tempo/diário/mensal, produto/categoria, região/estado). Esta spec adiciona navegação entre dimensões no drill-down.
+Atualmente o drill-down funciona com uma dimensão fixa por KPI (hardcoded em `getDrilldownRows`). Cada KPI agrupa por uma única dimensão (fazenda, cultura, cliente, safra, etc). Esta spec adiciona seletor de dimensão selecionável pelo usuário, permitindo trocar a dimensão de agregação sem voltar ao resumo. As dimensões disponíveis dependem do dataset de cada KPI (plantio, colheita, contratos, embarques) e já estão disponíveis nos dados do Oracle/fallback — **não requer queries SQL Server adicionais**.
 
 ## 3. Regras de Negócio
 
@@ -25,39 +25,33 @@ Nenhuma RN específica.
 ### Fluxo principal
 
 1. Usuário clica em KPI/gráfico.
-2. Drill-down abre com seletor de dimensão.
-3. Dimensões disponíveis: setor, tempo, produto, região.
+2. Drill-down abre com seletor de dimensão (tabs ou dropdown).
+3. Dimensões disponíveis por KPI: fazenda, cultura, variedade, safra, cliente, produto, status, tempo.
 4. Usuário seleciona dimensão "tempo".
-5. Dados agregados por tempo (diário/mensal/anual).
-6. Usuário pode trocar dimensão sem voltar.
-
-### Fluxo — Drill-down aninhado
-
-1. Usuário está em drill-down por setor.
-2. Clica em um setor específico.
-3. Sub-drill-down por tempo dentro daquele setor.
-4. Navegação breadcrumb para voltar.
+5. Dados agregados por tempo (mensal).
+6. Usuário pode trocar dimensão sem voltar ao resumo.
+7. Breadcrumb mostra: Home > KPI > Dimensão atual.
 
 ## 5. Critérios de Aceite
 
-- [ ] Seletor de dimensão no drill-down (setor, tempo, produto, região)
+- [ ] Seletor de dimensão no drill-down (fazenda, cultura, variedade, safra, cliente, produto, status, tempo)
 - [ ] Agregação de dados por dimensão selecionada
-- [ ] Drill-down aninhado (dimensão dentro de dimensão)
-- [ ] Breadcrumb de navegação
+- [ ] Breadcrumb de navegação (Home > KPI > Dimensão)
 - [ ] Troca de dimensão sem recarregar
+- [ ] Estados: loading, erro, vazio
 - [ ] Responsivo
 
 ## 6. Impacto Técnico
 
-| Área           | Impacto                                                      |
-| -------------- | ------------------------------------------------------------ |
-| Arquitetura    | Modificação em dashboard.controller para aceitar dimensão    |
-| Banco de dados | Queries de agregação por dimensão (SQL Server)               |
-| API            | GET /dashboard/drill-down?dimension=...&sector=...           |
-| Frontend       | Seletor de dimensão, breadcrumb, navegação aninhada          |
-| Testes         | Unit (drill-down com múltiplas dimensões), Integration (API) |
-| Infraestrutura | Nenhuma adicional                                            |
-| Segurança      | JwtAuthGuard, filtro por setor                               |
+| Área           | Impacto                                                        |
+| -------------- | -------------------------------------------------------------- |
+| Arquitetura    | Modificação em DashboardKpiDefinition para múltiplas dimensões |
+| Banco de dados | Sem migrations — agrega de dataset Oracle/fallback existente   |
+| API            | GET /dashboard/kpis/:kpiId/drilldown?dimension=...             |
+| Frontend       | Seletor de dimensão, breadcrumb, troca sem recarregar          |
+| Testes         | Unit (drill-down com múltiplas dimensões), Integration (API)   |
+| Infraestrutura | Nenhuma adicional                                              |
+| Segurança      | JwtAuthGuard, filtro por setor                                 |
 
 ## 7. Testes Necessários
 
@@ -79,5 +73,5 @@ Nenhuma RN específica.
 ## 9. Dependências
 
 - T07 (dashboard interativo) — concluído
-- `dashboard.controller` (modificação para aceitar dimensão)
-- Queries SQL de agregação por dimensão (pendentes)
+- `dashboard.controller` (modificação para aceitar query param `dimension`)
+- Dados com múltiplas dimensões já disponíveis no dataset Oracle/fallback
