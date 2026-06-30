@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiGetBlob, apiPatch, apiPost } from '@/lib/admin-api';
+import { apiDelete, apiGet, apiGetBlob, apiPatch, apiPost, getApiUrl } from '@/lib/admin-api';
 import type { BusinessArea, KpiItem, SectorKpiSummary } from '@/lib/kpis';
 import type { PaginatedReports } from '@/lib/reports-api';
 
@@ -285,7 +285,7 @@ export async function createExport(input: {
 }
 
 export async function downloadExportFile(fileUrl: string): Promise<Blob> {
-  const url = new URL(fileUrl, 'http://localhost:3001');
+  const url = new URL(fileUrl, getApiUrl());
   return apiGetBlob(`${url.pathname}${url.search}`);
 }
 

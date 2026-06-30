@@ -9,7 +9,7 @@ import { getCsrfHeader } from '@/lib/csrf';
 
 const DEFAULT_API_URL = 'http://localhost:3001';
 
-function getApiUrl(): string {
+export function getApiUrl(): string {
   return (process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL).replace(/\/$/, '');
 }
 

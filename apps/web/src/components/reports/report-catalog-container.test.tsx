@@ -51,7 +51,6 @@ describe('ReportCatalogContainer', () => {
     expect(fetchReportsMock).toHaveBeenCalledWith({
       page: 1,
       pageSize: 20,
-      token: 'jwt-token',
       filters: {},
     });
   });

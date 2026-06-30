@@ -4,7 +4,6 @@ import { TriangleAlert as AlertTriangle, Loader as Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react';
 
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui';
-import { getAuthSession } from '@/lib/auth/session';
 import { fetchReports, type PaginatedReports } from '@/lib/reports-api';
 import type { ReportFilters } from '@/lib/report-filters';
 
@@ -25,28 +24,24 @@ export function ReportCatalogContainer({ token, onSelectReport }: ReportCatalogC
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadReports = useCallback(
-    async (appliedFilters: ReportFilters) => {
-      setIsLoading(true);
-      setErrorMessage(null);
+  const loadReports = useCallback(async (appliedFilters: ReportFilters) => {
+    setIsLoading(true);
+    setErrorMessage(null);
 
-      try {
-        const response = await fetchReports({
-          page: INITIAL_PAGE,
-          pageSize: INITIAL_PAGE_SIZE,
-          token: token ?? getAuthSession()?.accessToken,
-          filters: appliedFilters,
-        });
+    try {
+      const response = await fetchReports({
+        page: INITIAL_PAGE,
+        pageSize: INITIAL_PAGE_SIZE,
+        filters: appliedFilters,
+      });
 
-        setReportsResponse(response);
-      } catch {
-        setErrorMessage('Não foi possível carregar os relatórios.');
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [token],
-  );
+      setReportsResponse(response);
+    } catch {
+      setErrorMessage('Não foi possível carregar os relatórios.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     void loadReports(filters);

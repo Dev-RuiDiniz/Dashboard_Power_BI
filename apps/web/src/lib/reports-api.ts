@@ -1,4 +1,5 @@
 import type { ReportCatalogItem } from '@/components/reports/report-catalog';
+import { apiGet } from '@/lib/admin-api';
 import { buildReportFiltersQueryParams, type ReportFilters } from '@/lib/report-filters';
 
 type ApiReportSourceType = 'view' | 'stored_procedure' | 'procedure';
@@ -25,7 +26,6 @@ type ApiPaginatedReports = {
 export type FetchReportsParams = {
   page?: number;
   pageSize?: number;
-  token?: string;
   filters?: ReportFilters;
 };
 
@@ -37,12 +37,9 @@ export type PaginatedReports = {
   totalPages: number;
 };
 
-const DEFAULT_API_URL = 'http://localhost:3001';
-
 export async function fetchReports({
   page = 1,
   pageSize = 20,
-  token,
   filters = { parameters: undefined },
 }: FetchReportsParams = {}): Promise<PaginatedReports> {
   const searchParams = new URLSearchParams();
@@ -53,24 +50,10 @@ export async function fetchReports({
     searchParams.set(key, value);
   });
 
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-  };
+  const query = searchParams.toString();
+  const path = query ? `/reports?${query}` : '/reports';
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(buildReportsUrl(searchParams), {
-    headers,
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    throw new Error('Não foi possível carregar os relatórios.');
-  }
-
-  const payload = (await response.json()) as ApiPaginatedReports;
+  const payload = await apiGet<ApiPaginatedReports>(path);
 
   return {
     items: payload.items.map(toCatalogItem),
@@ -79,17 +62,6 @@ export async function fetchReports({
     total: payload.total,
     totalPages: payload.totalPages,
   };
-}
-
-function getApiBaseUrl() {
-  return (process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL).replace(/\/$/, '');
-}
-
-function buildReportsUrl(searchParams: URLSearchParams): string {
-  const query = searchParams.toString();
-  const path = `${getApiBaseUrl()}/reports`;
-
-  return query ? `${path}?${query}` : path;
 }
 
 function toCatalogItem(report: ApiReport): ReportCatalogItem {

@@ -1,49 +1,38 @@
+import { apiGet } from './admin-api';
 import { fetchReports } from './reports-api';
 
+jest.mock('./admin-api', () => ({
+  apiGet: jest.fn(),
+}));
+
 describe('fetchReports', () => {
-  const originalEnv = process.env.NEXT_PUBLIC_API_URL;
-  const fetchMock = jest.fn();
+  const apiGetMock = apiGet as jest.MockedFunction<typeof apiGet>;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3001';
-    global.fetch = fetchMock as unknown as typeof fetch;
   });
 
-  afterEach(() => {
-    process.env.NEXT_PUBLIC_API_URL = originalEnv;
-  });
-
-  it('chama Reports API com paginacao e token bearer', async () => {
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        items: [
-          {
-            id: 'financeiro-dre',
-            name: 'DRE Mensal',
-            description: 'Resultado financeiro.',
-            sector: 'Financeiro',
-            sourceType: 'view',
-            requiredPermissions: ['reports:read'],
-          },
-        ],
-        page: 1,
-        pageSize: 20,
-        total: 1,
-        totalPages: 1,
-      }),
+  it('chama Reports API com paginacao', async () => {
+    apiGetMock.mockResolvedValueOnce({
+      items: [
+        {
+          id: 'financeiro-dre',
+          name: 'DRE Mensal',
+          description: 'Resultado financeiro.',
+          sector: 'Financeiro',
+          sourceType: 'view',
+          requiredPermissions: ['reports:read'],
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+      totalPages: 1,
     });
 
-    const response = await fetchReports({ page: 1, pageSize: 20, token: 'jwt-token' });
+    const response = await fetchReports({ page: 1, pageSize: 20 });
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/reports?page=1&pageSize=20', {
-      headers: {
-        Authorization: 'Bearer jwt-token',
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-    });
+    expect(apiGetMock).toHaveBeenCalledWith('/reports?page=1&pageSize=20');
     expect(response.items).toHaveLength(1);
     expect(response.items[0]).toBeDefined();
     expect(response.items[0]!).toMatchObject({
@@ -54,15 +43,12 @@ describe('fetchReports', () => {
   });
 
   it('envia filtros avancados na query string', async () => {
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        items: [],
-        page: 1,
-        pageSize: 20,
-        total: 0,
-        totalPages: 0,
-      }),
+    apiGetMock.mockResolvedValueOnce({
+      items: [],
+      page: 1,
+      pageSize: 20,
+      total: 0,
+      totalPages: 0,
     });
 
     await fetchReports({
@@ -79,60 +65,27 @@ describe('fetchReports', () => {
       },
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3001/reports?page=1&pageSize=20&startDate=2026-05-01&endDate=2026-05-31&category=dre&sector=financeiro&parameters%5Bcompetencia%5D=2026-05',
-      {
-        headers: {
-          Accept: 'application/json',
-        },
-        cache: 'no-store',
-      },
+    expect(apiGetMock).toHaveBeenCalledWith(
+      '/reports?page=1&pageSize=20&startDate=2026-05-01&endDate=2026-05-31&category=dre&sector=financeiro&parameters%5Bcompetencia%5D=2026-05',
     );
   });
 
-  it('aceita base relativa para a API atras do mesmo host', async () => {
-    process.env.NEXT_PUBLIC_API_URL = '/api';
-
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        items: [],
-        page: 1,
-        pageSize: 20,
-        total: 0,
-        totalPages: 0,
-      }),
-    });
-
-    await fetchReports({ page: 1, pageSize: 20 });
-
-    expect(fetchMock).toHaveBeenCalledWith('/api/reports?page=1&pageSize=20', {
-      headers: {
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-    });
-  });
-
   it('normaliza stored_procedure para procedure no catálogo do frontend', async () => {
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        items: [
-          {
-            id: 'comercial-funil',
-            name: 'Funil de Vendas',
-            description: 'Pipeline comercial.',
-            sector: 'Comercial',
-            sourceType: 'stored_procedure',
-            requiredPermissions: ['reports:read'],
-          },
-        ],
-        page: 1,
-        pageSize: 20,
-        total: 1,
-        totalPages: 1,
-      }),
+    apiGetMock.mockResolvedValueOnce({
+      items: [
+        {
+          id: 'comercial-funil',
+          name: 'Funil de Vendas',
+          description: 'Pipeline comercial.',
+          sector: 'Comercial',
+          sourceType: 'stored_procedure',
+          requiredPermissions: ['reports:read'],
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+      totalPages: 1,
     });
 
     const response = await fetchReports({ page: 1, pageSize: 20 });
@@ -141,16 +94,9 @@ describe('fetchReports', () => {
     expect(response.items[0]!.sourceType).toBe('procedure');
   });
 
-  it('retorna erro controlado quando a API falha', async () => {
-    fetchMock.mockResolvedValueOnce({
-      ok: false,
-      status: 403,
-      statusText: 'Forbidden',
-      json: async () => ({ message: 'Sem permissao' }),
-    });
+  it('propaga erro quando a API falha', async () => {
+    apiGetMock.mockRejectedValueOnce(new Error('Sem permissao'));
 
-    await expect(fetchReports({ page: 1, pageSize: 20, token: 'jwt-token' })).rejects.toThrow(
-      'Não foi possível carregar os relatórios.',
-    );
+    await expect(fetchReports({ page: 1, pageSize: 20 })).rejects.toThrow('Sem permissao');
   });
 });
