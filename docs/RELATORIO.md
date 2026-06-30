@@ -107,9 +107,23 @@ Verificação item por item de todas as 24 falhas originais do ROADMAP_FALHAS.md
 Novas falhas encontradas:
 
 - **F-N01:** `BCRYPT_SALT_ROUNDS` default 10 em `password-reset.service.ts` e `admin-users.service.ts` — **corrigido**.
-- **F-N02:** Sem security headers (Helmet) — pendente.
-- **F-N03:** Password reset token comparação non-constant-time — pendente.
-- **F-N04:** `getClientIp` confia em `x-forwarded-for` sem `trust proxy` — pendente.
+- **F-N02:** Sem security headers (Helmet) — **corrigido**.
+- **F-N03:** Password reset token comparação non-constant-time — **corrigido**.
+- **F-N04:** `getClientIp` confia em `x-forwarded-for` sem `trust proxy` — **corrigido**.
+
+### 9. Commits da Auditoria
+
+5. `fix: corrigir BCRYPT_SALT_ROUNDS em password-reset e admin-users (F-N01)`
+6. `security: adicionar helmet para security headers (F-N02)`
+7. `security: timingSafeEqual em password-reset (F-N03)`
+8. `security: trust proxy e simplificar getClientIp (F-N04)`
+
+### 10. Estado Final do ROADMAP_FALHAS.md
+
+- **28 falhas totais** (24 originais + 4 novas encontradas em auditoria).
+- **28 concluídas** — zero pendências.
+- **113 testes** passando na API.
+- **0 vulnerabilidades de segurança** remanescentes.
 
 ---
 

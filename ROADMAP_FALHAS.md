@@ -429,14 +429,14 @@
 
 ## Métricas
 
-| Métrica                       | Valor                                                       |
-| ----------------------------- | ----------------------------------------------------------- |
-| Total de falhas               | 28                                                          |
-| Críticas                      | 4                                                           |
-| Altas                         | 9 (8 originais + F-N02)                                     |
-| Médias                        | 12 (9 originais + F-N01, F-N03, F-N04)                      |
-| Baixas                        | 3                                                           |
-| Concluídas                    | 25 (todas as originais + F-N01)                             |
-| Pendentes                     | 3 (F-N02, F-N03, F-N04)                                     |
-| Bloqueiam produção            | 0 (todas as críticas corrigidas)                            |
-| Vulnerabilidades de segurança | 2 (security headers ausentes, IP spoofing no rate limiting) |
+| Métrica                       | Valor                                  |
+| ----------------------------- | -------------------------------------- |
+| Total de falhas               | 28                                     |
+| Críticas                      | 4                                      |
+| Altas                         | 9 (8 originais + F-N02)                |
+| Médias                        | 12 (9 originais + F-N01, F-N03, F-N04) |
+| Baixas                        | 3                                      |
+| Concluídas                    | 28 (todas)                             |
+| Pendentes                     | 0                                      |
+| Bloqueiam produção            | 0                                      |
+| Vulnerabilidades de segurança | 0                                      |
