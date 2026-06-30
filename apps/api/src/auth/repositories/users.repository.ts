@@ -30,22 +30,23 @@ export type UpdateUserInput = Partial<
 
 @Injectable()
 export class UsersRepository {
-  private readonly users = new Map<string, AuthUser>();
+  private readonly usersByEmail = new Map<string, AuthUser>();
+  private readonly usersById = new Map<string, AuthUser>();
 
   constructor(private readonly configService: ConfigService) {
     this.seedDevelopmentUsers();
   }
 
   async findAll(): Promise<AuthUser[]> {
-    return Array.from(this.users.values());
+    return Array.from(this.usersByEmail.values());
   }
 
   async findByEmail(email: string): Promise<AuthUser | null> {
-    return this.users.get(email.toLowerCase()) ?? null;
+    return this.usersByEmail.get(email.toLowerCase()) ?? null;
   }
 
   async findById(id: string): Promise<AuthUser | null> {
-    return Array.from(this.users.values()).find((user) => user.id === id) ?? null;
+    return this.usersById.get(id) ?? null;
   }
 
   async create(input: CreateUserInput): Promise<AuthUser> {
@@ -66,20 +67,21 @@ export class UsersRepository {
       deactivatedAt: null,
     };
 
-    this.users.set(user.email, user);
+    this.usersByEmail.set(user.email, user);
+    this.usersById.set(user.id, user);
 
     return user;
   }
 
   async update(id: string, input: UpdateUserInput): Promise<AuthUser | null> {
-    const current = await this.findById(id);
+    const current = this.usersById.get(id);
 
     if (!current) {
       return null;
     }
 
     if (input.email && input.email.toLowerCase() !== current.email) {
-      this.users.delete(current.email);
+      this.usersByEmail.delete(current.email);
     }
 
     const next: AuthUser = {
@@ -95,7 +97,8 @@ export class UsersRepository {
             : current.deactivatedAt,
     };
 
-    this.users.set(next.email, next);
+    this.usersByEmail.set(next.email, next);
+    this.usersById.set(next.id, next);
 
     return next;
   }
@@ -121,7 +124,7 @@ export class UsersRepository {
   }
 
   async incrementTokenVersion(id: string): Promise<number> {
-    const current = await this.findById(id);
+    const current = this.usersById.get(id);
 
     if (!current) {
       return 0;
@@ -178,11 +181,10 @@ export class UsersRepository {
     roles: UserRole[],
     sectors: SectorCode[],
   ): void {
-    const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 10));
+    const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 12));
     const passwordHash = bcrypt.hashSync(password, saltRounds);
     const now = new Date();
-
-    this.users.set(email.toLowerCase(), {
+    const user: AuthUser = {
       id,
       email: email.toLowerCase(),
       passwordHash,
@@ -196,6 +198,9 @@ export class UsersRepository {
       createdAt: now,
       updatedAt: now,
       deactivatedAt: null,
-    });
+    };
+
+    this.usersByEmail.set(user.email, user);
+    this.usersById.set(user.id, user);
   }
 }

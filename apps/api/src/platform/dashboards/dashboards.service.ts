@@ -445,11 +445,13 @@ export class DashboardsService {
     items: { widgetId: string; displayOrder: number }[],
   ): Promise<UserDashboard> {
     await this.getByIdForUser(userId, dashboardId);
-    for (const item of items) {
-      await this.updateWidget(userId, dashboardId, item.widgetId, {
-        displayOrder: item.displayOrder,
-      });
-    }
+    await Promise.all(
+      items.map((item) =>
+        this.updateWidget(userId, dashboardId, item.widgetId, {
+          displayOrder: item.displayOrder,
+        }),
+      ),
+    );
     return this.getByIdForUser(userId, dashboardId);
   }
 

@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { json } from 'express';
 import cookieParser from 'cookie-parser';
 
 import { AppModule } from './app.module';
@@ -23,6 +24,7 @@ export function configureApp(app: INestApplication): void {
   });
 
   app.use(cookieParser());
+  app.use(json({ limit: '10mb' }));
 
   app.useGlobalPipes(
     new ValidationPipe({
