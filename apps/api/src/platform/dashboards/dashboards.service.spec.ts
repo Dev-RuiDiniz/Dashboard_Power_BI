@@ -125,4 +125,87 @@ describe('DashboardsService', () => {
     expect(reordered.widgets[1]!.displayOrder).toBe(20);
     expect(reordered.widgets[2]!.displayOrder).toBe(30);
   });
+
+  it('cria dashboard padrao de producao para usuario do setor operacoes', async () => {
+    const supabaseService = {
+      isEnabled: () => false,
+      getClient: () => ({ from: jest.fn() }),
+    };
+
+    const service = new DashboardsService(supabaseService as never);
+
+    const dashboard = await service.ensureDefaultDashboardForUser('user-1', ['operacoes']);
+
+    expect(dashboard.name).toBe('Dashboard de Produção');
+    expect(dashboard.isDefault).toBe(true);
+    expect(dashboard.widgets.length).toBe(5);
+    expect(dashboard.widgets[0]!.widgetType).toBe('kpi');
+    expect(dashboard.widgets[0]!.kpiId).toBe('producao-plantio-area');
+    expect(dashboard.widgets[0]!.displayOrder).toBe(10);
+  });
+
+  it('cria dashboard executivo para usuario da diretoria', async () => {
+    const supabaseService = {
+      isEnabled: () => false,
+      getClient: () => ({ from: jest.fn() }),
+    };
+
+    const service = new DashboardsService(supabaseService as never);
+
+    const dashboard = await service.ensureDefaultDashboardForUser('user-1', ['diretoria']);
+
+    expect(dashboard.name).toBe('Dashboard Executivo');
+    expect(dashboard.widgets.length).toBe(6);
+    expect(dashboard.widgets.some((w) => w.kpiId === 'producao-plantio-area')).toBe(true);
+    expect(dashboard.widgets.some((w) => w.kpiId === 'comercial-contratos')).toBe(true);
+    expect(dashboard.widgets.some((w) => w.kpiId === 'algodoeira-fardos')).toBe(true);
+  });
+
+  it('cria dashboard executivo quando setor e vazio', async () => {
+    const supabaseService = {
+      isEnabled: () => false,
+      getClient: () => ({ from: jest.fn() }),
+    };
+
+    const service = new DashboardsService(supabaseService as never);
+
+    const dashboard = await service.ensureDefaultDashboardForUser('user-1', []);
+
+    expect(dashboard.name).toBe('Dashboard Executivo');
+  });
+
+  it('cria dashboard comercial para usuario do setor comercial', async () => {
+    const supabaseService = {
+      isEnabled: () => false,
+      getClient: () => ({ from: jest.fn() }),
+    };
+
+    const service = new DashboardsService(supabaseService as never);
+
+    const dashboard = await service.ensureDefaultDashboardForUser('user-1', ['comercial']);
+
+    expect(dashboard.name).toBe('Dashboard Comercial');
+    expect(dashboard.widgets.length).toBe(4);
+    expect(dashboard.widgets[0]!.kpiId).toBe('comercial-contratos');
+  });
+
+  it('nao duplica dashboard quando usuario ja possui dashboards', async () => {
+    const supabaseService = {
+      isEnabled: () => false,
+      getClient: () => ({ from: jest.fn() }),
+    };
+
+    const service = new DashboardsService(supabaseService as never);
+
+    await service.createForUser('user-1', { name: 'Existente' });
+    const list = await service.listForUser('user-1');
+
+    expect(list.length).toBe(1);
+
+    const seeded = await service.ensureDefaultDashboardForUser('user-1', ['operacoes']);
+    const listAfter = await service.listForUser('user-1');
+
+    expect(listAfter.length).toBe(2);
+    expect(seeded.name).toBe('Dashboard de Produção');
+  });
 });
