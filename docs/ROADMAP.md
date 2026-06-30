@@ -120,7 +120,7 @@ Documentos detalhados por categoria:
 | DT-002  | Débito técnico | Hardening final de sessão                      | Alta       | CONCLUÍDO |
 | DT-003  | Débito técnico | Herança de permissões via grupos               | Média      | CONCLUÍDO |
 | DT-004  | Débito técnico | Cache de queries SQL Server                    | Média      | CONCLUÍDO |
-| DT-005  | Débito técnico | Testes E2E (Playwright)                        | Média      | PENDENTE  |
+| DT-005  | Débito técnico | Testes E2E (Playwright)                        | Média      | CONCLUÍDO |
 | DT-006  | Débito técnico | Política de retenção de logs (LGPD)            | Alta       | CONCLUÍDO |
 
 ---
@@ -167,14 +167,15 @@ Uma tarefa só é considerada pronta quando:
 
 ## Notas e Próximos Passos
 
-1. **Próxima onda:** Fase 4 — Testes E2E (Playwright)
+1. **Próxima onda:** Validação final de aderência ao escopo V1
 2. **Concluído:** Editor visual drag-and-drop completo (T16b) — 2026-06-29
 3. **Concluído:** 2FA obrigatório para admins (DT-001), hardening de sessão (DT-002), herança via grupos (DT-003), cache SQL (DT-004), retenção LGPD (DT-006)
 4. **Concluído:** Dashboard padrão por setor (T08b) — 2026-06-29
 5. **Concluído:** Dashboard admin com gráficos de tendência (T12b) — 2026-06-29
 6. **Concluído:** Drill-down multi-dimensão (T07b) — 2026-06-29 (seletor de dimensão, breadcrumb, 3-5 dimensões por KPI)
-7. **Pendências remanescentes:** DT-005 (Playwright E2E)
-8. **Verificação antes de cada commit:** `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`
+7. **Concluído:** Testes E2E com Playwright (DT-005) — 2026-06-29 (6 testes: auth, dashboard, drill-down)
+8. **Pendências remanescentes:** Nenhuma — todas as tarefas técnicas concluídas
+9. **Verificação antes de cada commit:** `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`
 
 ---
 

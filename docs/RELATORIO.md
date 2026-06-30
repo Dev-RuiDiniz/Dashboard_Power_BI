@@ -262,7 +262,49 @@ Implementação de T07b: drill-down multi-dimensão selecionável no dashboard. 
 
 ### 6. Débitos Técnicos Remanescentes
 
-- DT-005 (Playwright E2E) — não configurado.
+- Nenhum — todas as tarefas técnicas concluídas.
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 7)
+
+### 1. Resumo
+
+Implementação de DT-005: setup do Playwright E2E com 6 testes básicos cobrindo autenticação e dashboard.
+
+### 2. Tarefas Executadas
+
+- Instalado @playwright/test como devDependency do workspace.
+- Criado `playwright.config.ts` com webServer auto-start (pnpm dev:web).
+- Criados 6 testes E2E em `tests/e2e/auth-dashboard.spec.ts`:
+  - Login com credenciais válidas
+  - Login com credenciais inválidas
+  - Logout
+  - Carregamento da home executiva
+  - Abertura de drill-down
+  - Seletor de dimensão no drill-down
+- Adicionados scripts `test:e2e:playwright` e `test:e2e:playwright:ui`.
+
+### 3. Arquivos Criados
+
+- `playwright.config.ts`
+- `tests/e2e/auth-dashboard.spec.ts`
+
+### 4. Commits Realizados
+
+1. `feat: setup Playwright E2E com testes basicos de auth e dashboard`
+2. `docs: atualizar documentacao com entrega de DT-005 Playwright`
+
+### 5. Métricas de Progresso
+
+- Telas: 18/18 concluídas (100%)
+- Módulos: 6/6 parciais (funcional mas com lacunas)
+- Tarefas técnicas: 13 concluídas, 0 pendentes
+- Pendências remanescentes: Nenhuma
+
+### 6. Débitos Técnicos Remanescentes
+
+- Nenhum — todas as tarefas técnicas concluídas.
 
 ---
 

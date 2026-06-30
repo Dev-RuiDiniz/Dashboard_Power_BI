@@ -177,6 +177,7 @@ pnpm lint
 pnpm format:check
 pnpm typecheck
 pnpm test
+pnpm test:e2e:playwright
 pnpm build
 pnpm quality
 pnpm dev:api

@@ -194,13 +194,13 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 | Fallback em memória perde dados ao reiniciar             | Alto    | Garantir Supabase configurado em produção    |
 | Fila em memória não suporta múltiplas instâncias         | Baixo   | BullMQ + Redis já implementados com fallback |
 | `pnpm typecheck` falha sem artefatos de build do Next.js | Baixo   | Rodar `pnpm build` antes do typecheck        |
-| Sem testes E2E (Playwright)                              | Médio   | Configurar Playwright (DT-005)               |
+| Testes E2E configurados (Playwright)                     | Baixo   | 6 testes E2E em `tests/e2e/`                 |
 
 ---
 
 ## 9. Próximos Passos
 
-1. Configurar testes E2E com Playwright (DT-005).
+1. Validação final de aderência ao escopo V1.
 2. Validar com `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 
 ---
