@@ -4,7 +4,7 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
-const SALT = 'dashboard-power-bi-totp-salt';
+const DEFAULT_SALT = 'dashboard-power-bi-totp-salt';
 
 @Injectable()
 export class TotpEncryptionService {
@@ -15,7 +15,8 @@ export class TotpEncryptionService {
     const encryptionKey = this.configService.get<string>('TOTP_ENCRYPTION_KEY');
 
     if (encryptionKey) {
-      this.key = scryptSync(encryptionKey, SALT, 32);
+      const salt = this.configService.get<string>('TOTP_ENCRYPTION_SALT', DEFAULT_SALT);
+      this.key = scryptSync(encryptionKey, salt, 32);
     } else {
       this.key = null;
       this.logger.warn(

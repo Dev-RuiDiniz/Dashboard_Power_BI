@@ -335,13 +335,13 @@ export class AuthService {
   }
 
   private async hashRefreshToken(refreshToken: string): Promise<string> {
-    const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 10));
+    const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 12));
 
     return bcrypt.hash(refreshToken, saltRounds);
   }
 
   private async hashPassword(password: string): Promise<string> {
-    const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 10));
+    const saltRounds = Number(this.configService.get<number>('BCRYPT_SALT_ROUNDS', 12));
 
     return bcrypt.hash(password, saltRounds);
   }
