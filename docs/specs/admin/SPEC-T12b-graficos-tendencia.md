@@ -3,7 +3,7 @@
 **ID:** T12b
 **Módulo:** Admin
 **Fase:** Fase 4
-**Status:** Em implementação
+**Status:** Concluído
 **Atualizado em:** 2026-06-29
 
 ---
@@ -43,14 +43,14 @@ O dashboard admin atual (T12) exibe KPIs em cards (totais) e tabela de atividade
 
 ## 5. Critérios de Aceite
 
-- [ ] Endpoint GET /admin/dashboard/trends
-- [ ] Gráfico de usuários novos por mês (line/area)
-- [ ] Gráfico de atividade por semana (bar)
-- [ ] Gráfico de exports por semana (bar)
-- [ ] Top 5 relatórios mais executados (bar horizontal)
-- [ ] Top 5 setores com mais atividade (bar horizontal)
-- [ ] Estados: loading, erro, vazio
-- [ ] Responsivo
+- [x] Endpoint GET /admin/dashboard/trends
+- [x] Gráfico de usuários novos por mês (line/area)
+- [x] Gráfico de atividade por semana (bar)
+- [x] Gráfico de exports por semana (bar)
+- [x] Top 5 relatórios mais executados (bar horizontal)
+- [x] Top 5 setores com mais atividade (bar horizontal)
+- [x] Estados: loading, erro, vazio
+- [x] Responsivo
 
 ## 6. Impacto Técnico
 

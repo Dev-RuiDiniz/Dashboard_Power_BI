@@ -8,7 +8,7 @@
 
 ## 1. Resumo Executivo
 
-O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado funcional avançado. O sistema entrega autenticação com JWT, dashboard com KPIs e gráficos Recharts, catálogo e execução de relatórios via SQL Server/Oracle, administração de usuários/grupos/permissões com herança via grupos, auditoria com retenção LGPD, exportações com pipeline real, notificações, settings, dashboards personalizados com editor visual drag-and-drop completo (react-grid-layout) e seed automático de dashboard padrão por setor, 2FA/TOTP obrigatório para admins, hardening de sessão (token blacklist, token versioning, revogação), cache de queries SQL com TTL e LRU, e política de retenção de logs com cron diário. As lacunas remanescentes são: testes E2E (Playwright não configurado), drill-down multi-dimensão selecionável pelo usuário, e dashboard admin com gráficos de tendência. O principal risco técnico é a dependência de fallback em memória quando Supabase não está configurado.
+O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado funcional avançado. O sistema entrega autenticação com JWT, dashboard com KPIs e gráficos Recharts, catálogo e execução de relatórios via SQL Server/Oracle, administração de usuários/grupos/permissões com herança via grupos, auditoria com retenção LGPD, exportações com pipeline real, notificações, settings, dashboards personalizados com editor visual drag-and-drop completo (react-grid-layout) e seed automático de dashboard padrão por setor, dashboard admin com gráficos de tendência (agregações temporais de audit logs, exports e usuários), 2FA/TOTP obrigatório para admins, hardening de sessão (token blacklist, token versioning, revogação), cache de queries SQL com TTL e LRU, e política de retenção de logs com cron diário. As lacunas remanescentes são: testes E2E (Playwright não configurado) e drill-down multi-dimensão selecionável pelo usuário. O principal risco técnico é a dependência de fallback em memória quando Supabase não está configurado.
 
 ---
 
@@ -201,9 +201,8 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 ## 9. Próximos Passos
 
 1. Configurar testes E2E com Playwright (DT-005).
-2. Implementar dashboard admin com gráficos de tendência (T12b).
-3. Implementar drill-down multi-dimensão selecionável (T07b).
-4. Validar com `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
+2. Implementar drill-down multi-dimensão selecionável (T07b).
+3. Validar com `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 
 ---
 

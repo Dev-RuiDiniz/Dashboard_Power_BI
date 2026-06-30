@@ -48,7 +48,7 @@ Documentos detalhados por categoria:
 | -------------------- | :-------: | :-----: | :------: | :---: |
 | **Telas**            |    18     |    0    |    0     |  18   |
 | **Módulos**          |     0     |    6    |    0     |   6   |
-| **Tarefas Técnicas** |     9     |    1    |    2     |  12   |
+| **Tarefas Técnicas** |    10     |    1    |    1     |  12   |
 
 ---
 
@@ -91,14 +91,14 @@ Documentos detalhados por categoria:
 
 ## Resumo por Módulo
 
-| Módulo      | Status     |                                                           Concluído                                                            |            Parcial             |                Pendente                |
-| ----------- | ---------- | :----------------------------------------------------------------------------------------------------------------------------: | :----------------------------: | :------------------------------------: |
-| AUTH        | 🔄 Parcial | Login, JWT, refresh, logout, reset, rate limit, profile, CSRF, CSP, 2FA/TOTP, 2FA obrigatório para admins, hardening de sessão |               —                |    Regras finas de 2FA por contexto    |
-| PERMISSIONS | 🔄 Parcial |                          Roles, setores, grupos, permissões granulares, auditoria, herança via grupos                          |               —                |        Regras finas adicionais         |
-| SQL         | 🔄 Parcial |                           Queries parametrizadas, validação de identificadores, cache com TTL e LRU                            |               —                |         Cron, observabilidade          |
-| REPORTS     | 🔄 Parcial |                       Catálogo, visualização, filtros, admin básico, persistência real, export pipeline                        |       Ampliar favoritos        |                   —                    |
-| BI          | 🔄 Parcial |      KPIs, payload consolidado, charts reais, sparklines, drill-down, editor visual completo, dashboard padrão por setor       |               —                | Drill-down multi-dimensão selecionável |
-| ADMIN       | 🔄 Parcial |                     Usuários, grupos, permissões, auditoria, settings, dashboard admin KPIs, retenção LGPD                     | Dashboard admin com tendências |          Governança completa           |
+| Módulo      | Status     |                                                           Concluído                                                            |      Parcial      |                Pendente                |
+| ----------- | ---------- | :----------------------------------------------------------------------------------------------------------------------------: | :---------------: | :------------------------------------: |
+| AUTH        | 🔄 Parcial | Login, JWT, refresh, logout, reset, rate limit, profile, CSRF, CSP, 2FA/TOTP, 2FA obrigatório para admins, hardening de sessão |         —         |    Regras finas de 2FA por contexto    |
+| PERMISSIONS | 🔄 Parcial |                          Roles, setores, grupos, permissões granulares, auditoria, herança via grupos                          |         —         |        Regras finas adicionais         |
+| SQL         | 🔄 Parcial |                           Queries parametrizadas, validação de identificadores, cache com TTL e LRU                            |         —         |         Cron, observabilidade          |
+| REPORTS     | 🔄 Parcial |                       Catálogo, visualização, filtros, admin básico, persistência real, export pipeline                        | Ampliar favoritos |                   —                    |
+| BI          | 🔄 Parcial |      KPIs, payload consolidado, charts reais, sparklines, drill-down, editor visual completo, dashboard padrão por setor       |         —         | Drill-down multi-dimensão selecionável |
+| ADMIN       | 🔄 Parcial |     Usuários, grupos, permissões, auditoria, settings, dashboard admin KPIs, retenção LGPD, dashboard admin com tendências     |         —         |          Governança completa           |
 
 ---
 
@@ -115,7 +115,7 @@ Documentos detalhados por categoria:
 | T07b    | Tarefa         | Drill-down multi-dimensão                      | Média      | PARCIAL   |
 | T08b    | Tarefa         | Widgets editáveis e dashboard padrão por setor | Média      | CONCLUÍDO |
 | T09b    | Tarefa         | Pipeline BullMQ + Redis para exports           | Média      | CONCLUÍDO |
-| T12b    | Tarefa         | Dashboard admin com gráficos de tendência      | Baixa      | PENDENTE  |
+| T12b    | Tarefa         | Dashboard admin com gráficos de tendência      | Baixa      | CONCLUÍDO |
 | DT-001  | Débito técnico | 2FA obrigatório para admins                    | Alta       | CONCLUÍDO |
 | DT-002  | Débito técnico | Hardening final de sessão                      | Alta       | CONCLUÍDO |
 | DT-003  | Débito técnico | Herança de permissões via grupos               | Média      | CONCLUÍDO |
@@ -167,12 +167,13 @@ Uma tarefa só é considerada pronta quando:
 
 ## Notas e Próximos Passos
 
-1. **Próxima onda:** Fase 4 — Testes E2E (Playwright), dashboard admin com tendências, drill-down multi-dimensão
+1. **Próxima onda:** Fase 4 — Testes E2E (Playwright), drill-down multi-dimensão
 2. **Concluído:** Editor visual drag-and-drop completo (T16b) — 2026-06-29 (auditoria de runtime confirmou implementação completa)
 3. **Concluído:** 2FA obrigatório para admins (DT-001), hardening de sessão (DT-002), herança via grupos (DT-003), cache SQL (DT-004), retenção LGPD (DT-006)
 4. **Concluído:** Dashboard padrão por setor (T08b) — 2026-06-29 (seed automático com widgets KPI pré-populados por setor)
-5. **Pendências remanescentes:** DT-005 (Playwright E2E), T07b (drill-down multi-dimensão), T12b (dashboard admin com tendências)
-6. **Verificação antes de cada commit:** `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`
+5. **Concluído:** Dashboard admin com gráficos de tendência (T12b) — 2026-06-29 (agregações temporais de audit logs, exports e usuários com Recharts)
+6. **Pendências remanescentes:** DT-005 (Playwright E2E), T07b (drill-down multi-dimensão)
+7. **Verificação antes de cada commit:** `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`
 
 ---
 

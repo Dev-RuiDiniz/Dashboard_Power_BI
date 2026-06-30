@@ -155,8 +155,61 @@ Verificação item por item do ROADMAP.md contra o código atual:
 
 - Telas: 18/18 concluídas (100%)
 - Módulos: 6/6 parciais (funcional mas com lacunas)
-- Tarefas técnicas: 10 concluídas, 1 parcial, 2 pendentes
-- Pendências remanescentes: DT-005 (Playwright), T07b (drill-down multi-dim), T12b (dashboard admin tendências)
+- Tarefas técnicas: 11 concluídas, 1 parcial, 1 pendente
+- Pendências remanescentes: DT-005 (Playwright), T07b (drill-down multi-dim)
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 5)
+
+### 1. Resumo
+
+Implementação de T12b: gráficos de tendência no dashboard admin. Adicionado endpoint `GET /admin/dashboard/trends` que agrega dados temporais de audit logs, exports e usuários. Frontend exibe 5 gráficos Recharts (AreaChart + BarChart) com estados loading/erro/vazio.
+
+### 2. Tarefas Executadas
+
+- Atualizada spec T12b (removida dependência de tracking histórico — dados já têm timestamps).
+- Criado método `getTrends()` em `AdminDashboardService` com 5 agregações.
+- Adicionado endpoint `GET /admin/dashboard/trends` no controller.
+- Adicionados tipos `AdminDashboardTrends` e função `getAdminDashboardTrends()` no frontend.
+- Adicionados 5 gráficos Recharts na página admin (AreaChart para usuários/mês, BarChart para atividade/exports/topReports/topSectors).
+- 4 novos testes backend (agregação correta, vazio, erro, limite top 5).
+- 3 novos testes frontend (renderiza gráficos, estado vazio, erro).
+
+### 3. Arquivos Criados
+
+- `apps/web/src/app/app/admin/page.test.tsx`
+
+### 4. Arquivos Modificados
+
+- `docs/specs/admin/SPEC-T12b-graficos-tendencia.md`
+- `apps/api/src/admin/dashboard/admin-dashboard.service.ts`
+- `apps/api/src/admin/dashboard/admin-dashboard.controller.ts`
+- `apps/api/src/admin/dashboard/admin-dashboard.service.spec.ts`
+- `apps/web/src/lib/admin-api.ts`
+- `apps/web/src/app/app/admin/page.tsx`
+- `docs/ROADMAP.md`
+- `docs/CONTEXTO.md`
+- `docs/api.md`
+- `docs/web.md`
+
+### 5. Testes Executados
+
+- `pnpm --filter @dashboard-power-bi/api exec jest -- admin-dashboard.service.spec` — 7/7 passando.
+- `pnpm --filter @dashboard-power-bi/web exec jest -- app/app/admin/page.test` — 3/3 passando.
+
+### 6. Commits Realizados
+
+1. `docs(sdd): atualizar especificacao T12b graficos de tendencia`
+2. `feat: adicionar endpoint GET /admin/dashboard/trends com graficos de tendencia`
+3. `test(api): adicionar testes para getTrends do dashboard admin`
+4. `test(web): adicionar testes para graficos de tendencia do dashboard admin`
+5. `docs: atualizar documentacao com entrega de T12b graficos de tendencia`
+
+### 7. Débitos Técnicos Remanescentes
+
+- DT-005 (Playwright E2E) — não configurado.
+- T07b (drill-down multi-dimensão selecionável) — parcial.
 
 ---
 

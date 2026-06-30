@@ -23,6 +23,7 @@
 - configurações do sistema
 - página de design system
 - dashboards personalizados com seed automático por setor e banner de boas-vindas
+- dashboard admin com gráficos de tendência (usuários por mês, atividade por semana, exports por semana, top relatórios, top setores)
 
 ## Sessão
 

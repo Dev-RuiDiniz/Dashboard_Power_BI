@@ -31,6 +31,7 @@
 - `PATCH /dashboards/:id/widgets/reorder` — reordena widgets do dashboard (batch)
 - `PATCH /dashboards/:id/widgets/batch` — atualização em lote de widgets (posição, título, chartType, kpiId, config, content, url)
 - `GET /admin/dashboard` — métricas operacionais do painel administrativo
+- `GET /admin/dashboard/trends` — agregações temporais de tendências (usuários por mês, atividade por semana, exports por semana, top 5 relatórios, top 5 setores)
 - `POST /admin/reports/validate` — valida se fonte SQL (view ou stored_procedure) existe e é acessível
 - `POST /admin/cache/invalidate` — invalida todas as entradas do cache de queries (admin apenas)
 - `GET /admin/cache/stats` — retorna estatísticas de hit/miss/evictions do cache de queries (admin apenas)
