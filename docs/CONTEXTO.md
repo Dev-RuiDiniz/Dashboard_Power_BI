@@ -201,8 +201,7 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 ## 9. Próximos Passos
 
 1. Configurar testes E2E com Playwright (DT-005).
-2. Implementar drill-down multi-dimensão selecionável (T07b).
-3. Validar com `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
+2. Validar com `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 
 ---
 

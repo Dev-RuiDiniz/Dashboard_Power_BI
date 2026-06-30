@@ -112,7 +112,7 @@ Documentos detalhados por categoria:
 | EP-0004 | Épico          | Definir escopo inicial                         | Alta       | CONCLUÍDO |
 | EP-0005 | Épico          | Definir estratégia de testes                   | Alta       | CONCLUÍDO |
 | T16b    | Tarefa         | Editor visual drag-and-drop completo           | Alta       | CONCLUÍDO |
-| T07b    | Tarefa         | Drill-down multi-dimensão                      | Média      | PARCIAL   |
+| T07b    | Tarefa         | Drill-down multi-dimensão                      | Média      | CONCLUÍDO |
 | T08b    | Tarefa         | Widgets editáveis e dashboard padrão por setor | Média      | CONCLUÍDO |
 | T09b    | Tarefa         | Pipeline BullMQ + Redis para exports           | Média      | CONCLUÍDO |
 | T12b    | Tarefa         | Dashboard admin com gráficos de tendência      | Baixa      | CONCLUÍDO |
@@ -167,13 +167,14 @@ Uma tarefa só é considerada pronta quando:
 
 ## Notas e Próximos Passos
 
-1. **Próxima onda:** Fase 4 — Testes E2E (Playwright), drill-down multi-dimensão
-2. **Concluído:** Editor visual drag-and-drop completo (T16b) — 2026-06-29 (auditoria de runtime confirmou implementação completa)
+1. **Próxima onda:** Fase 4 — Testes E2E (Playwright)
+2. **Concluído:** Editor visual drag-and-drop completo (T16b) — 2026-06-29
 3. **Concluído:** 2FA obrigatório para admins (DT-001), hardening de sessão (DT-002), herança via grupos (DT-003), cache SQL (DT-004), retenção LGPD (DT-006)
-4. **Concluído:** Dashboard padrão por setor (T08b) — 2026-06-29 (seed automático com widgets KPI pré-populados por setor)
-5. **Concluído:** Dashboard admin com gráficos de tendência (T12b) — 2026-06-29 (agregações temporais de audit logs, exports e usuários com Recharts)
-6. **Pendências remanescentes:** DT-005 (Playwright E2E), T07b (drill-down multi-dimensão)
-7. **Verificação antes de cada commit:** `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`
+4. **Concluído:** Dashboard padrão por setor (T08b) — 2026-06-29
+5. **Concluído:** Dashboard admin com gráficos de tendência (T12b) — 2026-06-29
+6. **Concluído:** Drill-down multi-dimensão (T07b) — 2026-06-29 (seletor de dimensão, breadcrumb, 3-5 dimensões por KPI)
+7. **Pendências remanescentes:** DT-005 (Playwright E2E)
+8. **Verificação antes de cada commit:** `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`
 
 ---
 

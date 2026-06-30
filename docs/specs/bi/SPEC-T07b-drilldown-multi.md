@@ -3,7 +3,7 @@
 **ID:** T07b
 **Módulo:** BI
 **Fase:** Fase 3
-**Status:** Em implementação
+**Status:** Concluído
 **Atualizado em:** 2026-06-29
 
 ---
@@ -34,12 +34,12 @@ Nenhuma RN específica.
 
 ## 5. Critérios de Aceite
 
-- [ ] Seletor de dimensão no drill-down (fazenda, cultura, variedade, safra, cliente, produto, status, tempo)
-- [ ] Agregação de dados por dimensão selecionada
-- [ ] Breadcrumb de navegação (Home > KPI > Dimensão)
-- [ ] Troca de dimensão sem recarregar
-- [ ] Estados: loading, erro, vazio
-- [ ] Responsivo
+- [x] Seletor de dimensão no drill-down (fazenda, cultura, variedade, safra, cliente, produto, status, tempo)
+- [x] Agregação de dados por dimensão selecionada
+- [x] Breadcrumb de navegação (Home > KPI > Dimensão)
+- [x] Troca de dimensão sem recarregar
+- [x] Estados: loading, erro, vazio
+- [x] Responsivo
 
 ## 6. Impacto Técnico
 

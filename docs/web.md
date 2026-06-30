@@ -35,7 +35,7 @@ A sessão do frontend agora fica em `sessionStorage`, remove a dependência oper
 - a Web não depende mais de leituras diretas do Supabase nesses fluxos principais da plataforma.
 - a home autenticada agora usa `GET /dashboard/home` e renderiza charts reais com Recharts (BarChart, LineChart, PieChart, AreaChart);
 - componentes de gráfico reutilizáveis em `components/charts/` (BarChartWidget, LineChartWidget, PieChartWidget, AreaChartWidget, ChartTooltip);
-- cada KPI da home já abre um drill-down completo consumindo `GET /dashboard/kpis/:kpiId/drilldown` + `GET /dashboard/kpis/:kpiId/history`, com resumo, gráfico de evolução de 12 meses e tabela comparativa;
+- cada KPI da home já abre um drill-down completo consumindo `GET /dashboard/kpis/:kpiId/drilldown?dimension=...` + `GET /dashboard/kpis/:kpiId/history`, com seletor de dimensão, breadcrumb, resumo, gráfico de evolução de 12 meses e tabela comparativa;
 - a tela de detalhe do relatório já consegue solicitar exportações via modal com seleção de formato (PDF, Excel, CSV, JSON);
 - a tela de exportações baixa arquivos pela API autenticada, sem depender de link público cru;
 - polling automático de status de exportações (atualiza a cada 5s enquanto houver jobs pendentes);
@@ -56,4 +56,3 @@ A sessão do frontend agora fica em `sessionStorage`, remove a dependência oper
 ## Limitações atuais
 
 - persistências de platform ainda dependem do Supabase no backend atual;
-- o drill-down existe em nivel inicial, mas ainda nao cobre exploracao rica por dimensao, navegacao multinivel nem widgets personalizados.

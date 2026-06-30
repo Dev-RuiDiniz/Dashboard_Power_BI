@@ -209,7 +209,60 @@ Implementação de T12b: gráficos de tendência no dashboard admin. Adicionado 
 ### 7. Débitos Técnicos Remanescentes
 
 - DT-005 (Playwright E2E) — não configurado.
-- T07b (drill-down multi-dimensão selecionável) — parcial.
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 6)
+
+### 1. Resumo
+
+Implementação de T07b: drill-down multi-dimensão selecionável no dashboard. Cada KPI agora suporta 3-5 dimensões de agregação (fazenda, cultura, variedade, safra, cliente, produto, status, tempo) com seletor de tabs, breadcrumb e troca sem recarregar.
+
+### 2. Tarefas Executadas
+
+- Atualizada spec T07b com base no runtime atual.
+- Modificado DashboardKpiDefinition para usar drilldownDimensions[] em vez de getDrilldownRows fixo.
+- Adicionados tipos DrilldownDimension, DrilldownDimensionOption, DrilldownDimensionConfig.
+- Endpoint GET /dashboard/kpis/:kpiId/drilldown?dimension=... com query param.
+- Frontend: seletor de dimensão (tabs), breadcrumb (Home > KPI > Dimensão), troca sem recarregar.
+- Estados: loading, erro, vazio no drill-down.
+- Atualizados tipos do frontend (DashboardHomeResponse, DashboardDrilldownResponse).
+- Corrigidos erros TS pre-existentes (SECTOR_TO_BUSINESS_AREA, admin-dashboard types).
+- 3 novos testes backend (dimensão específica, tempo, fallback dimensão inválida).
+- 2 novos testes frontend (breadcrumb/seletor, troca de dimensão).
+
+### 3. Arquivos Modificados
+
+- `apps/api/src/platform/dashboard/dashboard.service.ts`
+- `apps/api/src/platform/dashboard/dashboard.controller.ts`
+- `apps/api/src/platform/dashboard/dashboard.service.spec.ts`
+- `apps/api/src/admin/dashboard/admin-dashboard.service.ts`
+- `apps/api/src/admin/dashboard/admin-dashboard.service.spec.ts`
+- `apps/web/src/lib/platform-api.ts`
+- `apps/web/src/components/dashboard/dashboard-home.tsx`
+- `apps/web/src/components/dashboard/dashboard-home.test.tsx`
+- `docs/specs/bi/SPEC-T07b-drilldown-multi.md`
+- `docs/ROADMAP.md`
+- `docs/api.md`
+- `docs/web.md`
+- `docs/CONTEXTO.md`
+
+### 4. Commits Realizados
+
+1. `docs(sdd): atualizar especificacao T07b drilldown multi-dimensao`
+2. `feat(api): implementar drill-down multi-dimensao selecionavel`
+3. `test(web): adicionar testes do seletor de dimensoes e breadcrumb`
+
+### 5. Métricas de Progresso
+
+- Telas: 18/18 concluídas (100%)
+- Módulos: 6/6 parciais (funcional mas com lacunas)
+- Tarefas técnicas: 12 concluídas, 1 pendente
+- Pendências remanescentes: DT-005 (Playwright)
+
+### 6. Débitos Técnicos Remanescentes
+
+- DT-005 (Playwright E2E) — não configurado.
 
 ---
 

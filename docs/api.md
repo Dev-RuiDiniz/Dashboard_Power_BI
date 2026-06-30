@@ -18,7 +18,7 @@
 - `PATCH /auth/me/password`
 - `PATCH /admin/settings/:key`
 - `GET /dashboard/home`
-- `GET /dashboard/kpis/:kpiId/drilldown`
+- `GET /dashboard/kpis/:kpiId/drilldown?dimension=...` — drill-down multi-dimensão (fazenda, cultura, variedade, safra, cliente, produto, status, tempo)
 - `GET /dashboard/kpis/:kpiId/history` — serie historica de 12 meses do KPI
 - `GET /dashboards` — lista dashboards personalizados do usuario; cria dashboard padrão por setor automaticamente quando lista vazia (retorna `{ dashboards, seededViaApi }`)
 - `POST /dashboards` — cria dashboard personalizado
@@ -59,7 +59,7 @@
 - definições administrativas de relatórios persistem em `api_report_definitions` via Supabase no runtime principal quando `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` estão configurados;
 - parte desses fluxos ainda usa Supabase e memória como persistência real por trás da API;
 - a home de BI agora expõe payload consolidado em `GET /dashboard/home`, mantendo `GET /dashboard/kpis` por compatibilidade;
-- o primeiro drill-down funcional do dashboard está disponível em `GET /dashboard/kpis/:kpiId/drilldown`, retornando série e tabela de comparação do KPI selecionado;
+- o drill-down do dashboard suporta multi-dimensão selecionável em `GET /dashboard/kpis/:kpiId/drilldown?dimension=...`, retornando `availableDimensions` e linhas agregadas por dimensão;
 - exportações de relatórios agora geram PDF, XLSX, CSV e JSON com worker, fila, histórico, download autenticado e auditoria, mas a cobertura total do escopo V1 ainda não está fechada.
 - settings administrativos podem ser atualizados pela API e geram evento de auditoria;
 - permissões administrativas geram auditoria em create, update e delete, mas a matriz fina de herança e governança ainda é parcial.
