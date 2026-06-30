@@ -96,21 +96,34 @@ describe('DashboardHome', () => {
         ],
       },
       availableDrilldowns: [
-        { kpiId: 'receita', label: 'Receita mensal', dimension: 'businessArea' },
+        {
+          kpiId: 'receita',
+          label: 'Receita mensal',
+          dimensions: [
+            { dimension: 'fazenda', label: 'Fazenda' },
+            { dimension: 'cultura', label: 'Cultura' },
+            { dimension: 'tempo', label: 'Tempo' },
+          ],
+        },
       ],
     });
 
     (fetchDashboardDrilldown as jest.Mock).mockResolvedValue({
       kpiId: 'receita',
       label: 'Receita mensal',
-      dimension: 'businessArea',
+      dimension: 'fazenda',
+      availableDimensions: [
+        { dimension: 'fazenda', label: 'Fazenda' },
+        { dimension: 'cultura', label: 'Cultura' },
+        { dimension: 'tempo', label: 'Tempo' },
+      ],
       series: [
         { label: 'Atual', value: 120000 },
         { label: 'Anterior', value: 108000 },
       ],
       rows: [
-        { period: 'Atual', value: 120000, delta: 11.11 },
-        { period: 'Anterior', value: 108000, delta: 0 },
+        { period: 'Fazenda Norte', value: 120000, delta: 11.11 },
+        { period: 'Fazenda Sul', value: 108000, delta: 0 },
       ],
     });
 
@@ -164,13 +177,66 @@ describe('DashboardHome', () => {
       await screen.findByRole('button', { name: /abrir drilldown receita mensal/i }),
     );
 
-    expect(fetchDashboardDrilldown).toHaveBeenCalledWith('receita');
+    expect(fetchDashboardDrilldown).toHaveBeenCalledWith('receita', undefined);
     expect(await screen.findByText('Drill-down · Receita mensal')).toBeInTheDocument();
     expect(screen.getByText('Atual')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /voltar ao resumo/i }));
 
     expect(screen.queryByText('Drill-down · Receita mensal')).not.toBeInTheDocument();
+  });
+
+  it('exibe breadcrumb e seletor de dimensoes no drilldown', async () => {
+    const user = userEvent.setup();
+
+    render(<DashboardHome />);
+
+    await user.click(
+      await screen.findByRole('button', { name: /abrir drilldown receita mensal/i }),
+    );
+
+    expect(await screen.findByText('Drill-down · Receita mensal')).toBeInTheDocument();
+    expect(screen.getByLabelText('Breadcrumb')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Fazenda' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Cultura' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Tempo' })).toBeInTheDocument();
+  });
+
+  it('troca dimensao ao clicar em outra tab de dimensao', async () => {
+    const user = userEvent.setup();
+
+    render(<DashboardHome />);
+
+    await user.click(
+      await screen.findByRole('button', { name: /abrir drilldown receita mensal/i }),
+    );
+
+    await screen.findByText('Drill-down · Receita mensal');
+
+    (fetchDashboardDrilldown as jest.Mock).mockResolvedValueOnce({
+      kpiId: 'receita',
+      label: 'Receita mensal',
+      dimension: 'cultura',
+      availableDimensions: [
+        { dimension: 'fazenda', label: 'Fazenda' },
+        { dimension: 'cultura', label: 'Cultura' },
+        { dimension: 'tempo', label: 'Tempo' },
+      ],
+      series: [
+        { label: 'Atual', value: 120000 },
+        { label: 'Anterior', value: 108000 },
+      ],
+      rows: [
+        { period: 'Soja', value: 80000, delta: 5 },
+        { period: 'Milho', value: 40000, delta: 0 },
+      ],
+    });
+
+    await user.click(screen.getByRole('tab', { name: 'Cultura' }));
+
+    await waitFor(() => {
+      expect(fetchDashboardDrilldown).toHaveBeenCalledWith('receita', 'cultura');
+    });
   });
 
   it('troca para as abas analitica e operacional sem recarregar a home', async () => {
