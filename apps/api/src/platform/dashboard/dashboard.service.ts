@@ -45,6 +45,21 @@ export type DashboardHomeChartPoint = {
   delta: number;
 };
 
+export type DrilldownDimension =
+  | 'fazenda'
+  | 'cultura'
+  | 'variedade'
+  | 'safra'
+  | 'cliente'
+  | 'produto'
+  | 'status'
+  | 'tempo';
+
+export type DrilldownDimensionOption = {
+  dimension: DrilldownDimension;
+  label: string;
+};
+
 export type DashboardHomeResponse = {
   summary: {
     totalKpis: number;
@@ -61,14 +76,15 @@ export type DashboardHomeResponse = {
   availableDrilldowns: Array<{
     kpiId: string;
     label: string;
-    dimension: 'businessArea';
+    dimensions: DrilldownDimensionOption[];
   }>;
 };
 
 export type DashboardDrilldownResponse = {
   kpiId: string;
   label: string;
-  dimension: 'businessArea';
+  dimension: DrilldownDimension;
+  availableDimensions: DrilldownDimensionOption[];
   series: Array<{
     label: string;
     value: number;
@@ -150,6 +166,12 @@ type OracleDashboardDataset = {
   embarques: EmbarqueRow[];
 };
 
+type DrilldownDimensionConfig = {
+  dimension: DrilldownDimension;
+  label: string;
+  getRows: (dataset: OracleDashboardDataset) => DashboardDrilldownResponse['rows'];
+};
+
 type DashboardKpiDefinition = {
   id: string;
   title: string;
@@ -157,10 +179,7 @@ type DashboardKpiDefinition = {
   unit: DashboardKpi['unit'];
   getValue: (dataset: OracleDashboardDataset) => number;
   getPreviousValue: (dataset: OracleDashboardDataset, currentValue: number) => number;
-  getDrilldownRows: (
-    dataset: OracleDashboardDataset,
-    currentValue: number,
-  ) => DashboardDrilldownResponse['rows'];
+  drilldownDimensions: DrilldownDimensionConfig[];
   getHistory: (dataset: OracleDashboardDataset, currentValue: number) => KpiHistoryItem[];
   getHistoryGranularity: () => KpiHistoryResponse['granularity'];
 };
@@ -187,7 +206,7 @@ function filterKpisBySectors(kpis: DashboardKpi[], sectors: SectorCode[]): Dashb
   }
 
   const allowedAreas = new Set<BusinessArea>(
-    sectors.map((s) => SECTOR_TO_BUSINESS_AREA[s]).filter(Boolean),
+    sectors.map((s) => SECTOR_TO_BUSINESS_AREA[s]).filter((v): v is BusinessArea => Boolean(v)),
   );
 
   return kpis.filter((kpi) => allowedAreas.has(kpi.businessArea));
@@ -212,6 +231,7 @@ export class DashboardService {
   async getKpiDrilldown(
     kpiId: string,
     sectors: SectorCode[] = [],
+    dimension?: DrilldownDimension,
   ): Promise<DashboardDrilldownResponse> {
     const kpis = await this.listKpis(sectors);
     const kpi = kpis.find((item) => item.id === kpiId);
@@ -227,15 +247,25 @@ export class DashboardService {
 
     const dataset = await this.loadDataset();
 
+    const availableDimensions = definition.drilldownDimensions.map((d) => ({
+      dimension: d.dimension,
+      label: d.label,
+    }));
+
+    const selectedDimension =
+      definition.drilldownDimensions.find((d) => d.dimension === dimension) ??
+      definition.drilldownDimensions[0]!;
+
     return {
       kpiId: kpi.id,
       label: kpi.title,
-      dimension: 'businessArea',
+      dimension: selectedDimension.dimension,
+      availableDimensions,
       series: [
         { label: 'Atual', value: kpi.value },
         { label: 'Anterior', value: kpi.previousValue },
       ],
-      rows: definition.getDrilldownRows(dataset, kpi.value),
+      rows: selectedDimension.getRows(dataset),
     };
   }
 
@@ -496,14 +526,68 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
         (row) => toNumber(row.QTD_HA_EFETIVO),
         currentValue,
       ),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(
-        groupSumBy(
-          dataset.plantio,
-          (row) => normalizeLabel(row.DESC_FAZENDA),
-          (row) => toNumber(row.QTD_HA_EFETIVO),
-        ),
-      ),
+    drilldownDimensions: [
+      {
+        dimension: 'fazenda',
+        label: 'Fazenda',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.plantio,
+              (row) => normalizeLabel(row.DESC_FAZENDA),
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+      {
+        dimension: 'cultura',
+        label: 'Cultura',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.plantio,
+              (row) => normalizeLabel(row.DESC_CULTURA),
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+      {
+        dimension: 'variedade',
+        label: 'Variedade',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.plantio,
+              (row) => normalizeLabel(row.DESC_VARIEDADE),
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+      {
+        dimension: 'safra',
+        label: 'Safra',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.plantio,
+              (row) => normalizeLabel(row.DESCRICAO_SAFRA),
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+      {
+        dimension: 'tempo',
+        label: 'Tempo',
+        getRows: (dataset) =>
+          buildTimelineRows(
+            groupMonthlySum(
+              dataset.plantio,
+              (row) => row.DATA_PLANTIO,
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildHistoryFromTimeline(
         groupMonthlySum(
@@ -523,8 +607,46 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
     getValue: (dataset) => dataset.plantio.length,
     getPreviousValue: (dataset, currentValue) =>
       getPreviousPeriodCount(dataset.plantio, (row) => row.DATA_PLANTIO, currentValue),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_CULTURA))),
+    drilldownDimensions: [
+      {
+        dimension: 'cultura',
+        label: 'Cultura',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_CULTURA)),
+          ),
+      },
+      {
+        dimension: 'fazenda',
+        label: 'Fazenda',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_FAZENDA)),
+          ),
+      },
+      {
+        dimension: 'variedade',
+        label: 'Variedade',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_VARIEDADE)),
+          ),
+      },
+      {
+        dimension: 'safra',
+        label: 'Safra',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESCRICAO_SAFRA)),
+          ),
+      },
+      {
+        dimension: 'tempo',
+        label: 'Tempo',
+        getRows: (dataset) =>
+          buildTimelineRows(groupMonthlyCount(dataset.plantio, (row) => row.DATA_PLANTIO)),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildHistoryFromTimeline(
         groupMonthlyCount(dataset.plantio, (row) => row.DATA_PLANTIO),
@@ -545,14 +667,68 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
         (row) => toNumber(row.QTD_HA_EFETIVO),
         currentValue,
       ),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(
-        groupSumBy(
-          dataset.colheita,
-          (row) => normalizeLabel(row.DESC_FAZENDA),
-          (row) => toNumber(row.QTD_HA_EFETIVO),
-        ),
-      ),
+    drilldownDimensions: [
+      {
+        dimension: 'fazenda',
+        label: 'Fazenda',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.colheita,
+              (row) => normalizeLabel(row.DESC_FAZENDA),
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+      {
+        dimension: 'cultura',
+        label: 'Cultura',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.colheita,
+              (row) => normalizeLabel(row.DESC_CULTURA),
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+      {
+        dimension: 'variedade',
+        label: 'Variedade',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.colheita,
+              (row) => normalizeLabel(row.DESC_VARIEDADE),
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+      {
+        dimension: 'safra',
+        label: 'Safra',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.colheita,
+              (row) => normalizeLabel(row.DESCRICAO_SAFRA),
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+      {
+        dimension: 'tempo',
+        label: 'Tempo',
+        getRows: (dataset) =>
+          buildTimelineRows(
+            groupMonthlySum(
+              dataset.colheita,
+              (row) => row.DATA_LANCAMENTO,
+              (row) => toNumber(row.QTD_HA_EFETIVO),
+            ),
+          ),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildHistoryFromTimeline(
         groupMonthlySum(
@@ -572,8 +748,46 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
     getValue: (dataset) =>
       countDistinct(dataset.plantio, (row) => normalizeLabel(row.DESC_VARIEDADE)),
     getPreviousValue: (_, currentValue) => fallbackPreviousValue(currentValue),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_VARIEDADE))),
+    drilldownDimensions: [
+      {
+        dimension: 'variedade',
+        label: 'Variedade',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_VARIEDADE)),
+          ),
+      },
+      {
+        dimension: 'fazenda',
+        label: 'Fazenda',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_FAZENDA)),
+          ),
+      },
+      {
+        dimension: 'cultura',
+        label: 'Cultura',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_CULTURA)),
+          ),
+      },
+      {
+        dimension: 'safra',
+        label: 'Safra',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESCRICAO_SAFRA)),
+          ),
+      },
+      {
+        dimension: 'tempo',
+        label: 'Tempo',
+        getRows: (dataset) =>
+          buildTimelineRows(groupMonthlyCount(dataset.plantio, (row) => row.DATA_PLANTIO)),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildHistoryFromTimeline(
         groupMonthlyDistinctCount(
@@ -593,8 +807,46 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
     getValue: (dataset) =>
       countDistinct(dataset.plantio, (row) => normalizeLabel(row.NUMERO_TALHAO)),
     getPreviousValue: (_, currentValue) => fallbackPreviousValue(currentValue),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_FAZENDA))),
+    drilldownDimensions: [
+      {
+        dimension: 'fazenda',
+        label: 'Fazenda',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_FAZENDA)),
+          ),
+      },
+      {
+        dimension: 'cultura',
+        label: 'Cultura',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_CULTURA)),
+          ),
+      },
+      {
+        dimension: 'variedade',
+        label: 'Variedade',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESC_VARIEDADE)),
+          ),
+      },
+      {
+        dimension: 'safra',
+        label: 'Safra',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.plantio, (row) => normalizeLabel(row.DESCRICAO_SAFRA)),
+          ),
+      },
+      {
+        dimension: 'tempo',
+        label: 'Tempo',
+        getRows: (dataset) =>
+          buildTimelineRows(groupMonthlyCount(dataset.plantio, (row) => row.DATA_PLANTIO)),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildHistoryFromTimeline(
         groupMonthlyDistinctCount(
@@ -614,14 +866,44 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
     getValue: (dataset) =>
       countDistinct(dataset.contratos, (row) => normalizeLabel(row.SEQ_PLA_CONTRATO)),
     getPreviousValue: (_, currentValue) => fallbackPreviousValue(currentValue),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(
-        groupDistinctCountBy(
-          dataset.contratos,
-          (row) => normalizeLabel(row.NOME_CLIENTE),
-          (row) => normalizeLabel(row.SEQ_PLA_CONTRATO),
-        ),
-      ),
+    drilldownDimensions: [
+      {
+        dimension: 'cliente',
+        label: 'Cliente',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupDistinctCountBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.NOME_CLIENTE),
+              (row) => normalizeLabel(row.SEQ_PLA_CONTRATO),
+            ),
+          ),
+      },
+      {
+        dimension: 'produto',
+        label: 'Produto',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupDistinctCountBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.DESCRICAO_PRODUTO),
+              (row) => normalizeLabel(row.SEQ_PLA_CONTRATO),
+            ),
+          ),
+      },
+      {
+        dimension: 'status',
+        label: 'Status',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupDistinctCountBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.STATUS),
+              (row) => normalizeLabel(row.SEQ_PLA_CONTRATO),
+            ),
+          ),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildAnnualComparativeHistory(
         groupAnnualDistinctCount(dataset.contratos, (row) => normalizeLabel(row.SEQ_PLA_CONTRATO)),
@@ -637,14 +919,44 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
     getValue: (dataset) =>
       sumBy(dataset.contratos, (row) => firstNonZero(row.QTDE_EMBARC_TON, row.QTDE_EMBARC)),
     getPreviousValue: (_, currentValue) => fallbackPreviousValue(currentValue),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(
-        groupSumBy(
-          dataset.contratos,
-          (row) => normalizeLabel(row.DESCRICAO_PRODUTO),
-          (row) => firstNonZero(row.QTDE_EMBARC_TON, row.QTDE_EMBARC),
-        ),
-      ),
+    drilldownDimensions: [
+      {
+        dimension: 'produto',
+        label: 'Produto',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.DESCRICAO_PRODUTO),
+              (row) => firstNonZero(row.QTDE_EMBARC_TON, row.QTDE_EMBARC),
+            ),
+          ),
+      },
+      {
+        dimension: 'cliente',
+        label: 'Cliente',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.NOME_CLIENTE),
+              (row) => firstNonZero(row.QTDE_EMBARC_TON, row.QTDE_EMBARC),
+            ),
+          ),
+      },
+      {
+        dimension: 'status',
+        label: 'Status',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.STATUS),
+              (row) => firstNonZero(row.QTDE_EMBARC_TON, row.QTDE_EMBARC),
+            ),
+          ),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildAnnualComparativeHistory(
         groupAnnualSum(dataset.contratos, (row) =>
@@ -662,14 +974,44 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
     getValue: (dataset) =>
       sumBy(dataset.contratos, (row) => firstNonZero(row.SALDO_TON, row.SALDO)),
     getPreviousValue: (_, currentValue) => fallbackPreviousValue(currentValue),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(
-        groupSumBy(
-          dataset.contratos,
-          (row) => normalizeLabel(row.NOME_CLIENTE),
-          (row) => firstNonZero(row.SALDO_TON, row.SALDO),
-        ),
-      ),
+    drilldownDimensions: [
+      {
+        dimension: 'cliente',
+        label: 'Cliente',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.NOME_CLIENTE),
+              (row) => firstNonZero(row.SALDO_TON, row.SALDO),
+            ),
+          ),
+      },
+      {
+        dimension: 'produto',
+        label: 'Produto',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.DESCRICAO_PRODUTO),
+              (row) => firstNonZero(row.SALDO_TON, row.SALDO),
+            ),
+          ),
+      },
+      {
+        dimension: 'status',
+        label: 'Status',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.STATUS),
+              (row) => firstNonZero(row.SALDO_TON, row.SALDO),
+            ),
+          ),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildAnnualComparativeHistory(
         groupAnnualSum(dataset.contratos, (row) => firstNonZero(row.SALDO_TON, row.SALDO)),
@@ -684,14 +1026,44 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
     unit: 'number',
     getValue: (dataset) => sumBy(dataset.contratos, (row) => toNumber(row.DEVOLUCAO)),
     getPreviousValue: (_, currentValue) => fallbackPreviousValue(currentValue),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(
-        groupSumBy(
-          dataset.contratos,
-          (row) => normalizeLabel(row.DESCRICAO_PRODUTO),
-          (row) => toNumber(row.DEVOLUCAO),
-        ),
-      ),
+    drilldownDimensions: [
+      {
+        dimension: 'produto',
+        label: 'Produto',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.DESCRICAO_PRODUTO),
+              (row) => toNumber(row.DEVOLUCAO),
+            ),
+          ),
+      },
+      {
+        dimension: 'cliente',
+        label: 'Cliente',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.NOME_CLIENTE),
+              (row) => toNumber(row.DEVOLUCAO),
+            ),
+          ),
+      },
+      {
+        dimension: 'status',
+        label: 'Status',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.contratos,
+              (row) => normalizeLabel(row.STATUS),
+              (row) => toNumber(row.DEVOLUCAO),
+            ),
+          ),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildAnnualComparativeHistory(
         groupAnnualSum(dataset.contratos, (row) => toNumber(row.DEVOLUCAO)),
@@ -713,14 +1085,44 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
         (row) => normalizeLabel(row.SEQ_PLA_CONTRATO),
         currentValue,
       ),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(
-        groupDistinctCountBy(
-          dataset.embarques,
-          (row) => String(row.COD_SAFRA ?? 'Sem safra'),
-          (row) => normalizeLabel(row.SEQ_PLA_CONTRATO),
-        ),
-      ),
+    drilldownDimensions: [
+      {
+        dimension: 'safra',
+        label: 'Safra',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupDistinctCountBy(
+              dataset.embarques,
+              (row) => String(row.COD_SAFRA ?? 'Sem safra'),
+              (row) => normalizeLabel(row.SEQ_PLA_CONTRATO),
+            ),
+          ),
+      },
+      {
+        dimension: 'cliente',
+        label: 'Cliente',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupDistinctCountBy(
+              dataset.embarques,
+              (row) => normalizeLabel(row.CLIENTE_DESTINO),
+              (row) => normalizeLabel(row.SEQ_PLA_CONTRATO),
+            ),
+          ),
+      },
+      {
+        dimension: 'tempo',
+        label: 'Tempo',
+        getRows: (dataset) =>
+          buildTimelineRows(
+            groupMonthlyDistinctCount(
+              dataset.embarques,
+              (row) => row.DATA_INSTRUCAO,
+              (row) => normalizeLabel(row.SEQ_PLA_CONTRATO),
+            ),
+          ),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildHistoryFromTimeline(
         groupMonthlyDistinctCount(
@@ -740,10 +1142,30 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
     getValue: (dataset) => dataset.embarques.length,
     getPreviousValue: (dataset, currentValue) =>
       getPreviousPeriodCount(dataset.embarques, (row) => row.DATA_INSTRUCAO, currentValue),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(
-        groupCountBy(dataset.embarques, (row) => String(row.COD_SAFRA ?? 'Sem safra')),
-      ),
+    drilldownDimensions: [
+      {
+        dimension: 'safra',
+        label: 'Safra',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.embarques, (row) => String(row.COD_SAFRA ?? 'Sem safra')),
+          ),
+      },
+      {
+        dimension: 'cliente',
+        label: 'Cliente',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupCountBy(dataset.embarques, (row) => normalizeLabel(row.CLIENTE_DESTINO)),
+          ),
+      },
+      {
+        dimension: 'tempo',
+        label: 'Tempo',
+        getRows: (dataset) =>
+          buildTimelineRows(groupMonthlyCount(dataset.embarques, (row) => row.DATA_INSTRUCAO)),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildHistoryFromTimeline(
         groupMonthlyCount(dataset.embarques, (row) => row.DATA_INSTRUCAO),
@@ -764,14 +1186,44 @@ const KPI_DEFINITIONS: DashboardKpiDefinition[] = [
         (row) => toNumber(row.FARDOS),
         currentValue,
       ),
-    getDrilldownRows: (dataset) =>
-      buildGroupedRows(
-        groupSumBy(
-          dataset.embarques,
-          (row) => String(row.COD_SAFRA ?? 'Sem safra'),
-          (row) => toNumber(row.FARDOS),
-        ),
-      ),
+    drilldownDimensions: [
+      {
+        dimension: 'safra',
+        label: 'Safra',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.embarques,
+              (row) => String(row.COD_SAFRA ?? 'Sem safra'),
+              (row) => toNumber(row.FARDOS),
+            ),
+          ),
+      },
+      {
+        dimension: 'cliente',
+        label: 'Cliente',
+        getRows: (dataset) =>
+          buildGroupedRows(
+            groupSumBy(
+              dataset.embarques,
+              (row) => normalizeLabel(row.CLIENTE_DESTINO),
+              (row) => toNumber(row.FARDOS),
+            ),
+          ),
+      },
+      {
+        dimension: 'tempo',
+        label: 'Tempo',
+        getRows: (dataset) =>
+          buildTimelineRows(
+            groupMonthlySum(
+              dataset.embarques,
+              (row) => row.DATA_INSTRUCAO,
+              (row) => toNumber(row.FARDOS),
+            ),
+          ),
+      },
+    ],
     getHistory: (dataset, currentValue) =>
       buildHistoryFromTimeline(
         groupMonthlySum(
@@ -818,11 +1270,19 @@ function buildDashboardHome(kpis: DashboardKpi[]): DashboardHomeResponse {
         delta: calculateKpiDelta(kpi.value, kpi.previousValue),
       })),
     },
-    availableDrilldowns: kpis.map((kpi) => ({
-      kpiId: kpi.id,
-      label: kpi.title,
-      dimension: 'businessArea' as const,
-    })),
+    availableDrilldowns: kpis.map((kpi) => {
+      const definition = KPI_DEFINITIONS.find((d) => d.id === kpi.id);
+      return {
+        kpiId: kpi.id,
+        label: kpi.title,
+        dimensions: definition
+          ? definition.drilldownDimensions.map((d) => ({
+              dimension: d.dimension,
+              label: d.label,
+            }))
+          : [],
+      };
+    }),
   };
 }
 
@@ -1100,6 +1560,28 @@ function buildGroupedRows(grouped: Map<string, number>): DashboardDrilldownRespo
     return {
       period: row.period,
       value: row.value,
+      delta,
+    };
+  });
+}
+
+function buildTimelineRows(
+  periods: Array<{ period: string; value: number }>,
+): DashboardDrilldownResponse['rows'] {
+  const sorted = periods
+    .filter((p) => p.period)
+    .sort((a, b) => comparePeriodLabels(a.period, b.period))
+    .slice(-12);
+
+  let previousValue = 0;
+
+  return sorted.map((item) => {
+    const delta = calculateKpiDelta(item.value, previousValue);
+    previousValue = item.value;
+
+    return {
+      period: item.period,
+      value: round(item.value),
       delta,
     };
   });

@@ -1,10 +1,11 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AuthenticatedRequestUser } from '../../auth/types/auth.types';
 import { DashboardService } from './dashboard.service';
+import type { DrilldownDimension } from './dashboard.service';
 
 @ApiTags('dashboard')
 @ApiBearerAuth()
@@ -26,9 +27,13 @@ export class DashboardController {
   }
 
   @Get('kpis/:kpiId/drilldown')
-  @ApiOkResponse({ description: 'Retorna o drill-down tabular do KPI selecionado.' })
-  getKpiDrilldown(@CurrentUser() user: AuthenticatedRequestUser, @Param('kpiId') kpiId: string) {
-    return this.dashboardService.getKpiDrilldown(kpiId, user.sectors);
+  @ApiOkResponse({ description: 'Retorna o drill-down tabular do KPI selecionado por dimensão.' })
+  getKpiDrilldown(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('kpiId') kpiId: string,
+    @Query('dimension') dimension?: DrilldownDimension,
+  ) {
+    return this.dashboardService.getKpiDrilldown(kpiId, user.sectors, dimension);
   }
 
   @Get('kpis/:kpiId/history')

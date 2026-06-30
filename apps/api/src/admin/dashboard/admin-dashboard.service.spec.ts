@@ -152,15 +152,15 @@ describe('AdminDashboardService', () => {
       const trends = await service.getTrends();
 
       expect(trends.usersByMonth).toHaveLength(12);
-      const currentMonth = trends.usersByMonth[11];
+      const currentMonth = trends.usersByMonth[11]!;
       expect(currentMonth.count).toBe(2);
 
       expect(trends.activityByWeek).toHaveLength(8);
-      const currentWeek = trends.activityByWeek[7];
+      const currentWeek = trends.activityByWeek[7]!;
       expect(currentWeek.count).toBe(3);
 
       expect(trends.exportsByWeek).toHaveLength(8);
-      expect(trends.exportsByWeek[7].count).toBe(2);
+      expect(trends.exportsByWeek[7]!.count).toBe(2);
 
       expect(trends.topReports).toHaveLength(2);
       expect(trends.topReports[0]).toEqual({ reportId: 'r1', count: 2 });

@@ -39,7 +39,14 @@ describe('DashboardService', () => {
     );
     expect(home.availableDrilldowns).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kpiId: 'comercial-contratos', dimension: 'businessArea' }),
+        expect.objectContaining({
+          kpiId: 'comercial-contratos',
+          dimensions: expect.arrayContaining([
+            expect.objectContaining({ dimension: 'cliente', label: 'Cliente' }),
+            expect.objectContaining({ dimension: 'produto', label: 'Produto' }),
+            expect.objectContaining({ dimension: 'status', label: 'Status' }),
+          ]),
+        }),
       ]),
     );
   });
@@ -50,7 +57,14 @@ describe('DashboardService', () => {
     const drilldown = await service.getKpiDrilldown('comercial-contratos');
 
     expect(drilldown.kpiId).toBe('comercial-contratos');
-    expect(drilldown.dimension).toBe('businessArea');
+    expect(drilldown.dimension).toBe('cliente');
+    expect(drilldown.availableDimensions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ dimension: 'cliente', label: 'Cliente' }),
+        expect.objectContaining({ dimension: 'produto', label: 'Produto' }),
+        expect.objectContaining({ dimension: 'status', label: 'Status' }),
+      ]),
+    );
     expect(drilldown.series).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ label: 'Atual', value: expect.any(Number) }),
@@ -148,5 +162,35 @@ describe('DashboardService', () => {
     await expect(service.getKpiDrilldown('producao-plantio-area', sectors)).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  it('retorna drilldown com dimensão especifica (produto)', async () => {
+    const service = new DashboardService({} as never, {} as never);
+
+    const drilldown = await service.getKpiDrilldown('comercial-contratos', [], 'produto');
+
+    expect(drilldown.dimension).toBe('produto');
+    expect(drilldown.availableDimensions).toHaveLength(3);
+    expect(drilldown.rows.length).toBeGreaterThan(0);
+  });
+
+  it('retorna drilldown com dimensão tempo (timeline mensal)', async () => {
+    const service = new DashboardService({} as never, {} as never);
+
+    const drilldown = await service.getKpiDrilldown('producao-plantio-area', [], 'tempo');
+
+    expect(drilldown.dimension).toBe('tempo');
+    expect(drilldown.rows.length).toBeGreaterThan(0);
+    expect(drilldown.rows[0]).toEqual(
+      expect.objectContaining({ period: expect.any(String), value: expect.any(Number) }),
+    );
+  });
+
+  it('retorna fallback para primeira dimensão quando dimensão inválida', async () => {
+    const service = new DashboardService({} as never, {} as never);
+
+    const drilldown = await service.getKpiDrilldown('comercial-contratos', [], 'fazenda' as never);
+
+    expect(drilldown.dimension).toBe('cliente');
   });
 });

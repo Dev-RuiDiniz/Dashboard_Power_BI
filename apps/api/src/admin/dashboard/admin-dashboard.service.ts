@@ -77,7 +77,7 @@ export class AdminDashboardService {
   }
 
   private async getUsers(): Promise<
-    Array<{ isActive: boolean; createdAt: Date; sectors: SectorCode[] }>
+    Array<{ id: string; isActive: boolean; createdAt: Date; sectors: SectorCode[] }>
   > {
     try {
       return await this.adminUsersService.list();

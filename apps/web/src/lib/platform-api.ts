@@ -2,6 +2,21 @@ import { apiDelete, apiGet, apiGetBlob, apiPatch, apiPost, getApiUrl } from '@/l
 import type { BusinessArea, KpiItem, SectorKpiSummary } from '@/lib/kpis';
 import type { PaginatedReports } from '@/lib/reports-api';
 
+export type DrilldownDimension =
+  | 'fazenda'
+  | 'cultura'
+  | 'variedade'
+  | 'safra'
+  | 'cliente'
+  | 'produto'
+  | 'status'
+  | 'tempo';
+
+export type DrilldownDimensionOption = {
+  dimension: DrilldownDimension;
+  label: string;
+};
+
 export type DashboardHomeResponse = {
   summary: {
     totalKpis: number;
@@ -31,14 +46,15 @@ export type DashboardHomeResponse = {
   availableDrilldowns: Array<{
     kpiId: string;
     label: string;
-    dimension: 'businessArea';
+    dimensions: DrilldownDimensionOption[];
   }>;
 };
 
 export type DashboardDrilldownResponse = {
   kpiId: string;
   label: string;
-  dimension: 'businessArea';
+  dimension: DrilldownDimension;
+  availableDimensions: DrilldownDimensionOption[];
   series: Array<{
     label: string;
     value: number;
@@ -151,8 +167,12 @@ export async function fetchDashboardKpis(): Promise<KpiItem[]> {
   return apiGet<KpiItem[]>('/dashboard/kpis');
 }
 
-export async function fetchDashboardDrilldown(kpiId: string): Promise<DashboardDrilldownResponse> {
-  return apiGet<DashboardDrilldownResponse>(`/dashboard/kpis/${kpiId}/drilldown`);
+export async function fetchDashboardDrilldown(
+  kpiId: string,
+  dimension?: DrilldownDimension,
+): Promise<DashboardDrilldownResponse> {
+  const query = dimension ? `?dimension=${dimension}` : '';
+  return apiGet<DashboardDrilldownResponse>(`/dashboard/kpis/${kpiId}/drilldown${query}`);
 }
 
 export async function fetchKpiHistory(kpiId: string): Promise<KpiHistoryResponse> {

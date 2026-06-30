@@ -30,6 +30,7 @@ import {
   fetchKpiHistory,
   type DashboardDrilldownResponse,
   type DashboardHomeResponse,
+  type DrilldownDimension,
   type KpiHistoryResponse,
 } from '@/lib/platform-api';
 
@@ -74,6 +75,10 @@ export function DashboardHome({ kpis: initialKpis }: DashboardHomeProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeDrilldown, setActiveDrilldown] = useState<DashboardDrilldownResponse | null>(null);
   const [isDrilldownLoading, setIsDrilldownLoading] = useState(false);
+  const [activeKpiId, setActiveKpiId] = useState<string | null>(null);
+  const [selectedDimension, setSelectedDimension] = useState<DrilldownDimension | undefined>(
+    undefined,
+  );
   const [activeTab, setActiveTab] = useState<DashboardTab>('executiva');
   const [featuredHistory, setFeaturedHistory] = useState<KpiHistoryResponse | null>(null);
 
@@ -176,19 +181,35 @@ export function DashboardHome({ kpis: initialKpis }: DashboardHomeProps) {
     .sort((left, right) => Math.abs(right.delta) - Math.abs(left.delta))
     .slice(0, 5);
 
-  async function openDrilldown(kpiId: string) {
+  const openDrilldown = useCallback(async (kpiId: string, dimension?: DrilldownDimension) => {
     setIsDrilldownLoading(true);
     setErrorMessage(null);
+    setActiveKpiId(kpiId);
+    setSelectedDimension(dimension);
 
     try {
-      const response = await fetchDashboardDrilldown(kpiId);
+      const response = await fetchDashboardDrilldown(kpiId, dimension);
       setActiveDrilldown(response);
     } catch {
       setErrorMessage('Nao foi possivel carregar o drill-down selecionado.');
     } finally {
       setIsDrilldownLoading(false);
     }
-  }
+  }, []);
+
+  const switchDimension = useCallback(
+    async (dimension: DrilldownDimension) => {
+      if (!activeKpiId) return;
+      await openDrilldown(activeKpiId, dimension);
+    },
+    [activeKpiId, openDrilldown],
+  );
+
+  const closeDrilldown = useCallback(() => {
+    setActiveDrilldown(null);
+    setActiveKpiId(null);
+    setSelectedDimension(undefined);
+  }, []);
 
   if (isLoading) {
     return (
@@ -232,90 +253,160 @@ export function DashboardHome({ kpis: initialKpis }: DashboardHomeProps) {
   }
 
   if (activeDrilldown) {
+    const activeDimensionLabel =
+      activeDrilldown.availableDimensions.find((d) => d.dimension === activeDrilldown.dimension)
+        ?.label ?? activeDrilldown.dimension;
+
     return (
       <section className="space-y-6" aria-labelledby="dashboard-drilldown-title">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <Button
-            variant="outline"
-            onClick={() => setActiveDrilldown(null)}
-            aria-label="Voltar ao resumo"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao resumo
-          </Button>
-          <h1
-            id="dashboard-drilldown-title"
-            className="mt-4 text-3xl font-bold tracking-tight text-slate-950"
-          >
-            {`Drill-down · ${activeDrilldown.label}`}
-          </h1>
-          <p className="mt-3 text-sm text-slate-600">
-            Comparativo atual versus anterior com detalhamento por grupo de negocio.
-          </p>
+          <nav className="flex items-center gap-1 text-sm text-slate-500" aria-label="Breadcrumb">
+            <button
+              type="button"
+              onClick={closeDrilldown}
+              className="font-medium text-blue-700 hover:underline"
+            >
+              Home
+            </button>
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            <span className="font-medium text-slate-700">{activeDrilldown.label}</span>
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            <span className="font-semibold text-slate-950">{activeDimensionLabel}</span>
+          </nav>
+
+          <div className="mt-4 flex items-center justify-between">
+            <h1
+              id="dashboard-drilldown-title"
+              className="text-3xl font-bold tracking-tight text-slate-950"
+            >
+              {`Drill-down · ${activeDrilldown.label}`}
+            </h1>
+            <Button variant="outline" onClick={closeDrilldown} aria-label="Voltar ao resumo">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar ao resumo
+            </Button>
+          </div>
+
+          {activeDrilldown.availableDimensions.length > 0 && (
+            <div
+              className="mt-4 flex flex-wrap gap-2"
+              role="tablist"
+              aria-label="Seletor de dimensão do drill-down"
+            >
+              {activeDrilldown.availableDimensions.map((dim) => {
+                const isActive = dim.dimension === activeDrilldown.dimension;
+                return (
+                  <button
+                    key={dim.dimension}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => void switchDimension(dim.dimension)}
+                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-blue-700 text-white'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    {dim.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
+        {isDrilldownLoading && (
+          <Card className="border-dashed text-center">
             <CardHeader>
-              <CardTitle>Resumo do KPI</CardTitle>
-              <CardDescription>Atual versus anterior</CardDescription>
+              <div
+                className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-700"
+                aria-hidden="true"
+              />
+              <CardTitle>Carregando drill-down</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-3 md:grid-cols-2">
-              {activeDrilldown.series.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-                >
-                  <p className="text-sm font-semibold text-slate-500">
-                    {item.label === 'Atual' ? 'Atual' : 'Valor anterior'}
-                  </p>
-                  <p className="mt-2 text-2xl font-bold text-slate-950">{item.value}</p>
-                </div>
-              ))}
-            </CardContent>
           </Card>
-          <Card>
+        )}
+
+        {!isDrilldownLoading && activeDrilldown.rows.length === 0 && (
+          <Card className="border-dashed text-center">
             <CardHeader>
-              <CardTitle>Detalhamento</CardTitle>
-              <CardDescription>Evolucao do drill-down carregado</CardDescription>
+              <CardTitle>Dados insuficientes</CardTitle>
+              <CardDescription>
+                Nao ha dados para esta dimensao no periodo selecionado.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {activeDrilldown.rows.map((row) => (
-                <div
-                  key={row.period}
-                  className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-slate-950">{`Grupo ${row.period}`}</p>
+          </Card>
+        )}
+
+        {!isDrilldownLoading && activeDrilldown.rows.length > 0 && (
+          <>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resumo do KPI</CardTitle>
+                  <CardDescription>Atual versus anterior</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 md:grid-cols-2">
+                  {activeDrilldown.series.map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <p className="text-sm font-semibold text-slate-500">
+                        {item.label === 'Atual' ? 'Atual' : 'Valor anterior'}
+                      </p>
+                      <p className="mt-2 text-2xl font-bold text-slate-950">{item.value}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Detalhamento por {activeDimensionLabel}</CardTitle>
+                  <CardDescription>Evolucao do drill-down carregado</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {activeDrilldown.rows.map((row) => (
+                    <div
+                      key={row.period}
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold text-slate-950">{row.period}</p>
+                        <p className="text-lg font-bold text-slate-950">{row.value}</p>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">Delta {formatDelta(row.delta)}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Itens do drill-down</CardTitle>
+                <CardDescription>
+                  Top grupos por {activeDimensionLabel.toLowerCase()} retornados pela API.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {activeDrilldown.rows.map((row) => (
+                  <div
+                    key={row.period}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+                  >
+                    <div>
+                      <p className="font-semibold text-slate-950">{row.period}</p>
+                      <p className="text-xs text-slate-500">Delta {formatDelta(row.delta)}</p>
+                    </div>
                     <p className="text-lg font-bold text-slate-950">{row.value}</p>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">Delta {formatDelta(row.delta)}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Itens do drill-down</CardTitle>
-            <CardDescription>Top grupos retornados pela API consolidada.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {activeDrilldown.rows.map((row) => (
-              <div
-                key={row.period}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
-              >
-                <div>
-                  <p className="font-semibold text-slate-950">{`Grupo ${row.period}`}</p>
-                  <p className="text-xs text-slate-500">Delta {formatDelta(row.delta)}</p>
-                </div>
-                <p className="text-lg font-bold text-slate-950">{row.value}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+                ))}
+              </CardContent>
+            </Card>
+          </>
+        )}
       </section>
     );
   }
