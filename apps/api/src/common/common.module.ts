@@ -1,8 +1,12 @@
 import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 
 import { CsrfMiddleware } from './middleware/csrf.middleware';
+import { RedisConnectionService } from './redis-connection.service';
 
-@Module({})
+@Module({
+  providers: [RedisConnectionService],
+  exports: [RedisConnectionService],
+})
 export class CommonModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer

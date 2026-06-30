@@ -1,6 +1,8 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'node:crypto';
+
+import { RedisConnectionService } from '../../common/redis-connection.service';
 
 type LoginAttemptState = {
   attempts: number;
@@ -16,14 +18,20 @@ export type LoginAttemptStatus = {
   retryAfterSeconds: number;
 };
 
+const REDIS_PREFIX = 'login-attempts:';
+
 @Injectable()
 export class LoginAttemptsService {
+  private readonly logger = new Logger(LoginAttemptsService.name);
   private readonly attempts = new Map<string, LoginAttemptState>();
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly redisService: RedisConnectionService,
+  ) {}
 
-  assertCanAttempt(email: string, ipAddress: string): void {
-    const status = this.getAttemptStatus(email, ipAddress);
+  async assertCanAttempt(email: string, ipAddress: string): Promise<void> {
+    const status = await this.getAttemptStatus(email, ipAddress);
 
     if (!status.allowed) {
       throw new HttpException(
@@ -36,10 +44,10 @@ export class LoginAttemptsService {
     }
   }
 
-  recordFailure(email: string, ipAddress: string): LoginAttemptStatus {
+  async recordFailure(email: string, ipAddress: string): Promise<LoginAttemptStatus> {
     const key = this.buildKey(email, ipAddress);
     const now = Date.now();
-    const state = this.getCurrentState(key, now);
+    const state = await this.getCurrentState(key, now);
     const attempts = state.attempts + 1;
     const shouldLock = attempts > this.getMaxAttempts();
 
@@ -50,21 +58,35 @@ export class LoginAttemptsService {
       lockedUntil: shouldLock ? now + this.getLockoutMs() : null,
     };
 
-    this.attempts.set(key, nextState);
+    await this.setState(key, nextState);
 
     return this.toStatus(nextState, now);
   }
 
-  clearFailures(email: string, ipAddress: string): void {
-    this.attempts.delete(this.buildKey(email, ipAddress));
+  async clearFailures(email: string, ipAddress: string): Promise<void> {
+    const key = this.buildKey(email, ipAddress);
+    const client = await this.redisService.getClient();
+
+    if (client) {
+      try {
+        await client.del(`${REDIS_PREFIX}${key}`);
+        return;
+      } catch (error) {
+        this.logger.warn(
+          `Redis clearFailures falhou: ${error instanceof Error ? error.message : 'erro'}`,
+        );
+      }
+    }
+
+    this.attempts.delete(key);
   }
 
-  getAttemptStatus(email: string, ipAddress: string): LoginAttemptStatus {
+  async getAttemptStatus(email: string, ipAddress: string): Promise<LoginAttemptStatus> {
     const key = this.buildKey(email, ipAddress);
     const now = Date.now();
-    const state = this.getCurrentState(key, now);
+    const state = await this.getCurrentState(key, now);
 
-    this.attempts.set(key, state);
+    await this.setState(key, state);
 
     return this.toStatus(state, now);
   }
@@ -89,28 +111,59 @@ export class LoginAttemptsService {
     return `${visiblePrefix}***@${domain}`;
   }
 
-  private getCurrentState(key: string, now: number): LoginAttemptState {
+  private async getCurrentState(key: string, now: number): Promise<LoginAttemptState> {
+    const client = await this.redisService.getClient();
+
+    if (client) {
+      try {
+        const raw = await client.get(`${REDIS_PREFIX}${key}`);
+        if (raw) {
+          const parsed = JSON.parse(raw) as LoginAttemptState;
+          if (now - parsed.firstAttemptAt > this.getWindowMs()) {
+            return { attempts: 0, firstAttemptAt: now, lastFailureAt: 0, lockedUntil: null };
+          }
+          if (parsed.lockedUntil !== null && parsed.lockedUntil <= now) {
+            return { attempts: 0, firstAttemptAt: now, lastFailureAt: 0, lockedUntil: null };
+          }
+          return parsed;
+        }
+        return { attempts: 0, firstAttemptAt: now, lastFailureAt: 0, lockedUntil: null };
+      } catch (error) {
+        this.logger.warn(
+          `Redis getCurrentState falhou: ${error instanceof Error ? error.message : 'erro'}`,
+        );
+      }
+    }
+
     const current = this.attempts.get(key);
 
     if (!current || now - current.firstAttemptAt > this.getWindowMs()) {
-      return {
-        attempts: 0,
-        firstAttemptAt: now,
-        lastFailureAt: 0,
-        lockedUntil: null,
-      };
+      return { attempts: 0, firstAttemptAt: now, lastFailureAt: 0, lockedUntil: null };
     }
 
     if (current.lockedUntil !== null && current.lockedUntil <= now) {
-      return {
-        attempts: 0,
-        firstAttemptAt: now,
-        lastFailureAt: 0,
-        lockedUntil: null,
-      };
+      return { attempts: 0, firstAttemptAt: now, lastFailureAt: 0, lockedUntil: null };
     }
 
     return current;
+  }
+
+  private async setState(key: string, state: LoginAttemptState): Promise<void> {
+    const client = await this.redisService.getClient();
+
+    if (client) {
+      try {
+        const ttlSeconds = Math.ceil(this.getWindowMs() / 1000);
+        await client.set(`${REDIS_PREFIX}${key}`, JSON.stringify(state), 'EX', ttlSeconds);
+        return;
+      } catch (error) {
+        this.logger.warn(
+          `Redis setState falhou: ${error instanceof Error ? error.message : 'erro'}`,
+        );
+      }
+    }
+
+    this.attempts.set(key, state);
   }
 
   private toStatus(state: LoginAttemptState, now: number): LoginAttemptStatus {

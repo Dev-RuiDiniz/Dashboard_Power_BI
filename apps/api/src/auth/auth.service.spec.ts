@@ -11,6 +11,11 @@ import { TokenService } from './services/token.service';
 import { TotpAttemptsService } from './services/totp-attempts.service';
 import { TotpEncryptionService } from './services/totp-encryption.service';
 import { TotpService } from './services/totp.service';
+import { RedisConnectionService } from '../common/redis-connection.service';
+
+function createRedisMock(): RedisConnectionService {
+  return { getClient: async () => null } as unknown as RedisConnectionService;
+}
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -36,7 +41,7 @@ describe('AuthService', () => {
 
     usersRepository = new UsersRepository(configService);
     refreshTokenRepository = new RefreshTokenRepository();
-    loginAttemptsService = new LoginAttemptsService(configService);
+    loginAttemptsService = new LoginAttemptsService(configService, createRedisMock());
 
     authService = new AuthService(
       usersRepository,
@@ -44,9 +49,9 @@ describe('AuthService', () => {
       loginAttemptsService,
       new TokenService(configService),
       new TotpService(),
-      new TotpAttemptsService(configService),
+      new TotpAttemptsService(configService, createRedisMock()),
       new TotpEncryptionService(configService),
-      new TokenBlacklistService(),
+      new TokenBlacklistService(createRedisMock()),
       configService,
     );
   });
@@ -102,9 +107,9 @@ describe('AuthService', () => {
 
     await authService.login('admin@example.com', 'Admin123!', '127.0.0.1');
 
-    expect(loginAttemptsService.getAttemptStatus('admin@example.com', '127.0.0.1').attempts).toBe(
-      0,
-    );
+    expect(
+      (await loginAttemptsService.getAttemptStatus('admin@example.com', '127.0.0.1')).attempts,
+    ).toBe(0);
   });
 
   function getTokens(result: Awaited<ReturnType<typeof authService.login>>) {
@@ -387,12 +392,12 @@ describe('AuthService', () => {
     const inactivityAuthService = new AuthService(
       new UsersRepository(configWithShortTimeout),
       new RefreshTokenRepository(),
-      new LoginAttemptsService(configWithShortTimeout),
+      new LoginAttemptsService(configWithShortTimeout, createRedisMock()),
       new TokenService(configWithShortTimeout),
       new TotpService(),
-      new TotpAttemptsService(configWithShortTimeout),
+      new TotpAttemptsService(configWithShortTimeout, createRedisMock()),
       new TotpEncryptionService(configWithShortTimeout),
-      new TokenBlacklistService(),
+      new TokenBlacklistService(createRedisMock()),
       configWithShortTimeout,
     );
 
@@ -427,12 +432,12 @@ describe('AuthService', () => {
     const noTimeoutAuthService = new AuthService(
       new UsersRepository(configNoTimeout),
       new RefreshTokenRepository(),
-      new LoginAttemptsService(configNoTimeout),
+      new LoginAttemptsService(configNoTimeout, createRedisMock()),
       new TokenService(configNoTimeout),
       new TotpService(),
-      new TotpAttemptsService(configNoTimeout),
+      new TotpAttemptsService(configNoTimeout, createRedisMock()),
       new TotpEncryptionService(configNoTimeout),
-      new TokenBlacklistService(),
+      new TokenBlacklistService(createRedisMock()),
       configNoTimeout,
     );
 

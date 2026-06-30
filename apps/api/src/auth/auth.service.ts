@@ -42,7 +42,7 @@ export class AuthService {
 
   async login(email: string, password: string, ipAddress = 'unknown'): Promise<LoginResult> {
     try {
-      this.loginAttemptsService.assertCanAttempt(email, ipAddress);
+      await this.loginAttemptsService.assertCanAttempt(email, ipAddress);
     } catch (error) {
       this.logger.warn(
         `login_rate_limited email=${this.loginAttemptsService.maskEmail(email)} ip=${this.maskIp(ipAddress)}`,
@@ -53,18 +53,18 @@ export class AuthService {
     const user = await this.usersRepository.findByEmail(email);
 
     if (!user || !user.isActive) {
-      this.registerFailedLogin(email, ipAddress);
+      await this.registerFailedLogin(email, ipAddress);
       throw new UnauthorizedException('Credenciais inválidas.');
     }
 
     const passwordMatches = await bcrypt.compare(password, user.passwordHash);
 
     if (!passwordMatches) {
-      this.registerFailedLogin(email, ipAddress);
+      await this.registerFailedLogin(email, ipAddress);
       throw new UnauthorizedException('Credenciais inválidas.');
     }
 
-    this.loginAttemptsService.clearFailures(email, ipAddress);
+    await this.loginAttemptsService.clearFailures(email, ipAddress);
     this.logger.log(`login_success userId=${user.id} ip=${this.maskIp(ipAddress)}`);
 
     if (user.isTwoFactorEnabled) {
@@ -100,7 +100,7 @@ export class AuthService {
     await this.refreshTokenRepository.revoke(session.id);
 
     if (accessTokenJti && accessTokenExp) {
-      this.tokenBlacklistService.add(accessTokenJti, accessTokenExp);
+      await this.tokenBlacklistService.add(accessTokenJti, accessTokenExp);
     }
 
     return { success: true };
@@ -158,16 +158,16 @@ export class AuthService {
       throw new UnauthorizedException('Autenticação de dois fatores não configurada.');
     }
 
-    this.totpAttemptsService.assertCanAttempt(user.id);
+    await this.totpAttemptsService.assertCanAttempt(user.id);
 
     const decryptedSecret = this.totpEncryptionService.decrypt(user.totpSecret);
 
     if (!this.totpService.verifyToken(decryptedSecret, code)) {
-      this.totpAttemptsService.registerFailure(user.id);
+      await this.totpAttemptsService.registerFailure(user.id);
       throw new UnauthorizedException('Código de verificação inválido.');
     }
 
-    this.totpAttemptsService.clearFailures(user.id);
+    await this.totpAttemptsService.clearFailures(user.id);
     return this.issueTokens(user);
   }
 
@@ -194,16 +194,16 @@ export class AuthService {
       throw new UnauthorizedException('Configuração de 2FA não iniciada.');
     }
 
-    this.totpAttemptsService.assertCanAttempt(user.id);
+    await this.totpAttemptsService.assertCanAttempt(user.id);
 
     const decryptedSecret = this.totpEncryptionService.decrypt(user.totpSecret);
 
     if (!this.totpService.verifyToken(decryptedSecret, code)) {
-      this.totpAttemptsService.registerFailure(user.id);
+      await this.totpAttemptsService.registerFailure(user.id);
       throw new UnauthorizedException('Código de verificação inválido.');
     }
 
-    this.totpAttemptsService.clearFailures(user.id);
+    await this.totpAttemptsService.clearFailures(user.id);
     await this.usersRepository.enableTotp(user.id);
 
     return { enabled: true };
@@ -246,8 +246,8 @@ export class AuthService {
     return { success: true };
   }
 
-  private registerFailedLogin(email: string, ipAddress: string): void {
-    const status = this.loginAttemptsService.recordFailure(email, ipAddress);
+  private async registerFailedLogin(email: string, ipAddress: string): Promise<void> {
+    const status = await this.loginAttemptsService.recordFailure(email, ipAddress);
     const maskedEmail = this.loginAttemptsService.maskEmail(email);
     const maskedIp = this.maskIp(ipAddress);
 

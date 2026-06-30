@@ -6,6 +6,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { UsersRepository } from '../repositories/users.repository';
 import { TokenBlacklistService } from '../services/token-blacklist.service';
 import { TokenService } from '../services/token.service';
+import { RedisConnectionService } from '../../common/redis-connection.service';
 
 function createMockContext(authHeader?: string): ExecutionContext {
   const request: Record<string, unknown> = {
@@ -35,7 +36,8 @@ describe('JwtAuthGuard', () => {
     });
 
     usersRepository = new UsersRepository(configService);
-    tokenBlacklistService = new TokenBlacklistService();
+    const redisMock = { getClient: async () => null } as unknown as RedisConnectionService;
+    tokenBlacklistService = new TokenBlacklistService(redisMock);
     tokenService = new TokenService(configService);
     guard = new JwtAuthGuard(tokenService, tokenBlacklistService, usersRepository);
   });
@@ -86,7 +88,7 @@ describe('JwtAuthGuard', () => {
       tv: 0,
     });
 
-    tokenBlacklistService.add(result.jti, Math.floor(Date.now() / 1000) + 3600);
+    await tokenBlacklistService.add(result.jti, Math.floor(Date.now() / 1000) + 3600);
 
     await expect(
       guard.canActivate(createMockContext(`Bearer ${result.token}`)),

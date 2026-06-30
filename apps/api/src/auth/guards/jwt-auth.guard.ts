@@ -27,7 +27,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = authorization.replace('Bearer ', '').trim();
     const payload = this.tokenService.verifyAccessToken(token);
 
-    if (payload.jti && this.tokenBlacklistService.isBlacklisted(payload.jti)) {
+    if (payload.jti && (await this.tokenBlacklistService.isBlacklisted(payload.jti))) {
       throw new UnauthorizedException('Token revogado.');
     }
 

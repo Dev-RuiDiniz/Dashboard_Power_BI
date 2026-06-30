@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { CommonModule } from '../common/common.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { AuthController } from './auth.controller';
 import { AuthzTestController } from './authz-test.controller';
@@ -21,7 +22,7 @@ import { TotpEncryptionService } from './services/totp-encryption.service';
 import { TotpService } from './services/totp.service';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [CommonModule, SupabaseModule],
   controllers: [AuthController, AuthzTestController],
   providers: [
     AuthService,

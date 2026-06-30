@@ -2,6 +2,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { TotpAttemptsService } from './totp-attempts.service';
+import { RedisConnectionService } from '../../common/redis-connection.service';
 
 function createConfigService(overrides: Record<string, unknown> = {}): jest.Mocked<ConfigService> {
   const defaults: Record<string, unknown> = {
@@ -19,55 +20,56 @@ describe('TotpAttemptsService', () => {
   let service: TotpAttemptsService;
 
   beforeEach(() => {
-    service = new TotpAttemptsService(createConfigService());
+    const redisMock = { getClient: async () => null } as unknown as RedisConnectionService;
+    service = new TotpAttemptsService(createConfigService(), redisMock);
   });
 
-  it('deve permitir tentativa quando sem falhas previas', () => {
-    expect(() => service.assertCanAttempt('user-1')).not.toThrow();
+  it('deve permitir tentativa quando sem falhas previas', async () => {
+    await expect(service.assertCanAttempt('user-1')).resolves.toBeUndefined();
   });
 
-  it('deve bloquear apos 3 falhas', () => {
-    service.registerFailure('user-1');
-    service.registerFailure('user-1');
-    service.registerFailure('user-1');
+  it('deve bloquear apos 3 falhas', async () => {
+    await service.registerFailure('user-1');
+    await service.registerFailure('user-1');
+    await service.registerFailure('user-1');
 
-    expect(() => service.assertCanAttempt('user-1')).toThrow(HttpException);
+    await expect(service.assertCanAttempt('user-1')).rejects.toThrow(HttpException);
     try {
-      service.assertCanAttempt('user-1');
+      await service.assertCanAttempt('user-1');
     } catch (e) {
       expect((e as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
     }
   });
 
-  it('deve limpar falhas apos sucesso', () => {
-    service.registerFailure('user-1');
-    service.registerFailure('user-1');
-    service.clearFailures('user-1');
+  it('deve limpar falhas apos sucesso', async () => {
+    await service.registerFailure('user-1');
+    await service.registerFailure('user-1');
+    await service.clearFailures('user-1');
 
-    expect(() => service.assertCanAttempt('user-1')).not.toThrow();
+    await expect(service.assertCanAttempt('user-1')).resolves.toBeUndefined();
   });
 
-  it('deve permitir apos bloqueio expirar', () => {
-    service.registerFailure('user-1');
-    service.registerFailure('user-1');
-    service.registerFailure('user-1');
+  it('deve permitir apos bloqueio expirar', async () => {
+    await service.registerFailure('user-1');
+    await service.registerFailure('user-1');
+    await service.registerFailure('user-1');
 
-    expect(() => service.assertCanAttempt('user-1')).toThrow();
+    await expect(service.assertCanAttempt('user-1')).rejects.toThrow();
 
     const future = Date.now() + 901 * 1000;
     jest.spyOn(Date, 'now').mockReturnValue(future);
 
-    expect(() => service.assertCanAttempt('user-1')).not.toThrow();
+    await expect(service.assertCanAttempt('user-1')).resolves.toBeUndefined();
 
     jest.restoreAllMocks();
   });
 
-  it('deve rastrear usuarios independentemente', () => {
-    service.registerFailure('user-1');
-    service.registerFailure('user-1');
-    service.registerFailure('user-1');
+  it('deve rastrear usuarios independentemente', async () => {
+    await service.registerFailure('user-1');
+    await service.registerFailure('user-1');
+    await service.registerFailure('user-1');
 
-    expect(() => service.assertCanAttempt('user-1')).toThrow();
-    expect(() => service.assertCanAttempt('user-2')).not.toThrow();
+    await expect(service.assertCanAttempt('user-1')).rejects.toThrow();
+    await expect(service.assertCanAttempt('user-2')).resolves.toBeUndefined();
   });
 });
