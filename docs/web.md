@@ -22,6 +22,7 @@
 - exportações
 - configurações do sistema
 - página de design system
+- dashboards personalizados com seed automático por setor e banner de boas-vindas
 
 ## Sessão
 

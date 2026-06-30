@@ -55,7 +55,7 @@ Tela `/app/dashboards` onde usuários criam e gerenciam dashboards personalizado
 - [x] Reordenação via drag-and-drop
 - [x] Persistência da ordem (PATCH /dashboards/:id/widgets/reorder)
 - [ ] Widgets editáveis (configuração avançada)
-- [ ] Dashboard padrão por setor (T08b — em implementação)
+- [x] Dashboard padrão por setor (T08b — concluído em 2026-06-29)
 - [ ] Compartilhamento entre usuários do mesmo grupo
 
 ## 6. Impacto Técnico

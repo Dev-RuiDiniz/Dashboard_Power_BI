@@ -125,6 +125,96 @@ Novas falhas encontradas:
 - **113 testes** passando na API.
 - **0 vulnerabilidades de segurança** remanescentes.
 
+### 11. Auditoria de Runtime do ROADMAP (2026-06-29)
+
+Verificação item por item do ROADMAP.md contra o código atual:
+
+**Débitos técnicos confirmados como CONCLUÍDOS:**
+
+- **DT-001 (2FA obrigatório para admins):** `TwoFactorGuard` bloqueia admins sem 2FA ativo. `AuthService.disableTotp` impede admins de desativar 2FA. Testes cobrem todos os cenários.
+- **DT-002 (Hardening final de sessão):** `TokenBlacklistService` (Redis+fallback), `tokenVersion` check no `JwtAuthGuard`, `revokeAllSessions` incrementa versão e revoga refresh tokens, logout blacklista access token, troca de senha invalida sessões.
+- **DT-003 (Herança de permissões via grupos):** `EffectivePermissionsService` agrega permissões de múltiplos grupos ativos, filtra grupos/permissões inativos. Testes cobrem herança, união e casos edge.
+- **DT-004 (Cache de queries SQL Server):** `QueryCacheService` com TTL, LRU eviction, max entries. Env vars: `QUERY_CACHE_ENABLED`, `QUERY_CACHE_TTL_MS`, `QUERY_CACHE_MAX_ENTRIES`. Endpoints admin para invalidar e ver stats.
+- **DT-006 (Política de retenção LGPD):** `RetentionService` com cron diário (3am), anonimização de audit logs (90 dias), purge de refresh tokens (30 dias) e exports (7 dias). Endpoints `/admin/retention/status` e `/admin/retention/run`.
+
+**Tarefas atualizadas:**
+
+- **T16b (Editor visual drag-and-drop):** Marcado como EM DESENVOLVIMENTO no ROADMAP, mas runtime confirma CONCLUÍDO. `react-grid-layout` com drag, resize, grid de 12 colunas. `WidgetPalette` com 5 tipos (kpi, chart, table, text, iframe). `WidgetConfigPanel` para configurar cada widget. `DashboardCanvas` com modo edição e persistência de layout. **Atualizado para CONCLUÍDO.**
+- **T07b (Drill-down multi-dimensão):** PARCIAL. Drilldown existe no `DashboardService` com `getKpiDrilldown` mas dimensão é fixa por KPI (não selecionável pelo usuário).
+- **T08b (Widgets editáveis e dashboard padrão por setor):** PARCIAL. Widgets editáveis confirmados, mas dashboard padrão por setor não implementado.
+- **T12b (Dashboard admin com tendências):** PENDENTE. `AdminDashboardService` só retorna KPIs estáticos (totalUsers, activeUsers, totalGroups, totalExports, recentActivity). Sem gráficos de tendência.
+- **DT-005 (Testes E2E Playwright):** PENDENTE. Playwright não configurado no projeto.
+
+**Arquivos modificados na auditoria:**
+
+- `docs/ROADMAP.md` — T16b atualizado para CONCLUÍDO, telas 18/18, Fase 3 concluída, Fase 4 em andamento, módulos atualizados, próximos passos revisados.
+- `docs/CONTEXTO.md` — Resumo executivo, estado atual, riscos e próximos passos atualizados.
+- `docs/RELATORIO.md` — Esta seção adicionada.
+
+**Métricas finais:**
+
+- Telas: 18/18 concluídas (100%)
+- Módulos: 6/6 parciais (funcional mas com lacunas)
+- Tarefas técnicas: 10 concluídas, 1 parcial, 2 pendentes
+- Pendências remanescentes: DT-005 (Playwright), T07b (drill-down multi-dim), T12b (dashboard admin tendências)
+
+---
+
+## 2026-06-29 — Registro do Dia (Sessão 4)
+
+### 1. Resumo
+
+Implementação de T08b: dashboard padrão por setor. Quando usuário acessa `/app/dashboards` sem dashboards, o backend cria automaticamente um dashboard pré-configurado com widgets KPI relevantes ao seu setor.
+
+### 2. Tarefas Executadas
+
+- Criada especificação SDD `SPEC-T08b-dashboard-por-setor.md`.
+- Criado `dashboard-templates.ts` com templates por setor (produção, comercial, algodoeira, diretoria).
+- Adicionado método `ensureDefaultDashboardForUser` em `DashboardsService`.
+- Modificado `DashboardsController.list()` para criar seed quando lista vazia.
+- Atualizado `fetchDashboards` no frontend para novo formato `{ dashboards, seededViaApi }`.
+- Adicionado banner de boas-vindas no `DashboardWorkspace` quando `seededViaApi: true`.
+- 5 novos testes backend (seed por setor, diretoria, vazio, comercial, não duplica).
+- 3 novos testes frontend (banner aparece, dismissível, não aparece quando false).
+
+### 3. Arquivos Criados
+
+- `docs/specs/bi/SPEC-T08b-dashboard-por-setor.md`
+- `apps/api/src/platform/dashboards/dashboard-templates.ts`
+
+### 4. Arquivos Modificados
+
+- `apps/api/src/platform/dashboards/dashboards.service.ts`
+- `apps/api/src/platform/dashboards/dashboards.controller.ts`
+- `apps/api/src/platform/dashboards/dashboards.service.spec.ts`
+- `apps/web/src/lib/platform-api.ts`
+- `apps/web/src/components/dashboard/dashboard-workspace.tsx`
+- `apps/web/src/components/dashboard/dashboard-workspace.test.tsx`
+- `docs/specs/bi/SPEC-T08-dashboards-personalizados.md`
+- `docs/ROADMAP.md`
+- `docs/CONTEXTO.md`
+- `docs/api.md`
+- `docs/web.md`
+
+### 5. Testes Executados
+
+- `pnpm --filter @dashboard-power-bi/api exec jest -- dashboards.service.spec` — 7/7 passando.
+- `pnpm --filter @dashboard-power-bi/web exec jest -- dashboard-workspace.test` — 4/4 passando.
+
+### 6. Commits Realizados
+
+1. `docs(sdd): criar especificacao T08b dashboard padrao por setor`
+2. `feat: implementar seed de dashboard padrao por setor`
+3. `test(api): adicionar testes para seed de dashboard padrao por setor`
+4. `test(web): adicionar testes para banner de dashboard padrao por setor`
+5. `docs: atualizar documentacao com entrega de T08b dashboard padrao por setor`
+
+### 7. Débitos Técnicos Remanescentes
+
+- DT-005 (Playwright E2E) — não configurado.
+- T07b (drill-down multi-dimensão selecionável) — parcial.
+- T12b (dashboard admin com tendências) — pendente.
+
 ---
 
 ## 2026-06-28 — Registro do Dia (Sessão 2)

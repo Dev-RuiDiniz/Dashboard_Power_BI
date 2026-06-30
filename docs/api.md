@@ -20,7 +20,7 @@
 - `GET /dashboard/home`
 - `GET /dashboard/kpis/:kpiId/drilldown`
 - `GET /dashboard/kpis/:kpiId/history` — serie historica de 12 meses do KPI
-- `GET /dashboards` — lista dashboards personalizados do usuario
+- `GET /dashboards` — lista dashboards personalizados do usuario; cria dashboard padrão por setor automaticamente quando lista vazia (retorna `{ dashboards, seededViaApi }`)
 - `POST /dashboards` — cria dashboard personalizado
 - `GET /dashboards/:id` — retorna dashboard especifico
 - `PATCH /dashboards/:id` — atualiza dashboard

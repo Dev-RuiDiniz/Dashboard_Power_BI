@@ -1,29 +1,29 @@
 # CONTEXTO.md — Contexto Vivo do Projeto
 
 **Projeto:** Dashboard Power BI
-**Atualizado em:** 2026-06-28
+**Atualizado em:** 2026-06-29
 **Responsável pela atualização:** Agente IA / Desenvolvedor
 
 ---
 
 ## 1. Resumo Executivo
 
-O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado funcional parcial. O sistema entrega autenticação com JWT, dashboard com KPIs e gráficos Recharts, catálogo e execução de relatórios via SQL Server, administração de usuários/grupos/permissões, auditoria, exportações com pipeline real, notificações, settings e dashboards personalizados com editor visual mínimo. O estado atual está abaixo do escopo V1 completo descrito no PDF original, com lacunas principais em BI avançado (drill-down multi-dimensão, editor visual completo), hardening de segurança (2FA obrigatório para admins, blacklist de tokens) e persistência (BullMQ/Redis, cache de queries). O principal risco técnico é a dependência de fallback em memória quando Supabase não está configurado.
+O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado funcional avançado. O sistema entrega autenticação com JWT, dashboard com KPIs e gráficos Recharts, catálogo e execução de relatórios via SQL Server/Oracle, administração de usuários/grupos/permissões com herança via grupos, auditoria com retenção LGPD, exportações com pipeline real, notificações, settings, dashboards personalizados com editor visual drag-and-drop completo (react-grid-layout) e seed automático de dashboard padrão por setor, 2FA/TOTP obrigatório para admins, hardening de sessão (token blacklist, token versioning, revogação), cache de queries SQL com TTL e LRU, e política de retenção de logs com cron diário. As lacunas remanescentes são: testes E2E (Playwright não configurado), drill-down multi-dimensão selecionável pelo usuário, e dashboard admin com gráficos de tendência. O principal risco técnico é a dependência de fallback em memória quando Supabase não está configurado.
 
 ---
 
 ## 2. Estado Atual do Projeto
 
-| Área           | Status            | Observações                                                                            |
-| -------------- | ----------------- | -------------------------------------------------------------------------------------- |
-| Backend        | Funcional parcial | NestJS com 9 módulos ativos no AppModule; repositórios híbridos (Supabase + memória)   |
-| Frontend       | Funcional parcial | Next.js 14 com 18 telas implementadas (11 concluídas, 5 parciais, 2 com lacunas)       |
-| Banco de dados | Funcional parcial | 8 migrations Supabase aplicadas; SQL Server externo para relatórios                    |
-| Testes         | Estável           | `pnpm test`, `pnpm typecheck`, `pnpm build` passando; E2E não configurado              |
-| Infraestrutura | Funcional         | Docker Compose dev/prod; GitHub Actions para deploy VPS                                |
-| Documentação   | Atualizada        | Governança consolidada na raiz em 2026-06-28                                           |
-| Segurança      | Parcial           | JWT, bcrypt, CSRF, headers de segurança, 2FA opcional; hardening final pendente        |
-| BI             | Parcial           | KPIs, charts Recharts, drill-down por sector, dashboards personalizados, editor mínimo |
+| Área           | Status             | Observações                                                                            |
+| -------------- | ------------------ | -------------------------------------------------------------------------------------- |
+| Backend        | Funcional avançado | NestJS com módulos ativos; repositórios híbridos (Supabase + memória); 113 testes      |
+| Frontend       | Funcional avançado | Next.js 14 com 18 telas implementadas (18 concluídas, 0 parciais, 0 pendentes)         |
+| Banco de dados | Funcional parcial  | 8 migrations Supabase aplicadas; SQL Server/Oracle externo para relatórios             |
+| Testes         | Estável            | `pnpm test`, `pnpm typecheck`, `pnpm build` passando; E2E (Playwright) não configurado |
+| Infraestrutura | Funcional          | Docker Compose dev/prod; GitHub Actions para deploy VPS                                |
+| Documentação   | Atualizada         | Governança consolidada; auditoria de runtime em 2026-06-29                             |
+| Segurança      | Avançado           | JWT, bcrypt 12, CSRF, helmet, 2FA obrigatório para admins, token blacklist, versioning |
+| BI             | Avançado           | KPIs, charts Recharts, drill-down, editor visual completo, cache de queries, retenção  |
 
 ---
 
@@ -194,19 +194,16 @@ O Dashboard Power BI é uma plataforma web interna de relatórios e BI em estado
 | Fallback em memória perde dados ao reiniciar             | Alto    | Garantir Supabase configurado em produção    |
 | Fila em memória não suporta múltiplas instâncias         | Baixo   | BullMQ + Redis já implementados com fallback |
 | `pnpm typecheck` falha sem artefatos de build do Next.js | Baixo   | Rodar `pnpm build` antes do typecheck        |
-| LGPD não tratada explicitamente                          | Alto    | Definir política de retenção e exclusão      |
-| 2FA opcional para admins                                 | Médio   | Forçar 2FA para admins (DT-001)              |
-| Sem testes E2E                                           | Médio   | Implementar Playwright                       |
+| Sem testes E2E (Playwright)                              | Médio   | Configurar Playwright (DT-005)               |
 
 ---
 
 ## 9. Próximos Passos
 
-1. Validar com `pnpm verify:docs`.
-2. Commit da onda de governança: `docs(governanca): adiciona documentacao estrutural do repositorio`.
-3. Iniciar Fase 3: Editor visual drag-and-drop completo (T16b).
-4. Implementar 2FA obrigatório para admins (DT-001).
-5. Implementar hardening final de sessão (DT-002).
+1. Configurar testes E2E com Playwright (DT-005).
+2. Implementar dashboard admin com gráficos de tendência (T12b).
+3. Implementar drill-down multi-dimensão selecionável (T07b).
+4. Validar com `pnpm verify:docs`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 
 ---
 
