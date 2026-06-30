@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json } from 'express';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
 import { AppModule } from './app.module';
@@ -17,6 +18,8 @@ export function configureApp(app: INestApplication): void {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
+
+  app.use(helmet());
 
   app.enableCors({
     origin: origins,

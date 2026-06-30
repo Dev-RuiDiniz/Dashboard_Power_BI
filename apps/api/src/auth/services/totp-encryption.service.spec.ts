@@ -4,7 +4,11 @@ import { TotpEncryptionService } from './totp-encryption.service';
 
 function createConfigService(key?: string): jest.Mocked<ConfigService> {
   return {
-    get: jest.fn((name: string) => (name === 'TOTP_ENCRYPTION_KEY' ? key : undefined)),
+    get: jest.fn((name: string) => {
+      if (name === 'TOTP_ENCRYPTION_KEY') return key;
+      if (name === 'TOTP_ENCRYPTION_SALT') return 'dashboard-power-bi-totp-salt';
+      return undefined;
+    }),
   } as unknown as jest.Mocked<ConfigService>;
 }
 

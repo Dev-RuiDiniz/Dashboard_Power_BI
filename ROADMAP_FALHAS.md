@@ -349,7 +349,7 @@
 ### F-N02 — Sem Security Headers (Helmet/X-Frame-Options/X-Content-Type-Options/HSTS/CSP)
 
 - **Severidade:** 🟠 ALTO
-- **Status:** Pendente
+- **Status:** ✅ Concluído (2026-06-29)
 - **Arquivos:**
   - `apps/api/src/main.ts`
 - **Descrição:**
