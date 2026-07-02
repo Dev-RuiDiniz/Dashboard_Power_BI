@@ -38,7 +38,7 @@ export class ExportsProcessor implements OnModuleInit, OnModuleDestroy {
     const port = Number(this.configService.get<number>('REDIS_PORT', 6379));
 
     try {
-      this.connection = new IORedis({ host, port, maxRetriesPerRequest: null, lazyConnect: true });
+      this.connection = new IORedis({ host, port, maxRetriesPerRequest: null });
       this.worker = new Worker(
         EXPORTS_QUEUE_NAME,
         async (job: Job<ExportJobPayload>) => this.processJob(job),
