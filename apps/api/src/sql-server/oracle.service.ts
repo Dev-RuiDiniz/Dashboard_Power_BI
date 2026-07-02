@@ -51,7 +51,7 @@ export class OracleService implements OnModuleDestroy {
 
   async execute<TRecord extends Record<string, unknown> = Record<string, unknown>>(
     sql: string,
-    bindParams: Record<string, unknown> = {},
+    bindParams: oracledb.BindParameters = {},
     options: oracledb.ExecuteOptions = {},
   ): Promise<TRecord[]> {
     const pool = await this.getPool();
