@@ -3,11 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { RefreshTokenRepository } from '../../auth/repositories/refresh-token.repository';
+import { ExportsService } from '../../platform/exports/exports.service';
 import { AuditLogsRepository } from '../repositories/audit-logs.repository';
-
-export type ExportsRetentionPort = {
-  deleteExpiredExports(cutoffDate: Date): Promise<number>;
-};
 
 export type RetentionResult = {
   anonymizedLogs: number;
@@ -29,7 +26,7 @@ export class RetentionService {
     private readonly configService: ConfigService,
     private readonly auditLogsRepository: AuditLogsRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
-    private readonly exportsService: ExportsRetentionPort,
+    private readonly exportsService: ExportsService,
   ) {}
 
   async anonymizeOldAuditLogs(days?: number): Promise<number> {

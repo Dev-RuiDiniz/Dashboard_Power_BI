@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
@@ -20,7 +20,13 @@ import { SettingsController } from './settings/settings.controller';
 import { SettingsService } from './settings/settings.service';
 
 @Module({
-  imports: [AuthModule, SupabaseModule, ReportsModule, AuditModule, SqlServerModule],
+  imports: [
+    AuthModule,
+    SupabaseModule,
+    ReportsModule,
+    forwardRef(() => AuditModule),
+    SqlServerModule,
+  ],
   controllers: [
     DashboardController,
     DashboardsController,

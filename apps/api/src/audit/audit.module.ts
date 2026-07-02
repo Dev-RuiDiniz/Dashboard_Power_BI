@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module';
 import { PlatformModule } from '../platform/platform.module';
@@ -10,7 +10,7 @@ import { AuditLogsRepository } from './repositories/audit-logs.repository';
 import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-  imports: [AuthModule, SupabaseModule, PlatformModule],
+  imports: [AuthModule, SupabaseModule, forwardRef(() => PlatformModule)],
   controllers: [AuditController, RetentionController],
   providers: [AuditService, AuditLogsRepository, RetentionService],
   exports: [AuditService, AuditLogsRepository, RetentionService],
